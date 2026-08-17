@@ -1,3 +1,3 @@
-export const SITE_URL = "http://localhost:4321";
-export const SITE_TITLE: string = "understory";
-export const SITE_DESCRIPTION: string | undefined = undefined;
+export const SITE_URL = "https://aster.myles.garden";
+export const SITE_TITLE: string = "Aster";
+export const SITE_DESCRIPTION: string = "In-browser natal chart generator.";
