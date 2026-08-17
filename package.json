@@ -13,7 +13,7 @@
     "type": "git",
     "url": "https://github.com/myles/understory.git"
   },
-  "license": "MIT",
+  "license": "AGPL-3.0-only",
   "author": "Myles Braithwaite <myles@myles.garden> (https://myles.garden)",
   "type": "module",
   "scripts": {
