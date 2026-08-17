@@ -2,7 +2,7 @@
 
 A birth chart generator that runs entirely in the browser. Give it a date, a time, and a place, and it draws you a natal chart — no account, no server, no data leaving your machine.
 
-Lives at [aster.myles.garden](https://aster.myles.garden). Named for the star-shaped flower — *aster* is Greek for "star".
+Lives at [aster.myles.garden](https://aster.myles.garden). Named for the star-shaped flower — _aster_ is Greek for "star".
 
 > **Status:** early. This README describes where the project is headed before most of it exists. Treat it as intent, not a changelog.
 
@@ -32,13 +32,13 @@ Every step above happens in the browser. The WASM module is loaded once on first
 
 ## Tech stack
 
-| Layer | Choice |
-|---|---|
-| Framework | Astro |
-| Language | TypeScript |
+| Layer     | Choice                 |
+| --------- | ---------------------- |
+| Framework | Astro                  |
+| Language  | TypeScript             |
 | Ephemeris | Swiss Ephemeris (WASM) |
-| Hosting | Vercel (static) |
-| Rendering | SVG |
+| Hosting   | Vercel (static)        |
+| Rendering | SVG                    |
 
 ## Getting started
 
