@@ -1,6 +1,6 @@
 ---
 import App from "@/components/App.svelte";
-import { SOURCE_URL } from "@/consts";
+import { AUTHOR_URL, SOURCE_URL } from "@/consts";
 import Layout from "@/layouts/Layout.astro";
 ---
 
@@ -29,6 +29,9 @@ import Layout from "@/layouts/Layout.astro";
           href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a
         >).{" "}
         <a class="underline" href={SOURCE_URL}>Source code</a> under the AGPL.
+      </p>
+      <p class="mt-1">
+        Made with Claude by <a class="underline" href={AUTHOR_URL}>Myles</a>.
       </p>
     </footer>
   </div>
