@@ -174,3 +174,72 @@ describe("share links for transits", () => {
     expect(() => parseShareHash(hash)).toThrow(message);
   });
 });
+
+describe("share links for a place entered by coordinates", () => {
+  const SMALLVILLE = {
+    name: "Smallville",
+    region: "",
+    country: "",
+    latitude: 43.7,
+    longitude: -79.4,
+    timeZone: "America/Toronto",
+  };
+  const details = { ...CHART.details, place: SMALLVILLE };
+
+  it("carries the coordinates, time zone and name", () => {
+    expect(buildShareUrl(details, SITE_URL)).toBe(
+      "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
+        "&lat=43.7&lon=-79.4&tz=America/Toronto&name=Smallville&house=equal",
+    );
+  });
+
+  it("leaves out a name that's only the coordinates", () => {
+    const unnamed = {
+      ...details,
+      place: { ...SMALLVILLE, name: "43.70° N, 79.40° W" },
+    };
+
+    expect(buildShareUrl(unnamed, SITE_URL)).not.toContain("name=");
+  });
+
+  it("reads the place back", () => {
+    const { hash } = new URL(buildShareUrl(details, SITE_URL));
+
+    expect(parseShareHash(hash)).toMatchObject({
+      date: "2000-01-01",
+      place: SMALLVILLE,
+    });
+  });
+
+  it("names an unnamed place by its coordinates when read back", () => {
+    const shared = parseShareHash(
+      "#date=2000-01-01&time=12:00&lat=43.7&lon=-79.4&tz=America/Toronto",
+    );
+
+    expect(shared).toMatchObject({ place: { name: "43.70° N, 79.40° W" } });
+  });
+
+  it("works for the second person too", () => {
+    const { hash } = new URL(
+      buildShareUrl(CHART.details, SITE_URL, { comparedWith: details }),
+    );
+
+    expect(hash).toContain("&lat2=43.7&lon2=-79.4&tz2=America/Toronto");
+    expect(parseShareHash(hash)?.comparedWith).toMatchObject({
+      place: SMALLVILLE,
+    });
+  });
+
+  it.each([
+    ["a missing time zone", "&lat=43.7&lon=-79.4", "missing"],
+    [
+      "an unknown time zone",
+      "&lat=43.7&lon=-79.4&tz=Middle/Earth",
+      "time zone",
+    ],
+    ["a latitude out of range", "&lat=95&lon=-79.4&tz=UTC", "Latitude"],
+  ])("rejects %s", (_, place, message) => {
+    const hash = "#date=2000-01-01&time=12:00" + place;
+    expect(() => parseShareHash(hash)).toThrow(message);
+  });
+});

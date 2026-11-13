@@ -51,7 +51,7 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placi
 
 ## Finding a place's GeoNames ID
 
-Aster knows the cities in GeoNames' `cities15000` list: places with a population over 15,000. For a smaller town, use the nearest city in the list.
+Aster knows the cities in GeoNames' `cities15000` list: places with a population over 15,000. For a smaller town, give its coordinates instead (see below).
 
 - Search https://www.geonames.org/ for the place. The ID is the number in the place's URL, e.g. `https://www.geonames.org/6167865/toronto.html`.
 - Or look it up in Aster's own index, https://aster.myles.garden/data/places.json. Each entry in `places` is `[name, asciiName, region, country, latitude, longitude, timeZoneIndex, population, geonameId]`, so the GeoNames ID is the last item.
@@ -64,6 +64,14 @@ Some common IDs:
 | Toronto, Ontario, Canada | 6167865 |
 | London, Ontario, Canada | 6058560 |
 | Montréal, Quebec, Canada | 6077243 |
+
+## Places that aren't listed
+
+Instead of `place`, give `lat` and `lon` in decimal degrees (south and west negative), `tz` as an IANA time zone, and optionally `name`. Use `lat2`, `lon2`, `tz2` and `name2` for a comparison's second person.
+
+```
+https://aster.myles.garden/#date=1990-05-15&time=14:30&lat=43.6833&lon=-79.7667&tz=America/Toronto&name=Brampton
+```
 
 ## What the chart shows
 

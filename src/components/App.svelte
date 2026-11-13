@@ -63,7 +63,8 @@
   let houseSystem: string = $state(DEFAULT_HOUSE_SYSTEM);
   let chart: Chart | undefined = $state.raw();
   let comparedChart: Chart | undefined = $state.raw();
-  let panel = $state(Panel.None);
+  // Cast so TypeScript doesn't narrow panel to its first value, None.
+  let panel = $state(Panel.None as Panel);
   // Transit moments are read on the clock where the visitor is.
   let transitTimeZone = $state("UTC");
   let transitDate = $state("");
@@ -146,17 +147,25 @@
   }
 
   async function fillForm(person: SharedPerson): Promise<BirthForm> {
-    const place = findPlace(await loadPlaceIndex(), person.placeId);
-    if (!place) {
-      throw new Error(`No place has the ID ${person.placeId}.`);
-    }
-
     return {
       date: person.date,
       time: person.time ?? "",
       isTimeUnknown: person.time === undefined,
-      place,
+      place: await resolvePlace(person),
     };
+  }
+
+  /** A place entered by coordinates comes whole; a listed one is looked up. */
+  async function resolvePlace(person: SharedPerson): Promise<Place> {
+    if ("place" in person) {
+      return person.place;
+    }
+
+    const place = findPlace(await loadPlaceIndex(), person.placeId);
+    if (!place) {
+      throw new Error(`No place has the ID ${person.placeId}.`);
+    }
+    return place;
   }
 
   function loadSavedCharts(): void {
@@ -242,7 +251,7 @@
       return "Enter a time, or tick “I don't know the time”.";
     }
     if (!form.place) {
-      return "Choose a place from the list.";
+      return "Choose a place from the list, or enter its coordinates.";
     }
     return undefined;
   }

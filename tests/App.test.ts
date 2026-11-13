@@ -92,7 +92,7 @@ describe("App", () => {
     await submit();
 
     expect(screen.getByRole("alert").textContent).toContain(
-      "Choose a place from the list.",
+      "Choose a place from the list, or enter its coordinates.",
     );
   });
 
@@ -733,5 +733,168 @@ describe("App with saved charts", () => {
       yourForm().getByRole<HTMLButtonElement>("button", { name: "Save" })
         .disabled,
     ).toBe(true);
+  });
+});
+
+describe("App with a place entered by coordinates", () => {
+  // Brampton, about 30 km from Toronto, the nearest listed place.
+  const BRAMPTON = "43.6833, -79.7667";
+
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  function yourForm() {
+    return within(screen.getByRole("form", { name: "Your birth details" }));
+  }
+
+  async function enterCoordinates(text: string): Promise<void> {
+    await fireEvent.click(
+      yourForm().getByRole("button", { name: "Not listed? Enter coordinates" }),
+    );
+    await fireEvent.input(yourForm().getByLabelText("Coordinates"), {
+      target: { value: text },
+    });
+  }
+
+  it("suggests the nearest listed place's time zone", async () => {
+    render(App);
+
+    await enterCoordinates(BRAMPTON);
+
+    await vi.waitFor(() =>
+      expect(
+        yourForm().getByLabelText<HTMLSelectElement>("Time zone").value,
+      ).toBe("America/Toronto"),
+    );
+    expect(
+      yourForm().getByText(/Toronto, Ontario, Canada, 30 km away/),
+    ).toBeTruthy();
+  });
+
+  it("draws a chart for the coordinates", async () => {
+    render(App);
+    await fillDateTime();
+    await enterCoordinates(BRAMPTON);
+    await vi.waitFor(() =>
+      expect(
+        yourForm().getByLabelText<HTMLSelectElement>("Time zone").value,
+      ).toBe("America/Toronto"),
+    );
+
+    await submit();
+
+    expect(createChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        place: {
+          name: "43.68° N, 79.77° W",
+          region: "",
+          country: "",
+          latitude: 43.6833,
+          longitude: -79.7667,
+          timeZone: "America/Toronto",
+        },
+      }),
+    );
+  });
+
+  it("keeps a time zone chosen by hand", async () => {
+    render(App);
+    await enterCoordinates(BRAMPTON);
+    await fireEvent.change(yourForm().getByLabelText("Time zone"), {
+      target: { value: "America/Winnipeg" },
+    });
+
+    await fireEvent.input(yourForm().getByLabelText("Coordinates"), {
+      target: { value: "43.7, -79.4" },
+    });
+
+    expect(
+      yourForm().getByLabelText<HTMLSelectElement>("Time zone").value,
+    ).toBe("America/Winnipeg");
+  });
+
+  it("explains coordinates it can't read, and won't draw them", async () => {
+    render(App);
+    await fillDateTime();
+
+    await enterCoordinates("95, 10");
+    await submit();
+
+    expect(
+      yourForm().getByText("Latitude must be between -90 and 90."),
+    ).toBeTruthy();
+    expect(screen.getAllByRole("alert")[0].textContent).toContain(
+      "Choose a place from the list, or enter its coordinates.",
+    );
+    expect(createChart).not.toHaveBeenCalled();
+  });
+
+  it("drops the coordinates on going back to the list", async () => {
+    render(App);
+    await fillDateTime();
+    await enterCoordinates(BRAMPTON);
+
+    await fireEvent.click(
+      yourForm().getByRole("button", { name: "Search the list instead" }),
+    );
+    await submit();
+
+    expect(yourForm().getByLabelText("Place")).toBeTruthy();
+    expect(createChart).not.toHaveBeenCalled();
+  });
+
+  it("opens a share link with coordinates", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/#date=2000-01-01&time=12:00&lat=43.7&lon=-79.4" +
+        "&tz=America/Toronto&name=Smallville",
+    );
+    render(App);
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          place: expect.objectContaining({ name: "Smallville" }),
+        }),
+      ),
+    );
+    expect(
+      yourForm().getByLabelText<HTMLInputElement>("Coordinates").value,
+    ).toBe("43.7, -79.4");
+    expect(
+      yourForm().getByLabelText<HTMLInputElement>("Name (optional)").value,
+    ).toBe("Smallville");
+  });
+
+  it("uses a saved chart with coordinates", async () => {
+    addSavedChart(localStorage, {
+      name: "Gran",
+      date: "1950-03-02",
+      place: {
+        name: "Smallville",
+        region: "",
+        country: "",
+        latitude: 43.7,
+        longitude: -79.4,
+        timeZone: "America/Toronto",
+      },
+    });
+    render(App);
+
+    await fireEvent.click(yourForm().getByRole("button", { name: "Use Gran" }));
+
+    await vi.waitFor(() => expect(createChart).toHaveBeenCalled());
+    expect(
+      yourForm().getByLabelText<HTMLSelectElement>("Time zone").value,
+    ).toBe("America/Toronto");
   });
 });

@@ -5,6 +5,8 @@ import {
   formatTimeValue,
   getLocalTimeZone,
   getOffsetMinutes,
+  isTimeZone,
+  listTimeZones,
   parseLocalDate,
   parseLocalDateTime,
   parseLocalTime,
@@ -167,5 +169,23 @@ describe("getLocalTimeZone", () => {
     expect(
       () => new Intl.DateTimeFormat("en", { timeZone: getLocalTimeZone() }),
     ).not.toThrow();
+  });
+});
+
+describe("listTimeZones", () => {
+  it("lists IANA time zones, sorted, with UTC", () => {
+    const zones = listTimeZones();
+
+    expect(zones).toContain("America/Toronto");
+    expect(zones).toContain("UTC");
+    expect(zones).toEqual([...zones].sort());
+  });
+});
+
+describe("isTimeZone", () => {
+  it("knows a real zone from a made-up one", () => {
+    expect(isTimeZone("Europe/London")).toBe(true);
+    expect(isTimeZone("Middle/Earth")).toBe(false);
+    expect(isTimeZone("")).toBe(false);
   });
 });

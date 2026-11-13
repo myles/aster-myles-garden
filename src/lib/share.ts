@@ -7,10 +7,17 @@
 //            &place=2643743&house=placidus
 
 import type { BirthDetails } from "@/lib/chart";
+import { formatCoordinates } from "@/lib/format";
 import { DEFAULT_HOUSE_SYSTEM, HouseSystem, isHouseSystem } from "@/lib/houses";
+import {
+  createCoordinatePlace,
+  parseCoordinates,
+  type Place,
+} from "@/lib/places";
 import {
   formatDateValue,
   formatTimeValue,
+  isTimeZone,
   parseLocalDate,
   parseLocalTime,
 } from "@/lib/time";
@@ -18,6 +25,11 @@ import {
 const DATE_PARAM = "date";
 const TIME_PARAM = "time";
 const PLACE_PARAM = "place";
+// A place entered by coordinates, which has no GeoNames ID.
+const LATITUDE_PARAM = "lat";
+const LONGITUDE_PARAM = "lon";
+const TIME_ZONE_PARAM = "tz";
+const PLACE_NAME_PARAM = "name";
 const HOUSE_PARAM = "house";
 const TRANSITS_PARAM = "transits";
 
@@ -31,13 +43,16 @@ const UNKNOWN_TIME_VALUE = "unknown";
 const PLACE_ID_PATTERN = /^[1-9]\d*$/;
 
 /** Form values carried by a share link, as the form's inputs hold them. */
-/** One person's birth details, as the form's inputs hold them. */
+/**
+ * One person's birth details, as the form's inputs hold them. A listed
+ * place comes as its GeoNames ID, to look up; a place entered by its
+ * coordinates comes whole.
+ */
 export type SharedPerson = {
   date: string;
   /** Undefined when the birth time isn't known. */
   time?: string;
-  placeId: number;
-};
+} & ({ placeId: number } | { place: Place });
 
 /** Form values carried by a share link. */
 export type SharedDetails = SharedPerson & {
@@ -96,8 +111,9 @@ export function buildShareUrl(
     params.set(TRANSITS_PARAM, `${minute}Z`);
   }
 
-  // ":" is safe in a hash; leaving it bare keeps "12:00" readable.
-  url.hash = params.toString().replaceAll("%3A", ":");
+  // ":" and "/" are safe in a hash; leaving them bare keeps "12:00" and
+  // "America/Toronto" readable.
+  url.hash = params.toString().replaceAll("%3A", ":").replaceAll("%2F", "/");
 
   return url.toString();
 }
@@ -156,7 +172,28 @@ function writePerson(
 
   params.set(DATE_PARAM + person.suffix, formatDateValue(details.date));
   params.set(TIME_PARAM + person.suffix, time);
-  params.set(PLACE_PARAM + person.suffix, String(details.place.id));
+  writePlace(params, details.place, person);
+}
+
+function writePlace(
+  params: URLSearchParams,
+  place: Place,
+  person: PersonParams,
+): void {
+  if (place.id !== undefined) {
+    params.set(PLACE_PARAM + person.suffix, String(place.id));
+    return;
+  }
+
+  const { latitude, longitude, timeZone, name } = place;
+  params.set(LATITUDE_PARAM + person.suffix, String(latitude));
+  params.set(LONGITUDE_PARAM + person.suffix, String(longitude));
+  params.set(TIME_ZONE_PARAM + person.suffix, timeZone);
+
+  // A place named only by its coordinates gets that name back on reading.
+  if (name !== formatCoordinates(latitude, longitude)) {
+    params.set(PLACE_NAME_PARAM + person.suffix, name);
+  }
 }
 
 /** Undefined when the link has none of this person's fields. */
@@ -164,15 +201,22 @@ function readPerson(
   params: URLSearchParams,
   person: PersonParams,
 ): SharedPerson | undefined {
-  const date = params.get(DATE_PARAM + person.suffix);
-  const time = params.get(TIME_PARAM + person.suffix);
-  const place = params.get(PLACE_PARAM + person.suffix);
+  const read = (name: string) => params.get(name + person.suffix);
+  const date = read(DATE_PARAM);
+  const time = read(TIME_PARAM);
+  const placeId = read(PLACE_PARAM);
+  const latitude = read(LATITUDE_PARAM);
+  const longitude = read(LONGITUDE_PARAM);
+  const timeZone = read(TIME_ZONE_PARAM);
+  const hasCoordinates =
+    latitude !== null && longitude !== null && timeZone !== null;
 
-  if (date === null && time === null && place === null) {
+  const fields = [date, time, placeId, latitude, longitude, timeZone];
+  if (fields.every((field) => field === null)) {
     return undefined;
   }
 
-  if (date === null || time === null || place === null) {
+  if (date === null || time === null || (placeId === null && !hasCoordinates)) {
     throw new Error(`${person.subject} is missing its date, time or place.`);
   }
 
@@ -184,13 +228,28 @@ function readPerson(
     parseLocalTime(time);
   }
 
-  if (!PLACE_ID_PATTERN.test(place)) {
-    throw new Error(`${person.possessive} place isn't valid: "${place}".`);
+  const birth = { date, time: isTimeUnknown ? undefined : time };
+
+  if (placeId !== null) {
+    if (!PLACE_ID_PATTERN.test(placeId)) {
+      throw new Error(`${person.possessive} place isn't valid: "${placeId}".`);
+    }
+    return { ...birth, placeId: Number(placeId) };
   }
 
-  return {
-    date,
-    time: isTimeUnknown ? undefined : time,
-    placeId: Number(place),
-  };
+  // hasCoordinates holds here, so none of the three is null.
+  if (!isTimeZone(timeZone!)) {
+    throw new Error(
+      `${person.possessive} time zone isn't known: "${timeZone}".`,
+    );
+  }
+
+  const coordinates = parseCoordinates(`${latitude}, ${longitude}`);
+  const place = createCoordinatePlace({
+    ...coordinates,
+    name: read(PLACE_NAME_PARAM) ?? "",
+    timeZone: timeZone!,
+  });
+
+  return { ...birth, place };
 }

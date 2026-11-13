@@ -4,6 +4,8 @@ const MS_PER_MINUTE = 60_000;
 /** Julian day of the Unix epoch, 1970-01-01T00:00:00Z. */
 const UNIX_EPOCH_JULIAN_DAY = 2_440_587.5;
 
+const UTC_TIME_ZONE = "UTC";
+
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_PATTERN = /^(\d{2}):(\d{2})$/;
 
@@ -185,6 +187,32 @@ export function formatTimeValue(time: LocalTime): string {
 /** The browser's own IANA time zone, e.g. "America/Toronto". */
 export function getLocalTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+/**
+ * The IANA time zones this browser lists, plus UTC, which it leaves out.
+ * Some are old spellings ("Asia/Calcutta" where GeoNames has
+ * "Asia/Kolkata"); Intl accepts both, so a picker should add its current
+ * zone if it's missing.
+ */
+export function listTimeZones(): string[] {
+  return [...Intl.supportedValuesOf("timeZone"), UTC_TIME_ZONE].sort();
+}
+
+/** Whether this browser can read the clock in `timeZone`. */
+export function isTimeZone(timeZone: string): boolean {
+  if (!timeZone) {
+    return false;
+  }
+
+  try {
+    new Intl.DateTimeFormat("en", { timeZone });
+    return true;
+  } catch {
+    // Intl throws a RangeError for a zone it doesn't know; that is the
+    // answer, not a failure.
+    return false;
+  }
 }
 
 function padTwo(value: number): string {

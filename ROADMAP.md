@@ -14,6 +14,7 @@
 - [x] Transits: the sky at any moment, defaulting to now, against the natal chart, with aspects within 2°
 - [x] Saved charts: named, in the browser only, to fill either form with one press
 - [x] A written description of the wheel, read by screen readers and shown under the wheel
+- [x] Coordinates for unlisted places, with the time zone suggested from the nearest listed place
 
 ## Charts
 
@@ -22,10 +23,6 @@
 - [ ] Minor aspects and adjustable orbs
 - [ ] Sidereal zodiac, with a choice of ayanamsa
 - [ ] Optional high-precision ephemeris files
-
-## Places
-
-- [ ] Coordinates for unlisted places: enter a latitude, longitude and time zone for towns too small for the place index.
 
 ## App
 

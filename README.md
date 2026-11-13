@@ -70,7 +70,7 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 
 ## Usage
 
-1. Enter a birth date, time, and place. If you don't know the time, tick **I don't know the time** for a noon chart without houses.
+1. Enter a birth date, time, and place. If you don't know the time, tick **I don't know the time** for a noon chart without houses. If the place isn't listed, choose **Not listed? Enter coordinates** and paste its latitude and longitude from any map; the time zone is suggested from the nearest listed place.
 2. The place resolves, offline, to coordinates and an IANA time zone; the browser's time zone database supplies the historical offset, Local Mean Time included.
 3. The chart is calculated and drawn as an SVG wheel.
 4. Adjust the house system if you'd like a different one.

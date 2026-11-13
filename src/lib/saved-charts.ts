@@ -119,7 +119,8 @@ function isSavedChart(value: unknown): value is SavedChart {
 function isPlace(value: unknown): value is Place {
   return (
     isRecord(value) &&
-    typeof value.id === "number" &&
+    // No id means a place entered by its coordinates.
+    (value.id === undefined || typeof value.id === "number") &&
     typeof value.name === "string" &&
     typeof value.region === "string" &&
     typeof value.country === "string" &&

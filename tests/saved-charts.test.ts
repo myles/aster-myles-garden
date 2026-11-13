@@ -80,6 +80,21 @@ describe("saved charts", () => {
     expect(saved.time).toBeUndefined();
   });
 
+  it("saves a place entered by its coordinates", () => {
+    const smallville = {
+      name: "Smallville",
+      region: "",
+      country: "",
+      latitude: 43.7,
+      longitude: -79.4,
+      timeZone: "America/Toronto",
+    };
+
+    addSavedChart(storage, { ...ME, place: smallville });
+
+    expect(readSavedCharts(storage)[0].place).toEqual(smallville);
+  });
+
   it("keeps charts in the order they were saved", () => {
     addSavedChart(storage, ME);
     addSavedChart(storage, { ...ME, name: "Sam" });
