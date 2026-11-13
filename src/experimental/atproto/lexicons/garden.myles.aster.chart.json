@@ -33,7 +33,7 @@
           "aiPreferences": {
             "type": "ref",
             "ref": "community.lexicon.preference.ai#preferenceSet",
-            "description": "Chart-specific AI preferences; omission declares none."
+            "description": "Chart-specific AI preferences. Aster treats omitted preferences, including inference, as denied. Inference covers sending chart data to an AI model, including a hosted LLM, to generate text such as a horoscope."
           },
           "timeZone": {
             "type": "string"
