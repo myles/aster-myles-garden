@@ -1,0 +1,54 @@
+# Aster
+
+> Aster is a free natal (birth) chart generator that runs entirely in the browser. Give it a birth date, local time and place, and it draws a chart wheel with planet positions, houses and aspects. Calculations use the Swiss Ephemeris compiled to WebAssembly; nothing entered is sent to a server.
+
+Aster is a single page at https://aster.myles.garden/. It has no API and no server-side rendering: the chart is calculated and drawn by JavaScript in the visitor's browser. A tool that fetches the page without running JavaScript will see only the empty form, not a chart.
+
+## Linking to a birth chart
+
+A link can fill in the form and draw a chart as soon as the page opens. The birth details go in the URL's `#` fragment, so browsers never send them to the server:
+
+```
+https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus
+```
+
+That link draws a chart for 15 May 1990 at 2:30 pm in Toronto, Ontario, Canada, with Placidus houses.
+
+| Parameter | Required | Format | Notes |
+| --- | --- | --- | --- |
+| `date` | Yes | `YYYY-MM-DD` | Birth date, e.g. `1990-05-15`. |
+| `time` | Yes | `HH:MM`, 24-hour | Local clock time at the birthplace, e.g. `14:30`. Aster works out the historical time zone and daylight saving offset itself; do not convert to UTC. |
+| `place` | Yes | GeoNames ID | A number identifying the birthplace, e.g. `6167865` for Toronto. See below. |
+| `house` | No | House system | One of `placidus`, `koch`, `wholeSign`, `equal`, `porphyry`, `regiomontanus` or `campanus`. Defaults to `placidus`. |
+
+If a parameter is missing or malformed, or the place isn't in Aster's index, the page shows an error instead of a chart.
+
+## Finding a place's GeoNames ID
+
+Aster knows the cities in GeoNames' `cities15000` list: places with a population over 15,000. For a smaller town, use the nearest city in the list.
+
+- Search https://www.geonames.org/ for the place. The ID is the number in the place's URL, e.g. `https://www.geonames.org/6167865/toronto.html`.
+- Or look it up in Aster's own index, https://aster.myles.garden/data/places.json. Each entry in `places` is `[name, asciiName, region, country, latitude, longitude, timeZoneIndex, population, geonameId]`, so the GeoNames ID is the last item.
+
+Some common IDs:
+
+| Place | GeoNames ID |
+| --- | --- |
+| London, England, United Kingdom | 2643743 |
+| Toronto, Ontario, Canada | 6167865 |
+| London, Ontario, Canada | 6058560 |
+| Montréal, Quebec, Canada | 6077243 |
+
+## What the chart shows
+
+- A chart wheel with the ascendant at nine o'clock, zodiac signs coloured by element, house cusps, the four angles (AC, DC, MC, IC) and aspect lines.
+- A Positions table: each body's sign, degree, retrograde status and house, plus the Ascendant and Midheaven.
+- An Aspects table: each major aspect between two bodies, with its orb.
+- Downloads of the wheel as SVG or PNG and of both tables as CSV, and a Copy link button that produces a link in the format above.
+
+## More
+
+- [Source code](https://github.com/myles/aster-myles-garden): AGPL-3.0, Astro and Svelte
+- [ai.txt](https://aster.myles.garden/ai.txt): how AI tools were used to build the site
+- [Swiss Ephemeris](https://www.astro.com/swisseph/): the astronomical calculation library
+- [GeoNames](https://www.geonames.org/): place data, CC BY 4.0
