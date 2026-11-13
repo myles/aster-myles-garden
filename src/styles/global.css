@@ -26,7 +26,12 @@
   --ink: var(--color-inkwell);
   --ink-muted: var(--color-ash);
   --rule: color-mix(in srgb, var(--color-ash) 25%, var(--color-parchment));
-  --accent: var(--color-sage-dark);
+  /* sage-dark alone gives parchment text 4.29:1; this clears 4.5:1. */
+  --accent: color-mix(
+    in srgb,
+    var(--color-sage-dark),
+    var(--color-inkwell) 10%
+  );
 
   /*
    * Most palette accents are pastels that fall below 3:1 on parchment, so
