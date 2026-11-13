@@ -7,7 +7,7 @@
       "description": "Personal data used by Aster.",
       "key": "literal:self",
       "collections": ["garden.myles.aster.chart"],
-      "title": "myles.garden"
+      "title": "aster.myles.garden"
     }
   }
 }

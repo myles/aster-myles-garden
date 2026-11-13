@@ -25,12 +25,24 @@ describe("published Lexicon drafts", () => {
     },
   );
 
-  it("uses the SDK's title field for the myles.garden consent label", () => {
-    expect(space.defs.main).toHaveProperty("title", "myles.garden");
+  it("uses the SDK's title field for the Aster consent label", () => {
+    expect(space.defs.main).toHaveProperty("title", "aster.myles.garden");
     expect(space.defs.main).not.toHaveProperty("name");
     expect(space.defs.main.collections).toEqual([chart.id]);
     expect(space.id).toBe("garden.myles.aster.space");
     expect(CONFIG.spaceType).toBe(space.id);
+  });
+
+  it("defines inference consent and default-deny behaviour", () => {
+    expect(
+      chart.defs.main.record.properties.aiPreferences.description,
+    ).toContain("hosted LLM");
+    expect(
+      chart.defs.main.record.properties.aiPreferences.description,
+    ).toContain("horoscope");
+    expect(
+      chart.defs.main.record.properties.aiPreferences.description,
+    ).toContain("omitted preferences");
   });
 
   it.each([TimeDisclosure.Include, TimeDisclosure.Omit])(
