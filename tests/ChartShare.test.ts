@@ -9,7 +9,7 @@ import { HouseSystem } from "@/lib/houses";
 import { CHART } from "./fixtures/chart";
 
 const SHARE_URL =
-  "https://aster.myles.garden/?date=2000-01-01&time=12:00" +
+  "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
   "&place=2643743&house=equal";
 
 describe("ChartShare", () => {

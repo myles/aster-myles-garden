@@ -1,7 +1,9 @@
 // Encodes a chart's birth details as a link, and reads them back, so a
-// shared link fills in the form and draws the same chart.
+// shared link fills in the form and draws the same chart. Details ride in
+// the hash, which browsers never send to the server, so they stay out of
+// access logs and Referer headers.
 //
-// Example: https://aster.myles.garden/?date=2000-01-01&time=12:00
+// Example: https://aster.myles.garden/#date=2000-01-01&time=12:00
 //            &place=2643743&house=placidus
 
 import type { BirthDetails } from "@/lib/chart";
@@ -32,19 +34,19 @@ export function buildShareUrl(details: BirthDetails, siteUrl: string): string {
     [HOUSE_PARAM]: details.houseSystem,
   });
 
-  // ":" is safe in a query string; leaving it bare keeps "12:00" readable.
-  url.search = params.toString().replaceAll("%3A", ":");
+  // ":" is safe in a hash; leaving it bare keeps "12:00" readable.
+  url.hash = params.toString().replaceAll("%3A", ":");
 
   return url.toString();
 }
 
 /**
- * Reads share-link details from a query string. Returns undefined when
+ * Reads share-link details from a URL hash. Returns undefined when
  * the page wasn't opened from a share link, and throws when it was but
  * the link is damaged. A missing house system falls back to the default.
  */
-export function parseShareParams(search: string): SharedDetails | undefined {
-  const params = new URLSearchParams(search);
+export function parseShareHash(hash: string): SharedDetails | undefined {
+  const params = new URLSearchParams(hash.replace(/^#/, ""));
   const date = params.get(DATE_PARAM);
   const time = params.get(TIME_PARAM);
   const place = params.get(PLACE_PARAM);

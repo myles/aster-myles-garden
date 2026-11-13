@@ -12,7 +12,7 @@
     isHouseSystem,
   } from "@/lib/houses";
   import { findPlace, loadPlaceIndex, type Place } from "@/lib/places";
-  import { parseShareParams } from "@/lib/share";
+  import { parseShareHash } from "@/lib/share";
   import { parseLocalDateTime } from "@/lib/time";
   import { onMount } from "svelte";
 
@@ -27,14 +27,20 @@
   let isDrawing = $state(false);
   let hasRequestedEngine = false;
 
+  // Pasting another share link only changes the hash, which doesn't
+  // reload the page, so listen for that too.
   onMount(() => {
+    const onHashChange = () => void openSharedLink();
+
     void openSharedLink();
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
   });
 
   // Fills in the form from a share link, then draws its chart.
   async function openSharedLink(): Promise<void> {
     try {
-      const shared = parseShareParams(window.location.search);
+      const shared = parseShareHash(window.location.hash);
       if (!shared) {
         return;
       }

@@ -129,7 +129,7 @@ describe("App", () => {
 const CHART_HEADING = "London, England, United Kingdom";
 
 describe("App opened from a share link", () => {
-  const SHARE_SEARCH = "?date=2000-01-01&time=12:00&place=6058560&house=koch";
+  const SHARE_HASH = "#date=2000-01-01&time=12:00&place=6058560&house=koch";
 
   beforeEach(() => {
     vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
@@ -141,13 +141,13 @@ describe("App opened from a share link", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  function openLink(search: string): void {
-    window.history.replaceState(null, "", `/${search}`);
+  function openLink(hash: string): void {
+    window.history.replaceState(null, "", `/${hash}`);
     render(App);
   }
 
   it("fills in the form and draws the chart", async () => {
-    openLink(SHARE_SEARCH);
+    openLink(SHARE_HASH);
 
     await vi.waitFor(() =>
       expect(createChart).toHaveBeenCalledWith({
@@ -168,6 +168,18 @@ describe("App opened from a share link", () => {
     );
   });
 
+  it("follows a share link opened on the same page", async () => {
+    openLink("");
+
+    window.location.hash = SHARE_HASH;
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenCalledWith(
+        expect.objectContaining({ houseSystem: HouseSystem.Koch }),
+      ),
+    );
+  });
+
   it("does nothing without a share link", async () => {
     openLink("");
 
@@ -178,7 +190,7 @@ describe("App opened from a share link", () => {
   });
 
   it("explains a damaged link", () => {
-    openLink("?date=2000-01-01&time=noon&place=6058560");
+    openLink("#date=2000-01-01&time=noon&place=6058560");
 
     expect(screen.getByRole("alert").textContent).toContain(
       "Couldn't open the shared link: Invalid time",
@@ -187,7 +199,7 @@ describe("App opened from a share link", () => {
   });
 
   it("explains a place that isn't in the index", async () => {
-    openLink("?date=2000-01-01&time=12:00&place=1");
+    openLink("#date=2000-01-01&time=12:00&place=1");
 
     await vi.waitFor(() =>
       expect(screen.getByRole("alert").textContent).toContain(
