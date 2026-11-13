@@ -1,0 +1,45 @@
+{
+  "lexicon": 1,
+  "id": "garden.myles.aster.chart",
+  "defs": {
+    "main": {
+      "type": "record",
+      "description": "Own birth chart inputs for the Spaces trial.",
+      "key": "literal:self",
+      "record": {
+        "type": "object",
+        "required": [
+          "birthDate",
+          "coordinates",
+          "timeZone",
+          "placeName",
+          "houseSystem",
+          "updatedAt"
+        ],
+        "properties": {
+          "birthDate": { "type": "string", "minLength": 10, "maxLength": 10 },
+          "birthTime": { "type": "string", "minLength": 5, "maxLength": 5 },
+          "coordinates": {
+            "type": "string",
+            "description": "Comma-separated decimal latitude and longitude."
+          },
+          "timeZone": { "type": "string" },
+          "placeName": { "type": "string", "maxLength": 200 },
+          "houseSystem": {
+            "type": "string",
+            "enum": [
+              "placidus",
+              "koch",
+              "wholeSign",
+              "equal",
+              "porphyry",
+              "regiomontanus",
+              "campanus"
+            ]
+          },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    }
+  }
+}
