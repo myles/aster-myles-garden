@@ -1,10 +1,12 @@
 <!-- Birth form and chart view. Talks to the chart service, place search
      and wheel renderer — never to the ephemeris. Once your chart is drawn,
-     a second form compares it with someone else's. -->
+     a second form compares it with someone else's or shows its transits. -->
 <script lang="ts">
   import BirthFields from "@/components/BirthFields.svelte";
   import ChartView from "@/components/ChartView.svelte";
   import ComparisonView from "@/components/ComparisonView.svelte";
+  import TransitView from "@/components/TransitView.svelte";
+  import { Panel } from "@/components/panel";
   import {
     createChart,
     loadChartEngine,
@@ -21,7 +23,17 @@
   import { findPlace, loadPlaceIndex, type Place } from "@/lib/places";
   import { parseShareHash, type SharedPerson } from "@/lib/share";
   import { compareCharts } from "@/lib/synastry";
-  import { parseLocalDate, parseLocalTime } from "@/lib/time";
+  import {
+    formatDateValue,
+    formatTimeValue,
+    getLocalTimeZone,
+    parseLocalDate,
+    parseLocalDateTime,
+    parseLocalTime,
+    toLocal,
+    toUtc,
+  } from "@/lib/time";
+  import { createTransits } from "@/lib/transits";
   import { onMount, tick } from "svelte";
 
   /** One person's form fields. */
@@ -33,6 +45,7 @@
   };
 
   const COMPARE_DATE_ID = "compare-date";
+  const TRANSIT_DATE_ID = "transit-date";
 
   const houseSystems = Object.values(HouseSystem);
 
@@ -41,19 +54,34 @@
   let houseSystem: string = $state(DEFAULT_HOUSE_SYSTEM);
   let chart: Chart | undefined = $state.raw();
   let comparedChart: Chart | undefined = $state.raw();
-  let isComparing = $state(false);
+  let panel = $state(Panel.None);
+  // Transit moments are read on the clock where the visitor is.
+  let transitTimeZone = $state("UTC");
+  let transitDate = $state("");
+  let transitTime = $state("");
+  let transitsAt: Date | undefined = $state.raw();
+  let transitError = $state("");
   let error = $state("");
   let compareError = $state("");
   let isDrawing = $state(false);
   let hasRequestedEngine = false;
 
   const synastry = $derived(
-    chart && comparedChart ? compareCharts(chart, comparedChart) : undefined,
+    panel === Panel.Comparison && chart && comparedChart
+      ? compareCharts(chart, comparedChart)
+      : undefined,
+  );
+
+  // The engine is loaded whenever a chart exists, so this can't fail on it.
+  const transits = $derived(
+    panel === Panel.Transits && chart && transitsAt
+      ? createTransits(chart, transitsAt)
+      : undefined,
   );
 
   // Houses are only hidden when no chart on screen could have them.
   const isHouseSystemUnused = $derived(
-    yours.isTimeUnknown && (!isComparing || theirs.isTimeUnknown),
+    yours.isTimeUnknown && (panel !== Panel.Comparison || theirs.isTimeUnknown),
   );
 
   // Pasting another share link only changes the hash, which doesn't
@@ -61,6 +89,7 @@
   onMount(() => {
     const onHashChange = () => void openSharedLink();
 
+    transitTimeZone = getLocalTimeZone();
     void openSharedLink();
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
@@ -83,11 +112,14 @@
       houseSystem = shared.houseSystem;
       yours = await fillForm(shared);
 
+      closePanel();
       if (shared.comparedWith) {
         theirs = await fillForm(shared.comparedWith);
-        isComparing = true;
-      } else {
-        stopComparing();
+        panel = Panel.Comparison;
+      }
+      if (shared.transitsAt) {
+        setTransitMoment(shared.transitsAt);
+        panel = Panel.Transits;
       }
     } catch (cause) {
       error = `Couldn't open the shared link: ${describeError(cause)}`;
@@ -95,7 +127,7 @@
     }
 
     await draw();
-    if (isComparing) {
+    if (panel === Panel.Comparison) {
       await compare();
     }
   }
@@ -207,16 +239,58 @@
     }
   }
 
-  async function startComparing(): Promise<void> {
-    isComparing = true;
+  async function openPanel(next: Panel, focusId: string): Promise<void> {
+    panel = next;
     await tick();
-    document.getElementById(COMPARE_DATE_ID)?.focus();
+    document.getElementById(focusId)?.focus();
   }
 
-  function stopComparing(): void {
-    isComparing = false;
+  function startComparing(): Promise<void> {
+    return openPanel(Panel.Comparison, COMPARE_DATE_ID);
+  }
+
+  /** Opens transits for right now. */
+  function startTransits(): Promise<void> {
+    setTransitMoment(new Date());
+    return openPanel(Panel.Transits, TRANSIT_DATE_ID);
+  }
+
+  /** Back to your chart alone, forgetting any comparison or transits. */
+  function closePanel(): void {
+    panel = Panel.None;
     comparedChart = undefined;
     compareError = "";
+    transitsAt = undefined;
+    transitError = "";
+  }
+
+  /** Shows transits for a moment and puts it in the transit form. */
+  function setTransitMoment(at: Date): void {
+    const local = toLocal(at, transitTimeZone);
+    transitDate = formatDateValue(local);
+    transitTime = formatTimeValue(local);
+    transitsAt = at;
+    transitError = "";
+  }
+
+  function showTransits(): void {
+    if (!transitDate || !transitTime) {
+      transitError = "Enter both a date and a time.";
+      return;
+    }
+
+    try {
+      const local = parseLocalDateTime(transitDate, transitTime);
+      transitsAt = toUtc(local, transitTimeZone);
+      transitError = "";
+    } catch (cause) {
+      transitError = `Couldn't show transits: ${describeError(cause)}`;
+    }
+  }
+
+  function onTransitSubmit(event: SubmitEvent): void {
+    event.preventDefault();
+    showTransits();
   }
 
   function onSubmit(event: SubmitEvent): void {
@@ -301,17 +375,100 @@
       </p>
     </form>
 
-    {#if chart && !isComparing}
-      <button
-        type="button"
-        class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-        onclick={startComparing}
-      >
-        Compare with someone else
-      </button>
+    {#if chart && panel === Panel.None}
+      <div class="flex flex-col gap-2">
+        <button
+          type="button"
+          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
+          onclick={startComparing}
+        >
+          Compare with someone else
+        </button>
+        <button
+          type="button"
+          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
+          onclick={startTransits}
+        >
+          See transits
+        </button>
+      </div>
     {/if}
 
-    {#if isComparing}
+    {#if panel === Panel.Transits}
+      <form
+        aria-label="Transit moment"
+        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
+        novalidate
+        onsubmit={onTransitSubmit}
+      >
+        <div>
+          <h2 class="font-serif text-lg">Transit moment</h2>
+          <p class="text-ink-muted text-xs">
+            The sky at this moment, against your chart. Times are in your time
+            zone, {transitTimeZone}.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label for={TRANSIT_DATE_ID} class="text-sm font-medium">Date</label>
+          <input
+            id={TRANSIT_DATE_ID}
+            name="transitDate"
+            type="date"
+            required
+            min="0001-01-01"
+            max="9999-12-31"
+            class="border-rule bg-paper rounded border px-3 py-2"
+            bind:value={transitDate}
+          />
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label for="transit-time" class="text-sm font-medium">Time</label>
+          <input
+            id="transit-time"
+            name="transitTime"
+            type="time"
+            required
+            class="border-rule bg-paper rounded border px-3 py-2"
+            bind:value={transitTime}
+          />
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="submit"
+            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
+          >
+            Show transits
+          </button>
+          <button
+            type="button"
+            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+            onclick={() => setTransitMoment(new Date())}
+          >
+            Now
+          </button>
+          <button
+            type="button"
+            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+            onclick={closePanel}
+          >
+            Back to your chart
+          </button>
+        </div>
+
+        <p
+          role="alert"
+          class="text-sm text-[var(--challenging)]"
+          hidden={transitError.length === 0}
+        >
+          {transitError}
+        </p>
+      </form>
+    {/if}
+
+    {#if panel === Panel.Comparison}
       <form
         aria-label="Their birth details"
         class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
@@ -347,7 +504,7 @@
           <button
             type="button"
             class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={stopComparing}
+            onclick={closePanel}
           >
             Stop comparing
           </button>
@@ -367,6 +524,8 @@
   <section aria-live="polite" class="min-w-0">
     {#if synastry}
       <ComparisonView {synastry} />
+    {:else if transits}
+      <TransitView {transits} timeZone={transitTimeZone} />
     {:else if chart}
       <ChartView {chart} />
     {:else}

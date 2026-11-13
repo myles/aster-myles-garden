@@ -53,25 +53,32 @@ export function formatBirthDate(chart: Chart): string {
 
 /** Example: "1 January 2000 at 12:00 GMT (12:00 UT)". */
 export function formatBirthMoment(chart: Chart): string {
-  const { timeZone } = chart.details.place;
-  const local = new Intl.DateTimeFormat("en-GB", {
-    timeZone,
-    dateStyle: "long",
-    timeStyle: "short",
-  }).format(chart.bornAt);
-  // en-US knows abbreviations such as "EDT"; elsewhere it gives "GMT+1".
-  const zone = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    timeZoneName: "short",
-  })
-    .formatToParts(chart.bornAt)
-    .find((part) => part.type === "timeZoneName")?.value;
   const universal = new Intl.DateTimeFormat("en-GB", {
     timeZone: "UTC",
     timeStyle: "short",
   }).format(chart.bornAt);
 
-  return `${local} ${zone ?? ""} (${universal} UT)`;
+  const local = formatInstant(chart.bornAt, chart.details.place.timeZone);
+
+  return `${local} (${universal} UT)`;
+}
+
+/** Example: "13 November 2026 at 15:05 EST", on `timeZone`'s clock. */
+export function formatInstant(at: Date, timeZone: string): string {
+  const local = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(at);
+  // en-US knows abbreviations such as "EDT"; elsewhere it gives "GMT+1".
+  const zone = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "short",
+  })
+    .formatToParts(at)
+    .find((part) => part.type === "timeZoneName")?.value;
+
+  return zone ? `${local} ${zone}` : local;
 }
 
 /** Turns anything thrown into a message fit to show a person. */

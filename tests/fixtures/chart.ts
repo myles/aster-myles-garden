@@ -4,6 +4,7 @@ import { AspectType } from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
 import type { Chart } from "@/lib/chart";
 import { HouseSystem } from "@/lib/houses";
+import type { Transits } from "@/lib/transits";
 import { SIGNS } from "@/lib/zodiac";
 
 export const CHART: Chart = {
@@ -68,4 +69,20 @@ export const CHART_WITHOUT_TIME: Chart = {
     house: undefined,
     possibleSigns: placed.body === Body.Mars ? [CANCER, LEO] : [CAPRICORN],
   })),
+};
+
+/** The sky against CHART: a transiting Sun at 190°, squaring natal Mars. */
+export const TRANSITS: Transits = {
+  natal: CHART,
+  at: new Date("2026-11-13T20:05:00Z"),
+  bodies: [{ ...CHART.bodies[0], longitude: 190, house: undefined }],
+  aspects: [
+    {
+      first: Body.Mars,
+      second: Body.Sun,
+      type: AspectType.Square,
+      orbDegrees: 1.5,
+    },
+  ],
+  inNatalHouses: { [Body.Sun]: 7 },
 };

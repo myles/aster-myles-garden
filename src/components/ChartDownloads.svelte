@@ -1,16 +1,16 @@
-<!-- Download buttons for the chart: the wheel as an image, the tables as CSV. -->
+<!-- Download buttons for what's on screen: a chart, a comparison or
+     transits. The wheel saves as an image, the tables as CSV. -->
 <script lang="ts">
-  import type { Chart } from "@/lib/chart";
-  import { ExportFormat, exportTables, exportWheel } from "@/lib/export";
+  import {
+    ExportFormat,
+    exportTables,
+    exportWheel,
+    type ExportSubject,
+  } from "@/lib/export";
   import { describeError } from "@/lib/format";
-  import type { Synastry } from "@/lib/synastry";
 
-  // With a synastry, the downloads cover the whole comparison.
-  let {
-    chart,
-    synastry,
-    wheel,
-  }: { chart: Chart; synastry?: Synastry; wheel?: SVGSVGElement } = $props();
+  let { subject, wheel }: { subject: ExportSubject; wheel?: SVGSVGElement } =
+    $props();
 
   let error = $state("");
   let isExporting = $state(false);
@@ -38,7 +38,7 @@
     if (!wheel) {
       throw new Error("The wheel hasn't been drawn yet.");
     }
-    return exportWheel(wheel, chart, format, synastry);
+    return exportWheel(wheel, subject, format);
   }
 </script>
 
@@ -101,7 +101,7 @@
           class={buttonClass}
           aria-label="Download tables as CSV"
           disabled={isExporting}
-          onclick={() => download(() => exportTables(chart, synastry))}
+          onclick={() => download(() => exportTables(subject))}
         >
           {@render downloadIcon()} CSV
         </button>

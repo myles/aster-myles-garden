@@ -91,6 +91,22 @@ describe("findAspectsBetween", () => {
     expect(aspect).toMatchObject({ first: Body.Mars, second: Body.Sun });
   });
 
+  it("can cap the orb below each aspect's own", () => {
+    const yours = [at(Body.Sun, 0)];
+    const theirs = [at(Body.Mars, 92.5), at(Body.Venus, 181.5)];
+
+    // Without a cap both count: squares allow 7° and oppositions 8°.
+    expect(findAspectsBetween(yours, theirs)).toHaveLength(2);
+    expect(findAspectsBetween(yours, theirs, 2)).toEqual([
+      {
+        first: Body.Sun,
+        second: Body.Venus,
+        type: AspectType.Opposition,
+        orbDegrees: 1.5,
+      },
+    ]);
+  });
+
   it("leaves out points such as the node", () => {
     expect(
       findAspectsBetween([at(Body.NorthNode, 10)], [at(Body.Sun, 10)]),

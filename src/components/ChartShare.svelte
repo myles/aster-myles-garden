@@ -4,13 +4,13 @@
   import { SITE_URL } from "@/consts";
   import type { BirthDetails } from "@/lib/chart";
   import { describeError } from "@/lib/format";
-  import { buildShareUrl } from "@/lib/share";
+  import { buildShareUrl, type ShareAddition } from "@/lib/share";
 
-  // With comparedWith, the link reopens the whole comparison.
+  // With an addition, the link reopens the comparison or transits too.
   let {
     details,
-    comparedWith,
-  }: { details: BirthDetails; comparedWith?: BirthDetails } = $props();
+    addition,
+  }: { details: BirthDetails; addition?: ShareAddition } = $props();
 
   let link = $state("");
   let status = $state("");
@@ -18,13 +18,13 @@
   // A new chart makes an old link stale.
   $effect(() => {
     void details;
-    void comparedWith;
+    void addition;
     link = "";
     status = "";
   });
 
   async function share(): Promise<void> {
-    link = buildShareUrl(details, SITE_URL, comparedWith);
+    link = buildShareUrl(details, SITE_URL, addition);
 
     try {
       await navigator.clipboard.writeText(link);

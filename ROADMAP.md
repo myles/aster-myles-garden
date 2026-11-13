@@ -11,10 +11,10 @@
 - [x] Shareable chart links
 - [x] Unknown birth time: a noon chart without houses or angles, noting any body that changed sign that day
 - [x] Compare two birth charts: a bi-wheel, the aspects between them, and house overlays both ways
+- [x] Transits: the sky at any moment, defaulting to now, against the natal chart, with aspects within 2°
 
 ## Charts
 
-- [ ] Transits: today's sky laid over the natal chart.
 - [ ] Composite and solar return charts
 - [ ] Chiron, Lilith and the South Node
 - [ ] Minor aspects and adjustable orbs

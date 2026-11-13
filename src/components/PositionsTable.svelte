@@ -5,7 +5,7 @@
   import { BODY_INFO } from "@/lib/bodies";
   import type { Chart } from "@/lib/chart";
   import { formatPlacement } from "@/lib/format";
-  import type { HouseOverlay } from "@/lib/synastry";
+  import type { HouseOverlay } from "@/lib/houses";
   import { formatLongitude } from "@/lib/zodiac";
 
   let {
@@ -13,7 +13,8 @@
     title,
     overlay,
   }: {
-    chart: Chart;
+    // Only bodies and houses are read, so the sky at a moment fits too.
+    chart: Pick<Chart, "bodies" | "houses">;
     title: string;
     overlay?: { heading: string; houses?: HouseOverlay };
   } = $props();

@@ -2,13 +2,8 @@
 // person's planets fall in the other's houses.
 
 import { findAspectsBetween, type Aspect } from "@/lib/aspects";
-import type { Body } from "@/lib/bodies";
 import type { Chart } from "@/lib/chart";
-import type { HousePositions } from "@/lib/ephemeris";
-import { findHouse } from "@/lib/houses";
-
-/** The house (1–12) each body falls in. */
-export type HouseOverlay = Partial<Record<Body, number>>;
+import { placeInHouses, type HouseOverlay } from "@/lib/houses";
 
 export type Synastry = {
   /** "You": the inner chart of the bi-wheel. */
@@ -28,23 +23,7 @@ export function compareCharts(first: Chart, second: Chart): Synastry {
     first,
     second,
     aspects: findAspectsBetween(first.bodies, second.bodies),
-    secondInFirstHouses: overlayHouses(second, first.houses),
-    firstInSecondHouses: overlayHouses(first, second.houses),
+    secondInFirstHouses: placeInHouses(second.bodies, first.houses),
+    firstInSecondHouses: placeInHouses(first.bodies, second.houses),
   };
-}
-
-function overlayHouses(
-  chart: Chart,
-  houses: HousePositions | undefined,
-): HouseOverlay | undefined {
-  if (!houses) {
-    return undefined;
-  }
-
-  return Object.fromEntries(
-    chart.bodies.map((placed) => [
-      placed.body,
-      findHouse(placed.longitude, houses.cusps),
-    ]),
-  );
 }

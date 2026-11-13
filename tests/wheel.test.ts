@@ -134,6 +134,13 @@ describe("drawBiWheel", () => {
     bodies: [{ ...CHART.bodies[0], longitude: 190 }],
   };
   const synastry = compareCharts(CHART, theirs);
+  const biWheel = {
+    inner: CHART,
+    outerBodies: theirs.bodies,
+    aspects: synastry.aspects,
+    title: "Chart comparison wheel",
+    outerTitlePrefix: "Them: ",
+  };
 
   let svg: SVGSVGElement;
 
@@ -141,7 +148,7 @@ describe("drawBiWheel", () => {
 
   beforeEach(() => {
     svg = document.createElementNS(SVG_NAMESPACE, "svg");
-    drawBiWheel(svg, synastry);
+    drawBiWheel(svg, biWheel);
   });
 
   it("widens the view to fit the outer ring", () => {

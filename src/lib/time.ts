@@ -155,3 +155,38 @@ export function getOffsetMinutes(timeZone: string, instant: Date): number {
 export function toJulianDay(instant: Date): number {
   return instant.getTime() / MS_PER_DAY + UNIX_EPOCH_JULIAN_DAY;
 }
+
+/** Reads an instant on a time zone's wall clock; the inverse of toUtc. */
+export function toLocal(instant: Date, timeZone: string): LocalDateTime {
+  const epochMs = instant.getTime();
+  // Shift by the offset, then read the shifted instant's UTC fields.
+  const shifted = new Date(epochMs + getOffsetMs(timeZone, epochMs));
+
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth() + 1,
+    day: shifted.getUTCDate(),
+    hour: shifted.getUTCHours(),
+    minute: shifted.getUTCMinutes(),
+  };
+}
+
+/** Example: 1 Jan 2000 → "2000-01-01", as `<input type="date">` holds it. */
+export function formatDateValue(date: LocalDate): string {
+  const year = String(date.year).padStart(4, "0");
+  return `${year}-${padTwo(date.month)}-${padTwo(date.day)}`;
+}
+
+/** Example: 9:05 → "09:05", as `<input type="time">` holds it. */
+export function formatTimeValue(time: LocalTime): string {
+  return `${padTwo(time.hour)}:${padTwo(time.minute)}`;
+}
+
+/** The browser's own IANA time zone, e.g. "America/Toronto". */
+export function getLocalTimeZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+function padTwo(value: number): string {
+  return String(value).padStart(2, "0");
+}

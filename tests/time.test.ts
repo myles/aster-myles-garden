@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatDateValue,
+  formatTimeValue,
+  getLocalTimeZone,
   getOffsetMinutes,
   parseLocalDate,
   parseLocalDateTime,
   parseLocalTime,
   toJulianDay,
+  toLocal,
   toUtc,
 } from "@/lib/time";
 
@@ -113,5 +117,55 @@ describe("toJulianDay", () => {
 
   it("matches the Unix epoch", () => {
     expect(toJulianDay(new Date(0))).toBe(2_440_587.5);
+  });
+});
+
+describe("toLocal", () => {
+  it("reads an instant on a time zone's wall clock", () => {
+    expect(
+      toLocal(new Date("2026-11-13T20:05:00Z"), "America/Toronto"),
+    ).toEqual({
+      year: 2026,
+      month: 11,
+      day: 13,
+      hour: 15,
+      minute: 5,
+    });
+  });
+
+  it("crosses midnight when the offset does", () => {
+    expect(
+      toLocal(new Date("2026-11-13T23:30:00Z"), "Asia/Tokyo"),
+    ).toMatchObject({
+      day: 14,
+      hour: 8,
+    });
+  });
+
+  it("round-trips with toUtc", () => {
+    const at = new Date("1990-05-15T18:30:00Z");
+    expect(toUtc(toLocal(at, "America/Toronto"), "America/Toronto")).toEqual(
+      at,
+    );
+  });
+});
+
+describe("formatDateValue", () => {
+  it("pads as a date input holds it", () => {
+    expect(formatDateValue({ year: 987, month: 3, day: 4 })).toBe("0987-03-04");
+  });
+});
+
+describe("formatTimeValue", () => {
+  it("pads as a time input holds it", () => {
+    expect(formatTimeValue({ hour: 9, minute: 5 })).toBe("09:05");
+  });
+});
+
+describe("getLocalTimeZone", () => {
+  it("names an IANA time zone", () => {
+    expect(
+      () => new Intl.DateTimeFormat("en", { timeZone: getLocalTimeZone() }),
+    ).not.toThrow();
   });
 });

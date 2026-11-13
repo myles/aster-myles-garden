@@ -95,7 +95,9 @@ describe("share links for a comparison", () => {
   };
 
   it("adds the second chart's date, time and place", () => {
-    const url = buildShareUrl(CHART.details, SITE_URL, THEIRS);
+    const url = buildShareUrl(CHART.details, SITE_URL, {
+      comparedWith: THEIRS,
+    });
 
     expect(url).toBe(
       "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
@@ -105,7 +107,9 @@ describe("share links for a comparison", () => {
   });
 
   it("reads both charts back", () => {
-    const { hash } = new URL(buildShareUrl(CHART.details, SITE_URL, THEIRS));
+    const { hash } = new URL(
+      buildShareUrl(CHART.details, SITE_URL, { comparedWith: THEIRS }),
+    );
 
     expect(parseShareHash(hash)).toEqual({
       date: "2000-01-01",
@@ -134,6 +138,39 @@ describe("share links for a comparison", () => {
       "second chart's place",
     ],
   ])("rejects %s", (_, hash, message) => {
+    expect(() => parseShareHash(hash)).toThrow(message);
+  });
+});
+
+describe("share links for transits", () => {
+  const AT = new Date("2026-11-13T20:05:00Z");
+
+  it("adds the moment, in UTC to the minute", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, { transitsAt: AT });
+
+    expect(url).toBe(
+      "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
+        "&place=2643743&house=equal&transits=2026-11-13T20:05Z",
+    );
+  });
+
+  it("reads the moment back", () => {
+    const { hash } = new URL(
+      buildShareUrl(CHART.details, SITE_URL, { transitsAt: AT }),
+    );
+
+    expect(parseShareHash(hash)?.transitsAt).toEqual(AT);
+  });
+
+  it.each([
+    ["a malformed moment", "&transits=tomorrow", "transit moment"],
+    [
+      "both transits and a second chart",
+      "&transits=2026-11-13T20:05Z" + "&date2=1990-05-15&time2=12:00&place2=1",
+      "both",
+    ],
+  ])("rejects %s", (_, extra, message) => {
+    const hash = "#date=2000-01-01&time=12:00&place=1" + extra;
     expect(() => parseShareHash(hash)).toThrow(message);
   });
 });

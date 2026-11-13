@@ -5,7 +5,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ChartDownloads from "@/components/ChartDownloads.svelte";
 import ChartView from "@/components/ChartView.svelte";
-import { ExportFormat, exportTables, exportWheel } from "@/lib/export";
+import {
+  ExportFormat,
+  exportTables,
+  exportWheel,
+  SubjectKind,
+} from "@/lib/export";
 
 import { CHART } from "./fixtures/chart";
 
@@ -34,7 +39,11 @@ describe("ChartDownloads", () => {
     await press(name);
 
     const wheel = document.querySelector("svg.wheel");
-    expect(exportWheel).toHaveBeenCalledWith(wheel, CHART, format, undefined);
+    expect(exportWheel).toHaveBeenCalledWith(
+      wheel,
+      { kind: SubjectKind.Chart, chart: CHART },
+      format,
+    );
   });
 
   it("exports the tables as CSV", async () => {
@@ -42,7 +51,10 @@ describe("ChartDownloads", () => {
 
     await press("Download tables as CSV");
 
-    expect(exportTables).toHaveBeenCalledWith(CHART, undefined);
+    expect(exportTables).toHaveBeenCalledWith({
+      kind: SubjectKind.Chart,
+      chart: CHART,
+    });
   });
 
   it("groups the buttons by what they save", () => {
@@ -82,7 +94,9 @@ describe("ChartDownloads", () => {
   });
 
   it("refuses to export a wheel that isn't drawn", async () => {
-    render(ChartDownloads, { chart: CHART });
+    render(ChartDownloads, {
+      subject: { kind: SubjectKind.Chart, chart: CHART },
+    });
 
     await press("Download wheel as SVG");
 

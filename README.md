@@ -76,6 +76,7 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 4. Adjust the house system if you'd like a different one.
 5. Press **Copy link** to share the chart. The link carries the date, time, GeoNames place ID and house system in its `#` fragment, which browsers never send to the server, and opening it fills in the form and draws the same chart.
 6. Press **Compare with someone else** under the form to add a second person. The chart becomes a bi-wheel, with their planets outside the zodiac, plus the aspects between you and where each person's planets fall in the other's houses.
+7. Press **See transits** to set the sky at a moment, now by default, against your chart. Transits count within 2° of exact, and the time is read in your own time zone.
 
 ## Roadmap
 

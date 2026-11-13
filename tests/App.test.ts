@@ -7,13 +7,29 @@ import App from "@/components/App.svelte";
 import { createChart, loadChartEngine } from "@/lib/chart";
 import { HouseSystem } from "@/lib/houses";
 import { loadPlaceIndex } from "@/lib/places";
+import { toUtc } from "@/lib/time";
+import { createTransits } from "@/lib/transits";
 
-import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME, TRANSITS } from "./fixtures/chart";
 import { PLACE_INDEX } from "./fixtures/places";
 
 vi.mock("@/lib/chart", () => ({
   createChart: vi.fn(),
   loadChartEngine: vi.fn(),
+}));
+
+// A zone far from UTC, so reading the clock in the wrong zone shows up.
+const VISITOR_TIME_ZONE = "Asia/Tokyo";
+
+vi.mock("@/lib/time", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/time")>()),
+  getLocalTimeZone: () => VISITOR_TIME_ZONE,
+}));
+
+// The real one needs the WASM engine, which these tests never load.
+vi.mock("@/lib/transits", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/transits")>()),
+  createTransits: vi.fn(),
 }));
 
 vi.mock("@/lib/places", async (importOriginal) => ({
@@ -447,5 +463,109 @@ describe("App comparing two charts", () => {
         "I don't know the time",
       ).checked,
     ).toBe(true);
+  });
+});
+
+describe("App showing transits", () => {
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(createTransits).mockReset().mockReturnValue(TRANSITS);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  function transitForm(): HTMLElement {
+    return screen.getByRole("form", { name: "Transit moment" });
+  }
+
+  async function openTransits(): Promise<void> {
+    render(App);
+    await fillDateTime();
+    await choosePlace();
+    await submit();
+    await screen.findByRole("heading", { name: CHART_HEADING });
+    await fireEvent.click(screen.getByRole("button", { name: "See transits" }));
+  }
+
+  it("opens on the transits for right now", async () => {
+    const before = Date.now();
+
+    await openTransits();
+
+    expect(
+      await screen.findByRole("heading", { name: "Transits", level: 2 }),
+    ).toBeTruthy();
+    const [natal, at] = vi.mocked(createTransits).mock.lastCall!;
+    expect(natal).toBe(CHART);
+    expect(at.getTime()).toBeGreaterThanOrEqual(before);
+    expect(at.getTime()).toBeLessThanOrEqual(Date.now());
+    expect(document.activeElement?.id).toBe("transit-date");
+  });
+
+  it("shows transits for a moment on the visitor's clock", async () => {
+    await openTransits();
+    const form = within(transitForm());
+
+    await fireEvent.input(form.getByLabelText("Date"), {
+      target: { value: "2030-06-01" },
+    });
+    await fireEvent.input(form.getByLabelText("Time"), {
+      target: { value: "09:30" },
+    });
+    await fireEvent.click(form.getByRole("button", { name: "Show transits" }));
+
+    const expected = toUtc(
+      { year: 2030, month: 6, day: 1, hour: 9, minute: 30 },
+      VISITOR_TIME_ZONE,
+    );
+    await vi.waitFor(() =>
+      expect(vi.mocked(createTransits).mock.lastCall?.[1]).toEqual(expected),
+    );
+  });
+
+  it("asks for a date and time", async () => {
+    await openTransits();
+    const form = within(transitForm());
+
+    await fireEvent.input(form.getByLabelText("Time"), {
+      target: { value: "" },
+    });
+    await fireEvent.click(form.getByRole("button", { name: "Show transits" }));
+
+    expect(form.getByRole("alert").textContent).toContain(
+      "Enter both a date and a time.",
+    );
+  });
+
+  it("goes back to your chart", async () => {
+    await openTransits();
+
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Back to your chart" }),
+    );
+
+    expect(screen.queryByRole("form", { name: "Transit moment" })).toBeNull();
+    expect(screen.getByRole("heading", { name: CHART_HEADING })).toBeTruthy();
+  });
+
+  it("opens transits from a share link", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/#date=2000-01-01&time=12:00&place=2643743&transits=2026-11-13T20:05Z",
+    );
+    render(App);
+
+    expect(
+      await screen.findByRole("heading", { name: "Transits", level: 2 }),
+    ).toBeTruthy();
+    expect(vi.mocked(createTransits).mock.lastCall?.[1]).toEqual(
+      new Date("2026-11-13T20:05:00Z"),
+    );
   });
 });

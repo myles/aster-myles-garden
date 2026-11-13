@@ -2,15 +2,15 @@
 // data first, then joined to the DOM, so redrawing a chart updates the
 // existing elements in place. Colours come from CSS classes.
 //
-// A bi-wheel compares two charts: the first inside the zodiac as usual,
-// the second on a ring outside it, with aspects between the two.
+// A bi-wheel sets a chart inside the zodiac as usual against a second
+// set of bodies on a ring outside it, such as another person's chart or
+// the sky today, with the aspects between the two across the centre.
 
 import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
 import type { Chart, PlacedBody } from "@/lib/chart";
 import type { HousePositions } from "@/lib/ephemeris";
 import { HOUSE_COUNT } from "@/lib/houses";
-import type { Synastry } from "@/lib/synastry";
 import {
   DEGREES_PER_CIRCLE,
   DEGREES_PER_SIGN,
@@ -60,7 +60,20 @@ const COORDINATE_DECIMALS = 2;
 
 const WHEEL_TITLE_ID = "wheel-title";
 const WHEEL_TITLE = "Natal chart wheel";
-const BI_WHEEL_TITLE = "Chart comparison wheel";
+
+/** What a bi-wheel draws. */
+export type BiWheel = {
+  /** Drawn inside the zodiac, in its own houses. */
+  inner: Chart;
+  /** Drawn on the ring outside the zodiac. */
+  outerBodies: PlacedBody[];
+  /** Each aspect's first body is inner, its second outer. */
+  aspects: Aspect[];
+  /** The wheel's accessible name, e.g. "Chart comparison wheel". */
+  title: string;
+  /** Prefixed to each outer body's tooltip, e.g. "Them: ". */
+  outerTitlePrefix: string;
+};
 
 /** Paint order, back to front. Each layer is one <g>. */
 const LAYERS = [
@@ -116,7 +129,8 @@ const OUTER_BODY_RING: BodyRing = {
   degreeRadius: OUTER_BODY_DEGREE_RADIUS_PX,
   retrogradeRadius: OUTER_BODY_RETROGRADE_RADIUS_PX,
   className: "wheel-body wheel-body--outer",
-  titlePrefix: "Them: ",
+  // Set per bi-wheel, from BiWheel.outerTitlePrefix.
+  titlePrefix: "",
 };
 
 type BodyMark = {
@@ -490,23 +504,23 @@ export function drawWheel(element: SVGSVGElement, chart: Chart): void {
 }
 
 /**
- * Draws a bi-wheel comparing two charts: the first inside, in its own
- * houses, and the second on an outer ring. The centre shows the aspects
- * between them. Safe to call on an <svg> that held either kind of wheel.
+ * Draws a bi-wheel: a chart inside, in its own houses, and more bodies on
+ * an outer ring, with the aspects between them across the centre. Safe to
+ * call on an <svg> that held either kind of wheel.
  */
-export function drawBiWheel(element: SVGSVGElement, synastry: Synastry): void {
-  render(element, synastry.first, synastry);
+export function drawBiWheel(element: SVGSVGElement, biWheel: BiWheel): void {
+  render(element, biWheel.inner, biWheel);
 }
 
 function render(
   element: SVGSVGElement,
   chart: Chart,
-  synastry: Synastry | undefined,
+  biWheel: BiWheel | undefined,
 ): void {
   // Without a birth time there's no ascendant, so the wheel starts at
   // 0° Aries instead, as a natural chart does.
   const ascendant = chart.houses?.ascendant ?? NATURAL_WHEEL_START_DEGREES;
-  const margin = synastry ? BI_WHEEL_MARGIN_PX : 0;
+  const margin = biWheel ? BI_WHEEL_MARGIN_PX : 0;
   const size = WHEEL_SIZE_PX + margin * 2;
   const svg: Parent = select(element);
 
@@ -519,7 +533,7 @@ function render(
   // :scope keeps this from matching the bodies' own <title> elements.
   svg
     .selectAll(":scope > title")
-    .data([synastry ? BI_WHEEL_TITLE : WHEEL_TITLE])
+    .data([biWheel?.title ?? WHEEL_TITLE])
     .join("title")
     .attr("id", WHEEL_TITLE_ID)
     .text((d) => d);
@@ -529,7 +543,7 @@ function render(
     LAYERS.map((layer) => [layer, selectLayer(svg, layer)]),
   ) as Record<Layer, Parent>;
 
-  const outerRings: Ring[] = synastry
+  const outerRings: Ring[] = biWheel
     ? [
         {
           radius: OUTER_RING_RADIUS_PX,
@@ -553,20 +567,18 @@ function render(
   drawAxes(layers.axes, chart.houses);
   joinLines(
     layers.aspects,
-    synastry
+    biWheel
       ? measureAspects(
-          synastry.aspects,
+          biWheel.aspects,
           chart.bodies,
-          synastry.second.bodies,
+          biWheel.outerBodies,
           ascendant,
         )
       : measureAspects(chart.aspects, chart.bodies, chart.bodies, ascendant),
   );
   drawBodies(layers.bodies, chart.bodies, ascendant, INNER_BODY_RING);
-  drawBodies(
-    layers["outer-bodies"],
-    synastry?.second.bodies ?? [],
-    ascendant,
-    OUTER_BODY_RING,
-  );
+  drawBodies(layers["outer-bodies"], biWheel?.outerBodies ?? [], ascendant, {
+    ...OUTER_BODY_RING,
+    titlePrefix: biWheel?.outerTitlePrefix ?? "",
+  });
 }

@@ -73,12 +73,15 @@ export type Aspect = {
 
 type AspectMatch = Pick<Aspect, "type" | "orbDegrees">;
 
-function matchAspect(separation: number): AspectMatch | undefined {
+function matchAspect(
+  separation: number,
+  maxOrbDegrees = Infinity,
+): AspectMatch | undefined {
   for (const type of Object.values(AspectType)) {
     const info = ASPECT_INFO[type];
     const orbDegrees = Math.abs(separation - info.angleDegrees);
 
-    if (orbDegrees <= info.orbDegrees) {
+    if (orbDegrees <= Math.min(info.orbDegrees, maxOrbDegrees)) {
       return { type, orbDegrees };
     }
   }
@@ -121,10 +124,12 @@ export function findAspects(positions: BodyPosition[]): Aspect[] {
  * Finds the major aspects between two charts' planets, tightest first.
  * Each aspect's first body comes from `firstChart` and its second from
  * `secondChart`, so a body can aspect its own counterpart (Sun–Sun).
+ * `maxOrbDegrees` narrows every aspect's orb, as transits use.
  */
 export function findAspectsBetween(
   firstChart: BodyPosition[],
   secondChart: BodyPosition[],
+  maxOrbDegrees?: number,
 ): Aspect[] {
   const aspects: Aspect[] = [];
 
@@ -132,6 +137,7 @@ export function findAspectsBetween(
     for (const second of selectPlanets(secondChart)) {
       const match = matchAspect(
         separateDegrees(first.longitude, second.longitude),
+        maxOrbDegrees,
       );
 
       if (!match) {

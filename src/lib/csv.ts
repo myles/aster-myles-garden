@@ -5,7 +5,9 @@ import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
 import type { Chart } from "@/lib/chart";
 import { formatDegrees, formatPlacement } from "@/lib/format";
-import type { HouseOverlay, Synastry } from "@/lib/synastry";
+import type { HouseOverlay } from "@/lib/houses";
+import type { Synastry } from "@/lib/synastry";
+import type { Transits } from "@/lib/transits";
 import { formatLongitude } from "@/lib/zodiac";
 
 type Row = string[];
@@ -23,9 +25,11 @@ const POSITION_HEADINGS: Row = ["Body", "Position"];
 const HOUSE_HEADING = "House";
 const ASPECT_HEADINGS: Row = ["Pair", "Aspect", "Orb"];
 const CROSS_ASPECT_HEADINGS: Row = ["Yours", "Aspect", "Theirs", "Orb"];
+const TRANSIT_ASPECT_HEADINGS: Row = ["Transiting", "Aspect", "Natal", "Orb"];
 
 const NO_ASPECTS_TEXT = "No major aspects within orb.";
 const NO_CROSS_ASPECTS_TEXT = "No major aspects between you.";
+const NO_TRANSITS_TEXT = "No transits within orb.";
 
 /** Fields holding a comma, quote or line break must be quoted. */
 const NEEDS_QUOTES_PATTERN = /[",\r\n]/;
@@ -64,6 +68,25 @@ export function buildComparisonCsv(synastry: Synastry): string {
   ]);
 }
 
+/**
+ * Transits: where the planets are at the chosen moment, with the natal
+ * house each falls in, and the aspects they make to the natal planets.
+ */
+export function buildTransitsCsv(transits: Transits): string {
+  return layOutSideBySide([
+    buildPositionsTable(
+      "Transiting positions",
+      { bodies: transits.bodies, houses: undefined },
+      { heading: "Your house", houses: transits.inNatalHouses },
+    ),
+    {
+      title: "Transits to your chart",
+      headings: TRANSIT_ASPECT_HEADINGS,
+      rows: buildTransitRows(transits.aspects),
+    },
+  ]);
+}
+
 function layOutSideBySide(tables: Table[]): string {
   const blank = (table: Table) => table.headings.map(() => "");
   const rowCount = Math.max(...tables.map((table) => table.rows.length));
@@ -93,7 +116,7 @@ function joinTables(parts: Row[]): Row {
  */
 function buildPositionsTable(
   title: string,
-  chart: Chart,
+  chart: Pick<Chart, "bodies" | "houses">,
   overlay?: { heading: string; houses: HouseOverlay | undefined },
 ): Table {
   const { houses } = chart;
@@ -164,6 +187,26 @@ function buildCrossAspectRows(aspects: Aspect[]): Row[] {
       `${yours.glyph} ${yours.name}`,
       `${info.glyph} ${info.name}`,
       `${theirs.glyph} ${theirs.name}`,
+      formatDegrees(aspect.orbDegrees),
+    ];
+  });
+}
+
+/** Read transit first: "Transiting Saturn squares natal Sun". */
+function buildTransitRows(aspects: Aspect[]): Row[] {
+  if (aspects.length === 0) {
+    return [[NO_TRANSITS_TEXT, "", "", ""]];
+  }
+
+  return aspects.map((aspect) => {
+    const natal = BODY_INFO[aspect.first];
+    const transiting = BODY_INFO[aspect.second];
+    const info = ASPECT_INFO[aspect.type];
+
+    return [
+      `${transiting.glyph} ${transiting.name}`,
+      `${info.glyph} ${info.name}`,
+      `${natal.glyph} ${natal.name}`,
       formatDegrees(aspect.orbDegrees),
     ];
   });

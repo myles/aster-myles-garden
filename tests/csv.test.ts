@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ASPECT_INFO, AspectType } from "@/lib/aspects";
 import { Body, BODY_INFO } from "@/lib/bodies";
-import { buildChartCsv, buildComparisonCsv } from "@/lib/csv";
+import { buildChartCsv, buildComparisonCsv, buildTransitsCsv } from "@/lib/csv";
 import { compareCharts } from "@/lib/synastry";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
@@ -121,5 +121,47 @@ describe("buildComparisonCsv", () => {
     const lines = parseLines(buildComparisonCsv(compareCharts(CHART, apart)));
 
     expect(lines[2]).toMatch(/,,No major aspects between you\.,,,$/);
+  });
+});
+
+describe("buildTransitsCsv", () => {
+  // Transiting Sun at 190° squares natal Sun and Mars; it's in house 7.
+  const transits = {
+    natal: CHART,
+    at: new Date("2026-11-13T20:00:00Z"),
+    bodies: [{ ...CHART.bodies[0], longitude: 190, house: undefined }],
+    aspects: [
+      {
+        first: Body.Mars,
+        second: Body.Sun,
+        type: AspectType.Square,
+        orbDegrees: 1.5,
+      },
+    ],
+    inNatalHouses: { [Body.Sun]: 7 },
+  };
+  const SQUARE = `${ASPECT_INFO[AspectType.Square].glyph} Square`;
+
+  it("lists the transiting planets and their aspects to your chart", () => {
+    expect(parseLines(buildTransitsCsv(transits))).toEqual([
+      "Transiting positions,,,,Transits to your chart,,,",
+      "Body,Position,Your house,,Transiting,Aspect,Natal,Orb",
+      `${SUN},10° 00′ Libra,7,,${SUN},${SQUARE},${MARS},1° 30′`,
+      "",
+    ]);
+  });
+
+  it("leaves out your houses without a birth time", () => {
+    const lines = parseLines(
+      buildTransitsCsv({ ...transits, inNatalHouses: undefined }),
+    );
+
+    expect(lines[1]).toBe("Body,Position,,Transiting,Aspect,Natal,Orb");
+  });
+
+  it("says so when nothing is transiting your chart", () => {
+    const lines = parseLines(buildTransitsCsv({ ...transits, aspects: [] }));
+
+    expect(lines[2]).toMatch(/,,No transits within orb\.,,,$/);
   });
 });

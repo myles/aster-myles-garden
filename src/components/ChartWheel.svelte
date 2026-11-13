@@ -1,20 +1,19 @@
 <!-- Hosts the D3 wheel. Svelte owns the <svg>; D3 owns everything in it. -->
 <script lang="ts">
   import type { Chart } from "@/lib/chart";
-  import type { Synastry } from "@/lib/synastry";
-  import { drawBiWheel, drawWheel } from "@/lib/wheel";
+  import { drawBiWheel, drawWheel, type BiWheel } from "@/lib/wheel";
 
   // svg is bindable so the chart's downloads can export the drawn wheel.
-  // With a synastry, the wheel becomes a bi-wheel of both charts.
+  // With biWheel, it draws a bi-wheel instead of the chart alone.
   let {
     chart,
-    synastry,
+    biWheel,
     svg = $bindable(),
-  }: { chart: Chart; synastry?: Synastry; svg?: SVGSVGElement } = $props();
+  }: { chart: Chart; biWheel?: BiWheel; svg?: SVGSVGElement } = $props();
 
   $effect(() => {
-    if (synastry) {
-      drawBiWheel(svg!, synastry);
+    if (biWheel) {
+      drawBiWheel(svg!, biWheel);
       return;
     }
 

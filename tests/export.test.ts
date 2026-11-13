@@ -2,7 +2,12 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ExportFormat, exportTables, exportWheel } from "@/lib/export";
+import {
+  ExportFormat,
+  exportTables,
+  exportWheel,
+  SubjectKind,
+} from "@/lib/export";
 import { compareCharts } from "@/lib/synastry";
 import { drawBiWheel, drawWheel } from "@/lib/wheel";
 
@@ -59,7 +64,11 @@ describe("exportWheel", () => {
   }
 
   it("names the file after the place and birth moment", async () => {
-    await exportWheel(svg, CHART, ExportFormat.Svg);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART },
+      ExportFormat.Svg,
+    );
 
     expect(downloads).toHaveLength(1);
     expect(downloads[0].filename).toBe("aster-london-2000-01-01-1200.svg");
@@ -67,7 +76,11 @@ describe("exportWheel", () => {
   });
 
   it("leaves the time out of the filename when it's unknown", async () => {
-    await exportWheel(svg, CHART_WITHOUT_TIME, ExportFormat.Svg);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART_WITHOUT_TIME },
+      ExportFormat.Svg,
+    );
 
     expect(downloads[0].filename).toBe("aster-london-2000-01-01.svg");
   });
@@ -81,7 +94,11 @@ describe("exportWheel", () => {
       },
     };
 
-    await exportWheel(svg, chart, ExportFormat.Svg);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: chart },
+      ExportFormat.Svg,
+    );
 
     expect(downloads[0].filename).toBe(
       "aster-sao-paulo-centro-2000-01-01-1200.svg",
@@ -89,7 +106,11 @@ describe("exportWheel", () => {
   });
 
   it("writes a standalone SVG with styles inlined", async () => {
-    await exportWheel(svg, CHART, ExportFormat.Svg);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART },
+      ExportFormat.Svg,
+    );
     const file = await parseSvgDownload();
 
     expect(file.getAttribute("width")).toBe("600");
@@ -102,7 +123,11 @@ describe("exportWheel", () => {
   });
 
   it("paints the page background behind the wheel", async () => {
-    await exportWheel(svg, CHART, ExportFormat.Svg);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART },
+      ExportFormat.Svg,
+    );
     const file = await parseSvgDownload();
 
     const backdrop = file.querySelector(":scope > rect");
@@ -111,7 +136,11 @@ describe("exportWheel", () => {
   });
 
   it("leaves the on-screen wheel untouched", async () => {
-    await exportWheel(svg, CHART, ExportFormat.Svg);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART },
+      ExportFormat.Svg,
+    );
 
     expect(svg.querySelector(":scope > rect")).toBeNull();
     expect(svg.getAttribute("width")).toBeNull();
@@ -136,7 +165,11 @@ describe("exportWheel", () => {
       (callback) => callback(png),
     );
 
-    await exportWheel(svg, CHART, ExportFormat.Png);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART },
+      ExportFormat.Png,
+    );
 
     expect(drawImage).toHaveBeenCalledWith(expect.anything(), 0, 0, 1200, 1200);
     expect(downloads[0]).toEqual({
@@ -156,14 +189,22 @@ describe("exportWheel", () => {
       },
     );
 
-    await expect(exportWheel(svg, CHART, ExportFormat.Png)).rejects.toThrow(
-      "The wheel couldn't be drawn.",
-    );
+    await expect(
+      exportWheel(
+        svg,
+        { kind: SubjectKind.Chart, chart: CHART },
+        ExportFormat.Png,
+      ),
+    ).rejects.toThrow("The wheel couldn't be drawn.");
     expect(downloads).toHaveLength(0);
   });
 
   it("releases the download URL afterwards", async () => {
-    await exportWheel(svg, CHART, ExportFormat.Svg);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART },
+      ExportFormat.Svg,
+    );
     expect(URL.revokeObjectURL).not.toHaveBeenCalled();
 
     vi.runAllTimers();
@@ -172,7 +213,7 @@ describe("exportWheel", () => {
   });
 
   it("downloads the tables as CSV", async () => {
-    exportTables(CHART);
+    exportTables({ kind: SubjectKind.Chart, chart: CHART });
 
     expect(downloads[0].filename).toBe("aster-london-2000-01-01-1200.csv");
     expect(downloads[0].blob.type).toBe("text/csv");
@@ -184,7 +225,11 @@ describe("exportWheel", () => {
   it("names a comparison after both charts", async () => {
     const synastry = compareCharts(CHART, CHART_WITHOUT_TIME);
 
-    await exportWheel(svg, CHART, ExportFormat.Svg, synastry);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Comparison, synastry },
+      ExportFormat.Svg,
+    );
 
     expect(downloads[0].filename).toBe(
       "aster-london-2000-01-01-1200-and-london-2000-01-01.svg",
@@ -192,7 +237,10 @@ describe("exportWheel", () => {
   });
 
   it("downloads a comparison's tables as CSV", async () => {
-    exportTables(CHART, compareCharts(CHART, CHART));
+    exportTables({
+      kind: SubjectKind.Comparison,
+      synastry: compareCharts(CHART, CHART),
+    });
 
     expect(downloads[0].filename).toBe(
       "aster-london-2000-01-01-1200-and-london-2000-01-01-1200.csv",
@@ -201,14 +249,40 @@ describe("exportWheel", () => {
   });
 
   it("sizes a bi-wheel's file and backdrop to its wider view", async () => {
-    drawBiWheel(svg, compareCharts(CHART, CHART));
+    drawBiWheel(svg, {
+      inner: CHART,
+      outerBodies: CHART.bodies,
+      aspects: [],
+      title: "Chart comparison wheel",
+      outerTitlePrefix: "Them: ",
+    });
 
-    await exportWheel(svg, CHART, ExportFormat.Svg);
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART },
+      ExportFormat.Svg,
+    );
     const file = await parseSvgDownload();
 
     expect(file.getAttribute("width")).toBe("780");
     const backdrop = file.querySelector(":scope > rect");
     expect(backdrop?.getAttribute("x")).toBe("-90");
     expect(backdrop?.getAttribute("width")).toBe("780");
+  });
+
+  it("names transits after the chart and the moment, in UTC", async () => {
+    const transits = {
+      natal: CHART,
+      at: new Date("2026-11-13T20:05:00Z"),
+      bodies: CHART.bodies,
+      aspects: [],
+    };
+
+    exportTables({ kind: SubjectKind.Transits, transits });
+
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-transits-2026-11-13-2005-utc.csv",
+    );
+    expect(await downloads[0].blob.text()).toContain("Transits to your chart");
   });
 });

@@ -3,13 +3,26 @@
 // those are resolved and written onto each element before it leaves the page.
 
 import type { Chart } from "@/lib/chart";
-import { buildChartCsv, buildComparisonCsv } from "@/lib/csv";
+import { buildChartCsv, buildComparisonCsv, buildTransitsCsv } from "@/lib/csv";
 import type { Synastry } from "@/lib/synastry";
+import type { Transits } from "@/lib/transits";
 
 export enum ExportFormat {
   Svg = "svg",
   Png = "png",
 }
+
+export enum SubjectKind {
+  Chart = "chart",
+  Comparison = "comparison",
+  Transits = "transits",
+}
+
+/** What's being exported, which decides the CSV and the file name. */
+export type ExportSubject =
+  | { kind: SubjectKind.Chart; chart: Chart }
+  | { kind: SubjectKind.Comparison; synastry: Synastry }
+  | { kind: SubjectKind.Transits; transits: Transits };
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SVG_MIME_TYPE = "image/svg+xml";
@@ -35,15 +48,13 @@ const STYLED_PROPERTIES = [
 ] as const;
 
 /**
- * Downloads the wheel drawn in `svg` as a file named after the chart, or
- * after both charts when it's a comparison. Colours follow the page's
- * current light or dark theme.
+ * Downloads the wheel drawn in `svg` as a file named after what it shows.
+ * Colours follow the page's current light or dark theme.
  */
 export async function exportWheel(
   svg: SVGSVGElement,
-  chart: Chart,
+  subject: ExportSubject,
   format: ExportFormat,
-  synastry?: Synastry,
 ): Promise<void> {
   const { markup, sizePx } = serializeWheel(svg);
   const blob =
@@ -51,23 +62,25 @@ export async function exportWheel(
       ? new Blob([markup], { type: SVG_MIME_TYPE })
       : await renderPng(markup, sizePx);
 
-  downloadBlob(blob, buildFilename(listCharts(chart, synastry), format));
+  downloadBlob(blob, buildFilename(subject, format));
 }
 
-/**
- * Downloads the chart's tables, side by side, as CSV: Positions and
- * Aspects, or for a comparison, both people's positions and the aspects
- * between them.
- */
-export function exportTables(chart: Chart, synastry?: Synastry): void {
-  const csv = synastry ? buildComparisonCsv(synastry) : buildChartCsv(chart);
-  const blob = new Blob([csv], { type: CSV_MIME_TYPE });
+/** Downloads the subject's tables, side by side, as CSV. */
+export function exportTables(subject: ExportSubject): void {
+  const blob = new Blob([buildCsv(subject)], { type: CSV_MIME_TYPE });
 
-  downloadBlob(blob, buildFilename(listCharts(chart, synastry), CSV_EXTENSION));
+  downloadBlob(blob, buildFilename(subject, CSV_EXTENSION));
 }
 
-function listCharts(chart: Chart, synastry: Synastry | undefined): Chart[] {
-  return synastry ? [synastry.first, synastry.second] : [chart];
+function buildCsv(subject: ExportSubject): string {
+  switch (subject.kind) {
+    case SubjectKind.Chart:
+      return buildChartCsv(subject.chart);
+    case SubjectKind.Comparison:
+      return buildComparisonCsv(subject.synastry);
+    case SubjectKind.Transits:
+      return buildTransitsCsv(subject.transits);
+  }
 }
 
 function serializeWheel(svg: SVGSVGElement): {
@@ -197,17 +210,45 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 /**
- * Example: London on 1 Jan 2000, 12:00 → "aster-london-2000-01-01-1200".
- * Two charts are joined with "and"; a chart without a birth time leaves
- * its time part off.
+ * Examples, for a chart born in London on 1 Jan 2000 at 12:00:
+ * - the chart → "aster-london-2000-01-01-1200"
+ * - compared → "aster-london-2000-01-01-1200-and-toronto-1990-05-15"
+ * - transits → "aster-london-2000-01-01-1200-transits-2026-11-13-2000-utc"
  */
-function buildFilename(charts: Chart[], extension: string): string {
-  const described = charts.map(describeChart).join("-and-");
-
-  return `${FILENAME_PREFIX}-${described}.${extension}`;
+function buildFilename(subject: ExportSubject, extension: string): string {
+  return `${FILENAME_PREFIX}-${describeSubject(subject)}.${extension}`;
 }
 
-/** Example: London on 1 Jan 2000, 12:00 → "london-2000-01-01-1200". */
+function describeSubject(subject: ExportSubject): string {
+  switch (subject.kind) {
+    case SubjectKind.Chart:
+      return describeChart(subject.chart);
+    case SubjectKind.Comparison:
+      return [subject.synastry.first, subject.synastry.second]
+        .map(describeChart)
+        .join("-and-");
+    case SubjectKind.Transits:
+      return (
+        `${describeChart(subject.transits.natal)}-transits-` +
+        describeInstant(subject.transits.at)
+      );
+  }
+}
+
+/** In UTC, so the name doesn't depend on where it was saved. */
+function describeInstant(at: Date): string {
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const date =
+    `${at.getUTCFullYear()}-${pad(at.getUTCMonth() + 1)}-` +
+    pad(at.getUTCDate());
+
+  return `${date}-${pad(at.getUTCHours())}${pad(at.getUTCMinutes())}-utc`;
+}
+
+/**
+ * Example: London on 1 Jan 2000, 12:00 → "london-2000-01-01-1200". A chart
+ * without a birth time leaves its time part off.
+ */
 function describeChart(chart: Chart): string {
   const { date, time, place } = chart.details;
   const pad = (value: number) => String(value).padStart(2, "0");

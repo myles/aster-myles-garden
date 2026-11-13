@@ -1,4 +1,9 @@
+import type { Body } from "@/lib/bodies";
+import type { HousePositions } from "@/lib/ephemeris";
 import { normalizeDegrees } from "@/lib/zodiac";
+
+/** The house (1–12) each body falls in. */
+export type HouseOverlay = Partial<Record<Body, number>>;
 
 export enum HouseSystem {
   Placidus = "placidus",
@@ -45,4 +50,24 @@ export function findHouse(longitude: number, cusps: number[]): number {
   }
 
   throw new Error(`Longitude ${longitude} is not inside any house`);
+}
+
+/**
+ * Places bodies in a set of houses, such as one person's planets in
+ * another's chart. Undefined when there are no houses to place them in.
+ */
+export function placeInHouses(
+  bodies: { body: Body; longitude: number }[],
+  houses: HousePositions | undefined,
+): HouseOverlay | undefined {
+  if (!houses) {
+    return undefined;
+  }
+
+  return Object.fromEntries(
+    bodies.map((placed) => [
+      placed.body,
+      findHouse(placed.longitude, houses.cusps),
+    ]),
+  );
 }

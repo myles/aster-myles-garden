@@ -41,6 +41,14 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placi
 
 That link compares someone born in Toronto at 2:30 pm on 15 May 1990 with someone born in London on 2 November 1988 at an unknown time.
 
+### Transits
+
+Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact, and which natal house each is in. A link can carry `transits` or a second chart, not both.
+
+```
+https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&transits=2026-11-13T20:05Z
+```
+
 ## Finding a place's GeoNames ID
 
 Aster knows the cities in GeoNames' `cities15000` list: places with a population over 15,000. For a smaller town, use the nearest city in the list.
@@ -64,6 +72,7 @@ Some common IDs:
 - An Aspects table: each major aspect between two bodies, with its orb.
 - Downloads of the wheel as SVG or PNG and of both tables as CSV, and a Copy link button that produces a link in the format above.
 - In a comparison: the bi-wheel, an Aspects between you table, and each person's positions with a column for the house it falls in on the other person's chart.
+- With transits: the bi-wheel, a Transits to your chart table, and the transiting planets' positions with the natal house each is in.
 
 ## More
 

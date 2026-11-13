@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { findHouse, isHouseSystem } from "@/lib/houses";
+import { Body } from "@/lib/bodies";
+import { findHouse, isHouseSystem, placeInHouses } from "@/lib/houses";
 
 const EQUAL_CUSPS = Array.from({ length: 12 }, (_, i) => i * 30);
 // Cusps that wrap past 0° Aries partway round.
@@ -20,6 +21,28 @@ describe("findHouse", () => {
     expect(findHouse(310, WRAPPING_CUSPS)).toBe(1);
     expect(findHouse(15, WRAPPING_CUSPS)).toBe(3);
     expect(findHouse(299, WRAPPING_CUSPS)).toBe(12);
+  });
+});
+
+describe("placeInHouses", () => {
+  const houses = { cusps: EQUAL_CUSPS, ascendant: 0, midheaven: 270 };
+
+  it("finds the house each body falls in", () => {
+    const bodies = [
+      { body: Body.Sun, longitude: 45 },
+      { body: Body.Moon, longitude: 359 },
+    ];
+
+    expect(placeInHouses(bodies, houses)).toEqual({
+      [Body.Sun]: 2,
+      [Body.Moon]: 12,
+    });
+  });
+
+  it("has nothing to place bodies in without houses", () => {
+    expect(
+      placeInHouses([{ body: Body.Sun, longitude: 45 }], undefined),
+    ).toBeUndefined();
   });
 });
 

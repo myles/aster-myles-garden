@@ -9,6 +9,7 @@
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
   import type { Chart } from "@/lib/chart";
+  import { SubjectKind } from "@/lib/export";
   import {
     formatBirthDate,
     formatBirthMoment,
@@ -21,6 +22,14 @@
   let { synastry }: { synastry: Synastry } = $props();
 
   let wheel: SVGSVGElement | undefined = $state();
+
+  const biWheel = $derived({
+    inner: synastry.first,
+    outerBodies: synastry.second.bodies,
+    aspects: synastry.aspects,
+    title: "Chart comparison wheel",
+    outerTitlePrefix: "Them: ",
+  });
 
   const people = $derived([
     { label: "You", chart: synastry.first },
@@ -64,7 +73,7 @@
     </p>
   {/if}
 
-  <ChartWheel chart={synastry.first} {synastry} bind:svg={wheel} />
+  <ChartWheel chart={synastry.first} {biWheel} bind:svg={wheel} />
 
   <div>
     <h3 class="mb-2 font-serif text-lg">Aspects between you</h3>
@@ -115,8 +124,11 @@
   <div class="border-rule mt-10 grid gap-8 border-t pt-5 sm:grid-cols-2">
     <ChartShare
       details={synastry.first.details}
-      comparedWith={synastry.second.details}
+      addition={{ comparedWith: synastry.second.details }}
     />
-    <ChartDownloads chart={synastry.first} {synastry} {wheel} />
+    <ChartDownloads
+      subject={{ kind: SubjectKind.Comparison, synastry }}
+      {wheel}
+    />
   </div>
 </div>

@@ -6,6 +6,7 @@ import {
   formatBirthMoment,
   formatCoordinates,
   formatDegrees,
+  formatInstant,
   formatPlacement,
 } from "@/lib/format";
 
@@ -67,6 +68,14 @@ describe("formatBirthMoment", () => {
     expect(formatBirthMoment(CHART)).toBe(
       "1 January 2000 at 12:00 GMT (12:00 UT)",
     );
+  });
+});
+
+describe("formatInstant", () => {
+  it("gives the moment on a time zone's clock", () => {
+    expect(
+      formatInstant(new Date("2026-11-13T20:05:00Z"), "America/Toronto"),
+    ).toBe("13 November 2026 at 15:05 EST");
   });
 });
 
