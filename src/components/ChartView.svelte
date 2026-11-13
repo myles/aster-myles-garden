@@ -1,15 +1,17 @@
 <script lang="ts">
+  import ChartDownloads from "@/components/ChartDownloads.svelte";
   import ChartWheel from "@/components/ChartWheel.svelte";
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
   import type { Chart } from "@/lib/chart";
-  import { exportTables } from "@/lib/export";
   import { formatCoordinates, formatDegrees } from "@/lib/format";
   import { HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
   import { formatLongitude } from "@/lib/zodiac";
 
   let { chart }: { chart: Chart } = $props();
+
+  let wheel: SVGSVGElement | undefined = $state();
 
   const subheading = $derived(
     [
@@ -54,7 +56,7 @@
   <h2 class="font-serif text-2xl">{formatPlace(chart.details.place)}</h2>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
 
-  <ChartWheel {chart} />
+  <ChartWheel {chart} bind:svg={wheel} />
 
   <div class="grid gap-8 xl:grid-cols-2">
     <div>
@@ -128,13 +130,5 @@
     </div>
   </div>
 
-  <div class="mt-3 flex justify-end">
-    <button
-      type="button"
-      class="border-rule hover:bg-panel rounded border px-3 py-1.5 text-sm"
-      onclick={() => exportTables(chart)}
-    >
-      Download CSV
-    </button>
-  </div>
+  <ChartDownloads {chart} {wheel} />
 </div>
