@@ -24,6 +24,16 @@ const canonicalPath = Astro.url.pathname.endsWith("/")
   ? Astro.url.pathname.slice(0, -1)
   : Astro.url.pathname;
 const canonicalUrl = new URL(canonicalPath, Astro.site).toString();
+
+// Social previews need absolute image URLs.
+const OG_IMAGE_URL = new URL("/og-image.jpg", Astro.site).toString();
+const X_CARD_URL = new URL("/x-card.jpg", Astro.site).toString();
+const SOCIAL_IMAGE_ALT =
+  "Aster wordmark and tagline beside a lilac chart wheel.";
+
+// Browser chrome matches the page: parchment by day, midnight-soil by night.
+const THEME_COLOUR_LIGHT = "#f5f0e8";
+const THEME_COLOUR_DARK = "#1a1814";
 ---
 
 <html lang="en">
@@ -36,10 +46,40 @@ const canonicalUrl = new URL(canonicalPath, Astro.site).toString();
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
 
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" href="/favicon.ico" />
+    <meta
+      name="theme-color"
+      content={THEME_COLOUR_LIGHT}
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content={THEME_COLOUR_DARK}
+      media="(prefers-color-scheme: dark)"
+    />
+
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <link rel="manifest" href="/site.webmanifest" />
 
     <link rel="canonical" href={canonicalUrl} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content={siteTitle} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={OG_IMAGE_URL} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={SOCIAL_IMAGE_ALT} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={X_CARD_URL} />
+    <meta name="twitter:image:alt" content={SOCIAL_IMAGE_ALT} />
   </head>
   <body>
     <slot />
