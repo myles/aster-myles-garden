@@ -2,6 +2,7 @@ export const TRIAL_PATH = "/trials/atproto/";
 export const METADATA_PATH = "/trials/atproto/client-metadata.json";
 export const CHART_COLLECTION = "garden.myles.aster.chart";
 export const CHART_RECORD_KEY = "self";
+const DEFAULT_SPACE_TYPE = "garden.myles.aster.trial";
 
 const DID_PATTERN = /^did:(plc:[a-z2-7]{24}|web:[A-Za-z0-9._:%-]+)$/;
 const SPACE_PATTERN = /^at:\/\/([^/]+)\/space\/([^/]+)\/([^/]+)$/;
@@ -24,7 +25,9 @@ export function readTrialConfig(
   }
 
   const allowedDid = env.ASTER_ATPROTO_DID ?? "";
-  const space = env.ASTER_ATPROTO_SPACE ?? "";
+  const space =
+    env.ASTER_ATPROTO_SPACE ||
+    `at://${allowedDid}/space/${DEFAULT_SPACE_TYPE}/self`;
   const match = SPACE_PATTERN.exec(space);
   if (!DID_PATTERN.test(allowedDid) || !match || match[1] !== allowedDid) {
     throw new Error("Set a trial DID and a Space owned by that same DID.");
@@ -65,6 +68,7 @@ export function buildClientMetadata(config: TrialConfig) {
   for (const action of ["read_self", "create", "update", "delete"]) {
     params.append("action", action);
   }
+  params.set("manage", "create");
   const scope = `atproto space:${config.spaceType}?${params}`;
   const redirectUri = new URL(TRIAL_PATH, config.origin).href;
   const isLoopback = new URL(config.origin).protocol === "http:";
