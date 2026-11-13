@@ -3,6 +3,7 @@
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
   import type { Chart } from "@/lib/chart";
+  import { exportTables } from "@/lib/export";
   import { formatCoordinates, formatDegrees } from "@/lib/format";
   import { HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
@@ -125,5 +126,15 @@
         </tbody>
       </table>
     </div>
+  </div>
+
+  <div class="mt-3 flex justify-end">
+    <button
+      type="button"
+      class="border-rule hover:bg-panel rounded border px-3 py-1.5 text-sm"
+      onclick={() => exportTables(chart)}
+    >
+      Download CSV
+    </button>
   </div>
 </div>

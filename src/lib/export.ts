@@ -1,8 +1,9 @@
-// Saves the chart wheel as a standalone SVG or PNG file. The on-screen
-// wheel takes its colours and fonts from page CSS, so those are resolved
-// and written onto each element before the wheel leaves the page.
+// Saves the chart wheel as a standalone SVG or PNG file, and the tables as
+// CSV. The on-screen wheel takes its colours and fonts from page CSS, so
+// those are resolved and written onto each element before it leaves the page.
 
 import type { Chart } from "@/lib/chart";
+import { buildChartCsv } from "@/lib/csv";
 import { WHEEL_SIZE_PX } from "@/lib/wheel";
 
 export enum ExportFormat {
@@ -13,6 +14,8 @@ export enum ExportFormat {
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SVG_MIME_TYPE = "image/svg+xml";
 const PNG_MIME_TYPE = "image/png";
+const CSV_MIME_TYPE = "text/csv";
+const CSV_EXTENSION = "csv";
 
 /** PNGs are drawn at twice the wheel's size so they stay sharp. */
 const PNG_SCALE = 2;
@@ -47,6 +50,13 @@ export async function exportWheel(
       : await renderPng(markup);
 
   downloadBlob(blob, buildFilename(chart, format));
+}
+
+/** Downloads the Positions and Aspects tables, side by side, as CSV. */
+export function exportTables(chart: Chart): void {
+  const blob = new Blob([buildChartCsv(chart)], { type: CSV_MIME_TYPE });
+
+  downloadBlob(blob, buildFilename(chart, CSV_EXTENSION));
 }
 
 function serializeWheel(svg: SVGSVGElement): string {
@@ -148,13 +158,15 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 /** Example: London on 1 Jan 2000, 12:00 → "aster-london-2000-01-01-1200". */
-function buildFilename(chart: Chart, format: ExportFormat): string {
+function buildFilename(chart: Chart, extension: string): string {
   const { local, place } = chart.details;
   const pad = (value: number) => String(value).padStart(2, "0");
   const date = `${local.year}-${pad(local.month)}-${pad(local.day)}`;
   const time = `${pad(local.hour)}${pad(local.minute)}`;
 
-  return `${FILENAME_PREFIX}-${slugify(place.name)}-${date}-${time}.${format}`;
+  const name = slugify(place.name);
+
+  return `${FILENAME_PREFIX}-${name}-${date}-${time}.${extension}`;
 }
 
 /** Example: "São Paulo" → "sao-paulo". */

@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ExportFormat, exportWheel } from "@/lib/export";
+import { ExportFormat, exportTables, exportWheel } from "@/lib/export";
 import { drawWheel } from "@/lib/wheel";
 
 import { CHART } from "./fixtures/chart";
@@ -162,5 +162,15 @@ describe("exportWheel", () => {
     vi.runAllTimers();
 
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test/0");
+  });
+
+  it("downloads the tables as CSV", async () => {
+    exportTables(CHART);
+
+    expect(downloads[0].filename).toBe("aster-london-2000-01-01-1200.csv");
+    expect(downloads[0].blob.type).toBe("text/csv");
+    expect(await downloads[0].blob.text()).toContain(
+      "Body,Position,House,,Pair,Aspect,Orb",
+    );
   });
 });
