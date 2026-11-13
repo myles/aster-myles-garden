@@ -1,6 +1,6 @@
 # Aster
 
-A birth chart generator that runs entirely in the browser. Give it a date, a time, and a place, and it draws you a natal chart — no account, no server, no data leaving your machine.
+A birth chart generator that runs entirely in the browser. Give it a date, a time, and a place, and it draws you a natal chart — no account, and no data leaving your machine unless you want it to.
 
 Lives at [aster.myles.garden](https://aster.myles.garden). Named for the star-shaped flower — _aster_ is Greek for "star".
 
@@ -12,7 +12,7 @@ Most birth chart tools send your details off to a server you don't control, then
 
 ## Features
 
-- **Fully client-side.** Positions, house cusps, and angles are computed in-browser via Swiss Ephemeris (WASM). Nothing is sent anywhere.
+- **Fully client-side.** Positions, house cusps, and angles are computed in-browser via Swiss Ephemeris (WASM). Nothing is sent anywhere unless you want it to be.
 - **Accurate by default.** High-precision ephemeris data, with sensible handling of historical time zones and daylight saving.
 - **Static deploy.** Ships as a static Astro site — no backend to run or pay for.
 - **Readable chart wheel.** Rendered as SVG, so it stays crisp at any size and is easy to style or export.
