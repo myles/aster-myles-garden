@@ -9,6 +9,7 @@
 import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
 import type { Chart, PlacedBody } from "@/lib/chart";
+import { describeBiWheel, describeWheel } from "@/lib/describe";
 import type { HousePositions } from "@/lib/ephemeris";
 import { HOUSE_COUNT } from "@/lib/houses";
 import {
@@ -59,6 +60,7 @@ const SPREAD_ITERATIONS = 60;
 const COORDINATE_DECIMALS = 2;
 
 const WHEEL_TITLE_ID = "wheel-title";
+const WHEEL_DESCRIPTION_ID = "wheel-description";
 const WHEEL_TITLE = "Natal chart wheel";
 
 /** What a bi-wheel draws. */
@@ -71,8 +73,10 @@ export type BiWheel = {
   aspects: Aspect[];
   /** The wheel's accessible name, e.g. "Chart comparison wheel". */
   title: string;
-  /** Prefixed to each outer body's tooltip, e.g. "Them: ". */
-  outerTitlePrefix: string;
+  /** Whose the inner planets are, e.g. "Your" or "Your natal". */
+  innerLabel: string;
+  /** Whose the outer planets are, e.g. "Their" → "Their Venus". */
+  outerLabel: string;
 };
 
 /** Paint order, back to front. Each layer is one <g>. */
@@ -106,7 +110,7 @@ type BodyRing = {
   degreeRadius: number;
   retrogradeRadius: number;
   className: string;
-  /** Prefixed to each body's tooltip, e.g. "Them: " → "Them: Venus". */
+  /** Prefixed to each body's tooltip, e.g. "Their " → "Their Venus". */
   titlePrefix: string;
 };
 
@@ -129,7 +133,7 @@ const OUTER_BODY_RING: BodyRing = {
   degreeRadius: OUTER_BODY_DEGREE_RADIUS_PX,
   retrogradeRadius: OUTER_BODY_RETROGRADE_RADIUS_PX,
   className: "wheel-body wheel-body--outer",
-  // Set per bi-wheel, from BiWheel.outerTitlePrefix.
+  // Set per bi-wheel, from BiWheel.outerLabel.
   titlePrefix: "",
 };
 
@@ -528,7 +532,8 @@ function render(
     .attr("viewBox", `${-margin} ${-margin} ${size} ${size}`)
     .attr("class", "wheel")
     .attr("role", "img")
-    .attr("aria-labelledby", WHEEL_TITLE_ID);
+    .attr("aria-labelledby", WHEEL_TITLE_ID)
+    .attr("aria-describedby", WHEEL_DESCRIPTION_ID);
 
   // :scope keeps this from matching the bodies' own <title> elements.
   svg
@@ -536,6 +541,15 @@ function render(
     .data([biWheel?.title ?? WHEEL_TITLE])
     .join("title")
     .attr("id", WHEEL_TITLE_ID)
+    .text((d) => d);
+
+  // Read out after the title, and kept in exported files.
+  const description = biWheel ? describeBiWheel(biWheel) : describeWheel(chart);
+  svg
+    .selectAll(":scope > desc")
+    .data([description.join(" ")])
+    .join("desc")
+    .attr("id", WHEEL_DESCRIPTION_ID)
     .text((d) => d);
 
   // Create every layer up front so paint order is fixed on first draw.
@@ -579,6 +593,6 @@ function render(
   drawBodies(layers.bodies, chart.bodies, ascendant, INNER_BODY_RING);
   drawBodies(layers["outer-bodies"], biWheel?.outerBodies ?? [], ascendant, {
     ...OUTER_BODY_RING,
-    titlePrefix: biWheel?.outerTitlePrefix ?? "",
+    titlePrefix: biWheel ? `${biWheel.outerLabel} ` : "",
   });
 }

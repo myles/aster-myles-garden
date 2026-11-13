@@ -28,7 +28,8 @@
     outerBodies: synastry.second.bodies,
     aspects: synastry.aspects,
     title: "Chart comparison wheel",
-    outerTitlePrefix: "Them: ",
+    innerLabel: "Your",
+    outerLabel: "Their",
   });
 
   const people = $derived([

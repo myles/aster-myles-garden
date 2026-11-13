@@ -23,7 +23,8 @@
     outerBodies: transits.bodies,
     aspects: transits.aspects,
     title: "Transit wheel",
-    outerTitlePrefix: "Transit: ",
+    innerLabel: "Your natal",
+    outerLabel: "Transiting",
   });
 </script>
 

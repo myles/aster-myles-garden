@@ -116,6 +116,7 @@ describe("exportWheel", () => {
     expect(file.getAttribute("width")).toBe("600");
     expect(file.getAttribute("height")).toBe("600");
     expect(file.querySelectorAll("path")).toHaveLength(12);
+    expect(file.querySelector("desc")?.textContent).toContain("ascendant");
 
     const axisStyle = file.querySelector(".wheel-axis")?.getAttribute("style");
     expect(axisStyle).toContain("stroke:rgb(30, 28, 26)");
@@ -254,7 +255,8 @@ describe("exportWheel", () => {
       outerBodies: CHART.bodies,
       aspects: [],
       title: "Chart comparison wheel",
-      outerTitlePrefix: "Them: ",
+      innerLabel: "Your",
+      outerLabel: "Their",
     });
 
     await exportWheel(

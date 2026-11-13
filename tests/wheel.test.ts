@@ -2,6 +2,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { describeBiWheel, describeWheel } from "@/lib/describe";
 import { compareCharts } from "@/lib/synastry";
 import { drawBiWheel, drawWheel, spreadLongitudes } from "@/lib/wheel";
 import { separateDegrees } from "@/lib/zodiac";
@@ -42,6 +43,22 @@ describe("drawWheel", () => {
     expect(svg.getAttribute("viewBox")).toBe("0 0 600 600");
     expect(svg.querySelector(":scope > title")?.textContent).toBe(
       "Natal chart wheel",
+    );
+  });
+
+  it("carries a written description of itself", () => {
+    const description = svg.querySelector(":scope > desc");
+
+    expect(svg.getAttribute("aria-describedby")).toBe(description?.id);
+    expect(description?.textContent).toBe(describeWheel(CHART).join(" "));
+  });
+
+  it("rewrites the description when redrawn", () => {
+    drawWheel(svg, CHART_WITHOUT_TIME);
+
+    expect(svg.querySelectorAll(":scope > desc")).toHaveLength(1);
+    expect(svg.querySelector(":scope > desc")?.textContent).toContain(
+      "There's no birth time",
     );
   });
 
@@ -139,7 +156,8 @@ describe("drawBiWheel", () => {
     outerBodies: theirs.bodies,
     aspects: synastry.aspects,
     title: "Chart comparison wheel",
-    outerTitlePrefix: "Them: ",
+    innerLabel: "Your",
+    outerLabel: "Their",
   };
 
   let svg: SVGSVGElement;
@@ -149,6 +167,12 @@ describe("drawBiWheel", () => {
   beforeEach(() => {
     svg = document.createElementNS(SVG_NAMESPACE, "svg");
     drawBiWheel(svg, biWheel);
+  });
+
+  it("describes both rings", () => {
+    expect(svg.querySelector(":scope > desc")?.textContent).toBe(
+      describeBiWheel(biWheel).join(" "),
+    );
   });
 
   it("widens the view to fit the outer ring", () => {
@@ -162,7 +186,7 @@ describe("drawBiWheel", () => {
     expect(count("g.wheel-body:not(.wheel-body--outer)")).toBe(2);
     expect(count("g.wheel-body--outer")).toBe(1);
     expect(svg.querySelector("g.wheel-body--outer title")?.textContent).toBe(
-      "Them: Sun",
+      "Their Sun",
     );
   });
 

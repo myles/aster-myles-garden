@@ -15,7 +15,7 @@ Most birth chart tools send your details off to a server you don't control, then
 - **Fully client-side.** Positions, house cusps, and angles are computed in-browser via Swiss Ephemeris (WASM). Nothing is sent anywhere unless you want it to be.
 - **Accurate by default.** High-precision ephemeris data, with sensible handling of historical time zones and daylight saving.
 - **Static deploy.** Ships as a static Astro site — no backend to run or pay for.
-- **Readable chart wheel.** Rendered as SVG, so it stays crisp at any size and is easy to style or export.
+- **Readable chart wheel.** Rendered as SVG, so it stays crisp at any size and is easy to style or export. A written description of what it shows is read out by screen readers and shown under the wheel.
 - **Multiple house systems.** Placidus by default, with others available.
 
 ## How it works
