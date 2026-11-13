@@ -83,7 +83,9 @@
 </div>
 
 {#if isEnteringCoordinates}
-  <fieldset class="flex flex-col gap-5">
+  <!-- min-w-0: a fieldset is otherwise as wide as its widest content, so
+       a long time zone name would push it past the form. -->
+  <fieldset class="flex min-w-0 flex-col gap-5">
     <legend class="mb-3 text-sm font-medium">Place, by coordinates</legend>
     <CoordinateFields {idPrefix} bind:place />
   </fieldset>
