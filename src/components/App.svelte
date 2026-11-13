@@ -270,9 +270,9 @@
   }
 
   async function draw(): Promise<void> {
-    const problem = findProblem(yours);
-    if (problem) {
-      error = problem;
+    error = findProblem(yours) ?? "";
+    compareError = comparedChart ? (findProblem(theirs) ?? "") : "";
+    if (error || compareError) {
       return;
     }
     if (!isHouseSystem(houseSystem)) {
@@ -284,12 +284,19 @@
     isDrawing = true;
 
     try {
+      const yourDetails = toDetails(yours, houseSystem);
+      const theirDetails = comparedChart
+        ? toDetails(theirs, houseSystem)
+        : undefined;
       await loadChartEngine();
-      chart = createChart(toDetails(yours, houseSystem));
-      // Both charts share the house system, so a drawn comparison follows.
-      if (comparedChart) {
-        comparedChart = createChart(toDetails(theirs, houseSystem));
-      }
+      const nextChart = createChart(yourDetails);
+      const nextComparedChart = theirDetails
+        ? createChart(theirDetails)
+        : undefined;
+
+      // Publish both results only after every calculation succeeds.
+      chart = nextChart;
+      comparedChart = nextComparedChart;
     } catch (cause) {
       error = `Couldn't draw the chart: ${describeError(cause)}`;
     } finally {
@@ -308,12 +315,24 @@
       return;
     }
 
+    error = findProblem(yours) ?? "";
+    if (error) {
+      return;
+    }
+
     compareError = "";
     isDrawing = true;
 
     try {
+      const yourDetails = toDetails(yours, houseSystem);
+      const theirDetails = toDetails(theirs, houseSystem);
       await loadChartEngine();
-      comparedChart = createChart(toDetails(theirs, houseSystem));
+      const nextChart = createChart(yourDetails);
+      const nextComparedChart = createChart(theirDetails);
+
+      // A retry may follow a failed house-system change: rebuild both.
+      chart = nextChart;
+      comparedChart = nextComparedChart;
     } catch (cause) {
       compareError = `Couldn't draw their chart: ${describeError(cause)}`;
     } finally {

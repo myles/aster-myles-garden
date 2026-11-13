@@ -72,10 +72,14 @@ test("preserves both charts when comparison details are incomplete", async ({
   const form = page.getByRole("form", { name: "Their birth details" });
   await form.getByRole("combobox", { name: "Place" }).fill("");
   await page.getByLabel("House system", { exact: true }).selectOption("koch");
-  test.fail(true, "ISSUES.md #6: redraw replaces only the first chart");
   await expect(form.getByRole("alert")).toContainText("Choose a place");
   await expect(wheel).toHaveJSProperty("innerHTML", originalWheel);
   await expect(
     page.getByText("Placidus houses.", { exact: false }),
   ).toBeVisible();
+
+  await fillBirthDetails(form, "Toronto");
+  await form.getByRole("button", { name: "Compare charts" }).click();
+  await expect(form.getByRole("alert")).toBeHidden();
+  await expect(page.getByText("Koch houses.", { exact: false })).toBeVisible();
 });

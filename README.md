@@ -117,4 +117,4 @@ Use `npm run test:e2e:ui` for interactive debugging. Vitest remains separate und
 
 Coverage includes JavaScript-disabled and delayed-hydration privacy guards, drawing a natal chart with the real WebAssembly engine, and creating and closing a comparison. Place search uses a small local fixture, so tests need no GeoNames download or third-party service. This does not verify the generated production place dataset.
 
-The comparison-update regression for `ISSUES.md` issue 6 is marked as an expected failure. Playwright fails if it unexpectedly passes; remove that annotation when fixing the issue. CI runs the suite on pushes and pull requests to `main` and retains reports for 14 days.
+The comparison-update regression for `ISSUES.md` issue 6 verifies that incomplete details preserve both charts and that repairing them allows a consistent retry. CI runs the suite on pushes and pull requests to `main` and retains reports for 14 days.

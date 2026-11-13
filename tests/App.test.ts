@@ -457,6 +457,90 @@ describe("App comparing two charts", () => {
     }
   });
 
+  it("keeps both charts when their place is cleared", async () => {
+    render(App);
+    await drawYourChart();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+    await fillTheirForm();
+    await pressCompare();
+    await screen.findByRole("heading", { name: "Chart comparison" });
+    vi.mocked(createChart).mockClear();
+
+    await fireEvent.input(within(theirForm()).getByLabelText("Place"), {
+      target: { value: "" },
+    });
+    await fireEvent.change(screen.getByLabelText("House system"), {
+      target: { value: HouseSystem.Koch },
+    });
+
+    expect(createChart).not.toHaveBeenCalled();
+    expect(within(theirForm()).getByRole("alert").textContent).toContain(
+      "Choose a place from the list, or enter its coordinates.",
+    );
+    expect(screen.getByText(/Equal houses/)).toBeTruthy();
+  });
+
+  it("keeps both charts when their recalculation fails", async () => {
+    render(App);
+    await drawYourChart();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+    await fillTheirForm();
+    await pressCompare();
+    await screen.findByRole("heading", { name: "Chart comparison" });
+    const wheel = screen.getByRole("img", { name: "Chart comparison wheel" });
+    const originalWheel = wheel.innerHTML;
+    vi.mocked(createChart)
+      .mockReturnValueOnce({
+        ...CHART,
+        details: { ...CHART.details, houseSystem: HouseSystem.Koch },
+      })
+      .mockImplementationOnce(() => {
+        throw new Error("Calculation failed");
+      });
+
+    await fireEvent.change(screen.getByLabelText("House system"), {
+      target: { value: HouseSystem.Koch },
+    });
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Calculation failed",
+      ),
+    );
+    expect(wheel.innerHTML).toBe(originalWheel);
+    expect(screen.getByText(/Equal houses/)).toBeTruthy();
+  });
+
+  it("rebuilds both charts after repairing comparison details", async () => {
+    render(App);
+    await drawYourChart();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+    await fillTheirForm();
+    await pressCompare();
+    await screen.findByRole("heading", { name: "Chart comparison" });
+    await fireEvent.input(within(theirForm()).getByLabelText("Place"), {
+      target: { value: "" },
+    });
+    await fireEvent.change(screen.getByLabelText("House system"), {
+      target: { value: HouseSystem.Koch },
+    });
+    await fillTheirForm();
+    vi.mocked(createChart).mockClear();
+    await pressCompare();
+
+    expect(createChart).toHaveBeenCalledTimes(2);
+    for (const [details] of vi.mocked(createChart).mock.calls) {
+      expect(details.houseSystem).toBe(HouseSystem.Koch);
+    }
+    expect(within(theirForm()).queryByRole("alert")).toBeNull();
+  });
+
   it("opens a comparison from a share link", async () => {
     window.history.replaceState(
       null,

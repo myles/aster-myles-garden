@@ -60,7 +60,7 @@ The parsers validate string shape but not calendar validity or time ranges. `202
 
 **Verification:** Direct conversion reproduced the normalisation. A temporary regression test confirmed that a shared link with `date=2024-02-31&time=99:99` does not throw.
 
-### 6. Comparison updates can leave mismatched charts
+### 6. Comparison updates can leave mismatched charts — fixed
 
 **Location:** `src/components/App.svelte`, `draw`.
 
@@ -69,6 +69,8 @@ Draw a comparison, clear the second person's place, then change the house system
 **Suggested fix:** Validate both forms before rebuilding a comparison. Calculate both charts before replacing either displayed chart, so a failure preserves a consistent result. Show an actionable validation message beside the incomplete form.
 
 **Verification:** Reproduced in the browser by switching between Koch and Placidus after clearing the second person's place.
+
+**Resolution:** Both birth forms are validated before rebuilding a comparison. Both charts are calculated before either displayed result is replaced, including when retrying after a failed house-system change. Missing details are explained beside the relevant form. Unit regressions cover missing places, calculation failures and retries; the browser regression now runs without an expected-failure annotation and covers preserving the comparison and repairing the form.
 
 ## P3 — Usability
 
