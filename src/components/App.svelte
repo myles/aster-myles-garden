@@ -11,8 +11,10 @@
     HouseSystem,
     isHouseSystem,
   } from "@/lib/houses";
-  import type { Place } from "@/lib/places";
+  import { findPlace, loadPlaceIndex, type Place } from "@/lib/places";
+  import { parseShareParams } from "@/lib/share";
   import { parseLocalDateTime } from "@/lib/time";
+  import { onMount } from "svelte";
 
   const houseSystems = Object.values(HouseSystem);
 
@@ -24,6 +26,36 @@
   let error = $state("");
   let isDrawing = $state(false);
   let hasRequestedEngine = false;
+
+  onMount(() => {
+    void openSharedLink();
+  });
+
+  // Fills in the form from a share link, then draws its chart.
+  async function openSharedLink(): Promise<void> {
+    try {
+      const shared = parseShareParams(window.location.search);
+      if (!shared) {
+        return;
+      }
+
+      date = shared.date;
+      time = shared.time;
+      houseSystem = shared.houseSystem;
+      requestEngine();
+
+      const found = findPlace(await loadPlaceIndex(), shared.placeId);
+      if (!found) {
+        throw new Error(`No place has the ID ${shared.placeId}.`);
+      }
+      place = found;
+    } catch (cause) {
+      error = `Couldn't open the shared link: ${describeError(cause)}`;
+      return;
+    }
+
+    await draw();
+  }
 
   // Start fetching the WASM engine as soon as someone engages the form.
   function requestEngine(): void {

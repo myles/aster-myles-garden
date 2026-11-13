@@ -51,7 +51,7 @@
   </svg>
 {/snippet}
 
-<div class="border-rule mt-10 border-t pt-5">
+<div>
   <h3 class="mb-3 font-serif text-lg">Download</h3>
 
   <div class="flex flex-wrap items-center gap-x-6 gap-y-3">

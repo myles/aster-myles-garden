@@ -74,6 +74,7 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 2. The place resolves, offline, to coordinates and an IANA time zone; the browser's time zone database supplies the historical offset, Local Mean Time included.
 3. The chart is calculated and drawn as an SVG wheel.
 4. Adjust the house system if you'd like a different one.
+5. Press **Copy link** to share the chart. The link carries the date, time, GeoNames place ID and house system, and opening it fills in the form and draws the same chart.
 
 ## Roadmap
 
@@ -83,6 +84,7 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 - [x] House system selector
 - [x] Aspect lines and orbs
 - [x] Export chart as PNG/SVG
+- [x] Shareable chart links
 - [ ] Optional high-precision ephemeris files
 
 ## Licence

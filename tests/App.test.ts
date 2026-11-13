@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen } from "@testing-library/svelte";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "@/components/App.svelte";
 import { createChart, loadChartEngine } from "@/lib/chart";
@@ -127,3 +127,73 @@ describe("App", () => {
 });
 
 const CHART_HEADING = "London, England, United Kingdom";
+
+describe("App opened from a share link", () => {
+  const SHARE_SEARCH = "?date=2000-01-01&time=12:00&place=6058560&house=koch";
+
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  function openLink(search: string): void {
+    window.history.replaceState(null, "", `/${search}`);
+    render(App);
+  }
+
+  it("fills in the form and draws the chart", async () => {
+    openLink(SHARE_SEARCH);
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenCalledWith({
+        local: { year: 2000, month: 1, day: 1, hour: 12, minute: 0 },
+        place: expect.objectContaining({ id: 6058560, region: "Ontario" }),
+        houseSystem: HouseSystem.Koch,
+      }),
+    );
+    expect(screen.getByLabelText<HTMLInputElement>("Date").value).toBe(
+      "2000-01-01",
+    );
+    expect(screen.getByLabelText<HTMLInputElement>("Time").value).toBe("12:00");
+    expect(screen.getByLabelText<HTMLInputElement>("Place").value).toBe(
+      "London, Ontario, Canada",
+    );
+    expect(screen.getByLabelText<HTMLSelectElement>("House system").value).toBe(
+      HouseSystem.Koch,
+    );
+  });
+
+  it("does nothing without a share link", async () => {
+    openLink("");
+
+    await Promise.resolve();
+
+    expect(loadPlaceIndex).not.toHaveBeenCalled();
+    expect(createChart).not.toHaveBeenCalled();
+  });
+
+  it("explains a damaged link", () => {
+    openLink("?date=2000-01-01&time=noon&place=6058560");
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Couldn't open the shared link: Invalid time",
+    );
+    expect(createChart).not.toHaveBeenCalled();
+  });
+
+  it("explains a place that isn't in the index", async () => {
+    openLink("?date=2000-01-01&time=12:00&place=1");
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Couldn't open the shared link: No place has the ID 1.",
+      ),
+    );
+    expect(createChart).not.toHaveBeenCalled();
+  });
+});

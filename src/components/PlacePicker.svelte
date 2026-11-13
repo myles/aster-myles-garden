@@ -30,6 +30,14 @@
     }
   });
 
+  // A place chosen from outside, e.g. by a share link, shows in the input.
+  $effect(() => {
+    if (selected) {
+      query = formatPlace(selected);
+      status = describeSelection();
+    }
+  });
+
   function describeSelection(): string {
     return selected ? `Time zone: ${selected.timeZone}` : "";
   }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import ChartDownloads from "@/components/ChartDownloads.svelte";
+  import ChartShare from "@/components/ChartShare.svelte";
   import ChartWheel from "@/components/ChartWheel.svelte";
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
@@ -130,5 +131,8 @@
     </div>
   </div>
 
-  <ChartDownloads {chart} {wheel} />
+  <div class="border-rule mt-10 grid gap-8 border-t pt-5 sm:grid-cols-2">
+    <ChartShare details={chart.details} />
+    <ChartDownloads {chart} {wheel} />
+  </div>
 </div>

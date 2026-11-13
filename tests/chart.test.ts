@@ -11,6 +11,7 @@ const WASM_DATA_URL =
   "data:application/wasm;base64," + readFileSync(WASM_PATH).toString("base64");
 
 const TORONTO = {
+  id: 6167865,
   name: "Toronto",
   region: "Ontario",
   country: "Canada",

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  findPlace,
   formatPlace,
   normalizeSearchText,
   parsePlaceIndex,
@@ -12,10 +13,40 @@ import {
 const RAW_INDEX: RawPlaceIndex = {
   timeZones: ["Europe/London", "America/Toronto", "America/Montreal"],
   places: [
-    ["London", "", "England", "United Kingdom", 51.5085, -0.1257, 0, 8961989],
-    ["Toronto", "", "Ontario", "Canada", 43.7064, -79.3986, 1, 2600000],
-    ["Montréal", "Montreal", "Quebec", "Canada", 45.5088, -73.5878, 2, 1600000],
-    ["London", "", "Ontario", "Canada", 42.9834, -81.233, 1, 346765],
+    [
+      "London",
+      "",
+      "England",
+      "United Kingdom",
+      51.5085,
+      -0.1257,
+      0,
+      8961989,
+      2643743,
+    ],
+    [
+      "Toronto",
+      "",
+      "Ontario",
+      "Canada",
+      43.7064,
+      -79.3986,
+      1,
+      2600000,
+      6167865,
+    ],
+    [
+      "Montréal",
+      "Montreal",
+      "Quebec",
+      "Canada",
+      45.5088,
+      -73.5878,
+      2,
+      1600000,
+      6077243,
+    ],
+    ["London", "", "Ontario", "Canada", 42.9834, -81.233, 1, 346765, 6058560],
     [
       "East London",
       "",
@@ -25,6 +56,7 @@ const RAW_INDEX: RawPlaceIndex = {
       27.9116,
       0,
       478676,
+      1006984,
     ],
   ],
 };
@@ -41,6 +73,7 @@ describe("normalizeSearchText", () => {
 describe("parsePlaceIndex", () => {
   it("resolves time zone indices", () => {
     expect(index.entries[1].place).toEqual({
+      id: 6167865,
       name: "Toronto",
       region: "Ontario",
       country: "Canada",
@@ -48,6 +81,19 @@ describe("parsePlaceIndex", () => {
       longitude: -79.3986,
       timeZone: "America/Toronto",
     });
+  });
+});
+
+describe("findPlace", () => {
+  it("finds a place by its GeoNames ID", () => {
+    expect(findPlace(index, 6058560)).toMatchObject({
+      name: "London",
+      region: "Ontario",
+    });
+  });
+
+  it("returns undefined for an unknown ID", () => {
+    expect(findPlace(index, 1)).toBeUndefined();
   });
 });
 

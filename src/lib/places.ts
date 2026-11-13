@@ -6,6 +6,8 @@ export const PLACE_INDEX_URL = "/data/places.json";
 const DEFAULT_RESULT_LIMIT = 8;
 
 export type Place = {
+  /** GeoNames ID, e.g. 2643743 for London, England. */
+  id: number;
   name: string;
   region: string;
   country: string;
@@ -24,6 +26,7 @@ type PlaceRow = [
   longitude: number,
   timeZoneIndex: number,
   population: number,
+  geonameId: number,
 ];
 
 export type RawPlaceIndex = {
@@ -55,6 +58,7 @@ export function normalizeSearchText(text: string): string {
 export function parsePlaceIndex(raw: RawPlaceIndex): PlaceIndex {
   const entries = raw.places.map((row) => {
     const [name, asciiName, region, country, latitude, longitude] = row;
+    const id = row[8];
     const timeZone = raw.timeZones[row[6]];
     const searchNames = [normalizeSearchText(name)];
 
@@ -63,7 +67,7 @@ export function parsePlaceIndex(raw: RawPlaceIndex): PlaceIndex {
     }
 
     return {
-      place: { name, region, country, latitude, longitude, timeZone },
+      place: { id, name, region, country, latitude, longitude, timeZone },
       searchNames,
       searchQualifier: normalizeSearchText(`${region} ${country}`),
     };
@@ -139,6 +143,11 @@ export function searchPlaces(
   }
 
   return [...prefixMatches, ...innerMatches].slice(0, limit);
+}
+
+/** Looks a place up by its GeoNames ID. */
+export function findPlace(index: PlaceIndex, id: number): Place | undefined {
+  return index.entries.find((entry) => entry.place.id === id)?.place;
 }
 
 /** Example: "Toronto, Ontario, Canada". */

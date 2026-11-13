@@ -17,6 +17,7 @@ const OUTPUT_PATH = "public/data/places.json";
 const COORDINATE_DECIMALS = 4;
 
 // Column indices in the GeoNames "geoname" table.
+const COL_GEONAME_ID = 0;
 const COL_NAME = 1;
 const COL_ASCII_NAME = 2;
 const COL_LATITUDE = 4;
@@ -78,6 +79,8 @@ function buildPlaces(dir) {
       Number(Number(row[COL_LONGITUDE]).toFixed(COORDINATE_DECIMALS)),
       timeZoneIndices.get(timeZone),
       Number(row[COL_POPULATION]),
+      // Stable across rebuilds, so shared links can name a place by it.
+      Number(row[COL_GEONAME_ID]),
     ]);
   }
 
