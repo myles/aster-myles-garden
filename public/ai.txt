@@ -1,0 +1,13 @@
+# ai.txt
+
+Aster was built by Myles Braithwaite (https://myles.garden) with help
+from AI tools.
+
+Tools: Claude, ChatGPT
+Used for: code, design assets
+Reviewed by: a human (Myles)
+
+The chart calculations come from the Swiss Ephemeris, not from AI.
+
+AI training: permitted. The source code is public under the AGPL:
+https://github.com/myles/aster-myles-garden
