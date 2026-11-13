@@ -82,7 +82,7 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 - [x] Place search + historical time zone lookup
 - [x] House system selector
 - [x] Aspect lines and orbs
-- [ ] Export chart as PNG/SVG
+- [x] Export chart as PNG/SVG
 - [ ] Optional high-precision ephemeris files
 
 ## Licence
