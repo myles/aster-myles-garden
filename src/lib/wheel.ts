@@ -6,11 +6,15 @@
 // set of bodies on a ring outside it, such as another person's chart or
 // the sky today, with the aspects between the two across the centre.
 
+import { select, type Selection } from "d3-selection";
+import { arc } from "d3-shape";
+
+import type { Chart, PlacedBody } from "@/lib/chart";
+import type { HousePositions } from "@/lib/ephemeris";
+
 import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
-import type { Chart, PlacedBody } from "@/lib/chart";
 import { describeBiWheel, describeWheel } from "@/lib/describe";
-import type { HousePositions } from "@/lib/ephemeris";
 import { HOUSE_COUNT } from "@/lib/houses";
 import {
   DEGREES_PER_CIRCLE,
@@ -18,8 +22,6 @@ import {
   normalizeDegrees,
   SIGNS,
 } from "@/lib/zodiac";
-import { select, type Selection } from "d3-selection";
-import { arc } from "d3-shape";
 
 const WHEEL_SIZE_PX = 600;
 const CENTRE_PX = WHEEL_SIZE_PX / 2;

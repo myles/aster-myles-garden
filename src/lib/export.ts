@@ -3,9 +3,10 @@
 // those are resolved and written onto each element before it leaves the page.
 
 import type { Chart } from "@/lib/chart";
-import { buildChartCsv, buildComparisonCsv, buildTransitsCsv } from "@/lib/csv";
 import type { Synastry } from "@/lib/synastry";
 import type { Transits } from "@/lib/transits";
+
+import { buildChartCsv, buildComparisonCsv, buildTransitsCsv } from "@/lib/csv";
 
 export enum ExportFormat {
   Svg = "svg",

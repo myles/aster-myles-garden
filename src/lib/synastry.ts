@@ -1,8 +1,9 @@
 // Compares two natal charts: the aspects between them, and where each
 // person's planets fall in the other's houses.
 
-import { findAspectsBetween, type Aspect } from "@/lib/aspects";
 import type { Chart } from "@/lib/chart";
+
+import { findAspectsBetween, type Aspect } from "@/lib/aspects";
 import { placeInHouses, type HouseOverlay } from "@/lib/houses";
 
 export type Synastry = {

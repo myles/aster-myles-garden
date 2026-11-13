@@ -1,13 +1,14 @@
 // Lays out a chart's tables side by side as CSV, with a blank column
 // between each. Cells match the on-screen tables.
 
-import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
-import { BODY_INFO } from "@/lib/bodies";
 import type { Chart } from "@/lib/chart";
-import { formatDegrees, formatPlacement } from "@/lib/format";
 import type { HouseOverlay } from "@/lib/houses";
 import type { Synastry } from "@/lib/synastry";
 import type { Transits } from "@/lib/transits";
+
+import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
+import { BODY_INFO } from "@/lib/bodies";
+import { formatDegrees, formatPlacement } from "@/lib/format";
 import { formatLongitude } from "@/lib/zodiac";
 
 type Row = string[];

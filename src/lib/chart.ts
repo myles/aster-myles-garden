@@ -1,8 +1,10 @@
 // Chart service: turns birth details into a complete natal chart. Sits
 // between the UI and the ephemeris driver.
 
-import { findAspects, type Aspect } from "@/lib/aspects";
 import type { Body } from "@/lib/bodies";
+import type { Place } from "@/lib/places";
+
+import { findAspects, type Aspect } from "@/lib/aspects";
 import {
   calculateBodies,
   calculateHouses,
@@ -11,7 +13,6 @@ import {
   type HousePositions,
 } from "@/lib/ephemeris";
 import { findHouse, type HouseSystem } from "@/lib/houses";
-import type { Place } from "@/lib/places";
 import { toJulianDay, toUtc, type LocalDate, type LocalTime } from "@/lib/time";
 import { getSign, type Sign } from "@/lib/zodiac";
 

@@ -2,8 +2,9 @@
 // the planets are then, which natal houses they're crossing, and the
 // aspects they make to the natal planets.
 
-import { findAspectsBetween, type Aspect } from "@/lib/aspects";
 import type { Chart, PlacedBody } from "@/lib/chart";
+
+import { findAspectsBetween, type Aspect } from "@/lib/aspects";
 import { calculateBodies } from "@/lib/ephemeris";
 import { placeInHouses, type HouseOverlay } from "@/lib/houses";
 import { toJulianDay } from "@/lib/time";

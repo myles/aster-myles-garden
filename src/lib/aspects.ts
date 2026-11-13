@@ -1,5 +1,6 @@
-import { Body, BODY_INFO, BodyKind } from "@/lib/bodies";
 import type { BodyPosition } from "@/lib/ephemeris";
+
+import { Body, BODY_INFO, BodyKind } from "@/lib/bodies";
 import { separateDegrees } from "@/lib/zodiac";
 
 export enum AspectType {

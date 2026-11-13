@@ -3,10 +3,11 @@
 // wheel shows at a glance: which way round it sits, how the planets
 // cluster around it, their balance, and the lines across the centre.
 
-import { ASPECT_INFO, AspectQuality, type Aspect } from "@/lib/aspects";
-import { BODY_INFO, BodyKind } from "@/lib/bodies";
 import type { Chart, PlacedBody } from "@/lib/chart";
 import type { BiWheel } from "@/lib/wheel";
+
+import { ASPECT_INFO, AspectQuality, type Aspect } from "@/lib/aspects";
+import { BODY_INFO, BodyKind } from "@/lib/bodies";
 import { formatLongitude, getSign, normalizeDegrees } from "@/lib/zodiac";
 
 /** Matches the wheel: without an ascendant, 0° Aries sits on the left. */

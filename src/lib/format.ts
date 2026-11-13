@@ -1,4 +1,5 @@
 import type { Chart, PlacedBody } from "@/lib/chart";
+
 import { formatLongitude, getSign } from "@/lib/zodiac";
 
 const MINUTES_PER_DEGREE = 60;

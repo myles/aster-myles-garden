@@ -1,5 +1,6 @@
 import type { Body } from "@/lib/bodies";
 import type { HousePositions } from "@/lib/ephemeris";
+
 import { normalizeDegrees } from "@/lib/zodiac";
 
 /** The house (1–12) each body falls in. */
