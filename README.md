@@ -78,15 +78,7 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 
 ## Roadmap
 
-- [x] Core calculation (planets, houses, angles)
-- [x] SVG chart wheel
-- [x] Place search + historical time zone lookup
-- [x] House system selector
-- [x] Aspect lines and orbs
-- [x] Export chart as PNG/SVG
-- [x] Shareable chart links
-- [ ] Optional high-precision ephemeris files
-- [ ] Compare two birth charts
+See [ROADMAP.md](./ROADMAP.md).
 
 ## Licence
 
