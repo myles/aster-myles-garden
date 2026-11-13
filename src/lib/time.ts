@@ -190,13 +190,16 @@ export function getLocalTimeZone(): string {
 }
 
 /**
- * The IANA time zones this browser lists, plus UTC, which it leaves out.
- * Some are old spellings ("Asia/Calcutta" where GeoNames has
+ * The IANA time zones this browser lists, with UTC, which some leave
+ * out. Some are old spellings ("Asia/Calcutta" where GeoNames has
  * "Asia/Kolkata"); Intl accepts both, so a picker should add its current
  * zone if it's missing.
  */
 export function listTimeZones(): string[] {
-  return [...Intl.supportedValuesOf("timeZone"), UTC_TIME_ZONE].sort();
+  const zones = new Set(Intl.supportedValuesOf("timeZone"));
+  zones.add(UTC_TIME_ZONE);
+
+  return [...zones].sort();
 }
 
 /** Whether this browser can read the clock in `timeZone`. */

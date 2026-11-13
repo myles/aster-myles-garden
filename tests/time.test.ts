@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   formatDateValue,
@@ -179,6 +179,23 @@ describe("listTimeZones", () => {
     expect(zones).toContain("America/Toronto");
     expect(zones).toContain("UTC");
     expect(zones).toEqual([...zones].sort());
+  });
+});
+
+describe("listTimeZones in a browser that lists UTC", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("lists UTC once", () => {
+    // Node leaves UTC out of its list; some browsers include it, and a
+    // duplicate breaks the keyed list of zones in CoordinateFields.
+    vi.spyOn(Intl, "supportedValuesOf").mockReturnValue([
+      "America/Toronto",
+      "UTC",
+    ]);
+
+    expect(listTimeZones()).toEqual(["America/Toronto", "UTC"]);
   });
 });
 

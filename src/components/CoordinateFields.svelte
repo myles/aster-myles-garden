@@ -29,6 +29,8 @@
   let nearest: { place: Place; distanceKm: number } | undefined = $state.raw();
   let index: PlaceIndex | undefined;
   // The last place this component built, to tell it from one set outside.
+  // Compared by value: a parent's $state wraps it in a proxy, so the place
+  // that comes back is never the same object.
   let builtPlace: Place | undefined;
 
   // The browser's list uses some old spellings, so make sure the current
@@ -41,7 +43,7 @@
 
   // A place set from outside, e.g. a saved chart, fills in the fields.
   $effect(() => {
-    if (!place || place === builtPlace || place.id !== undefined) {
+    if (!place || place.id !== undefined || isSamePlace(place, builtPlace)) {
       return;
     }
 
@@ -69,6 +71,16 @@
         `Couldn't load places to suggest a time zone ` +
         `(${describeError(cause)}). Choose one yourself.`;
     }
+  }
+
+  function isSamePlace(a: Place, b: Place | undefined): boolean {
+    return (
+      b !== undefined &&
+      a.latitude === b.latitude &&
+      a.longitude === b.longitude &&
+      a.timeZone === b.timeZone &&
+      a.name === b.name
+    );
   }
 
   function findNearest(latitude: number, longitude: number): void {

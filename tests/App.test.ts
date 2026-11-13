@@ -749,6 +749,7 @@ describe("App with a place entered by coordinates", () => {
 
   afterEach(() => {
     window.history.replaceState(null, "", "/");
+    vi.restoreAllMocks();
   });
 
   function yourForm() {
@@ -764,6 +765,46 @@ describe("App with a place entered by coordinates", () => {
     });
   }
 
+  it("switches to coordinates in a browser that lists UTC", async () => {
+    // Some browsers include UTC in this list; Node doesn't.
+    vi.spyOn(Intl, "supportedValuesOf").mockReturnValue([
+      "America/Toronto",
+      "UTC",
+    ]);
+    render(App);
+
+    await fireEvent.click(
+      yourForm().getByRole("button", { name: "Not listed? Enter coordinates" }),
+    );
+
+    expect(yourForm().getByLabelText("Coordinates")).toBeTruthy();
+  });
+
+  it("switches to coordinates after a place was chosen from the list", async () => {
+    render(App);
+    await choosePlace();
+
+    await fireEvent.click(
+      yourForm().getByRole("button", { name: "Not listed? Enter coordinates" }),
+    );
+
+    expect(yourForm().getByLabelText("Coordinates")).toBeTruthy();
+  });
+
+  it("switches to coordinates after drawing a chart", async () => {
+    render(App);
+    await fillDateTime();
+    await choosePlace();
+    await submit();
+    await screen.findByRole("heading", { name: CHART_HEADING });
+
+    await fireEvent.click(
+      yourForm().getByRole("button", { name: "Not listed? Enter coordinates" }),
+    );
+
+    expect(yourForm().getByLabelText("Coordinates")).toBeTruthy();
+  });
+
   it("suggests the nearest listed place's time zone", async () => {
     render(App);
 
@@ -777,6 +818,26 @@ describe("App with a place entered by coordinates", () => {
     expect(
       yourForm().getByText(/Toronto, Ontario, Canada, 30 km away/),
     ).toBeTruthy();
+  });
+
+  it("keeps suggesting as the coordinates are typed", async () => {
+    render(App);
+
+    // Partway through typing, "-7" is a valid longitude near London.
+    await enterCoordinates("43.6833, -7");
+    await vi.waitFor(() =>
+      expect(
+        yourForm().getByLabelText<HTMLSelectElement>("Time zone").value,
+      ).toBe("Europe/London"),
+    );
+    await fireEvent.input(yourForm().getByLabelText("Coordinates"), {
+      target: { value: BRAMPTON },
+    });
+
+    expect(
+      yourForm().getByLabelText<HTMLSelectElement>("Time zone").value,
+    ).toBe("America/Toronto");
+    expect(yourForm().getByText(/Suggested from the nearest/)).toBeTruthy();
   });
 
   it("draws a chart for the coordinates", async () => {
