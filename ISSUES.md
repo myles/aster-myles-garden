@@ -14,7 +14,7 @@ The rendered form has no explicit submission method or action, so browsers defau
 
 **Verification:** Identified from the rendered HTML and form implementation; not exercised in a real browser.
 
-**Resolution:** The birth form renders with its controls inside a disabled fieldset, which is enabled only after hydration. This blocks native button and Enter-key submission before the app is ready and excludes birth fields from form data. A no-JavaScript message explains how to enable the form. Server-rendering regression tests failed before the fix and now confirm disabled controls and empty form data; a client test confirms controls become enabled after hydration. Real-browser keyboard submission remains unverified.
+**Resolution:** The birth form renders with its controls inside a disabled fieldset, which is enabled only after hydration. This blocks native button and Enter-key submission before the app is ready and excludes birth fields from form data. A message explains how to enable the form and remains visible until hydration succeeds. Server-rendering regression tests failed before the fix and now confirm disabled controls and empty form data; a client test confirms controls become enabled after hydration. Playwright now verifies disabled controls, native click and Enter attempts, and delayed hydration in desktop and 375px mobile Chromium.
 
 ### 2. Daylight-saving transitions resolve inconsistently — fixed
 

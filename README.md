@@ -104,3 +104,17 @@ Run `npm run format` to check formatting and `npm run format:fix` to apply it. O
 Run `npm run lint` for oxlint, or `npm run lint:fix` for automatic fixes. Existing style issues are warnings; correctness checks remain errors.
 
 CI runs tests with coverage and JUnit reports, Astro checks, formatting and lint checks on pushes and pull requests to `main`. Use `npm run test:coverage` to generate coverage locally.
+
+## Browser tests
+
+The E2E suite uses [Playwright](https://playwright.dev/docs/test-webserver) against a production build. It starts its own preview server on `127.0.0.1:4399`; keep that port free.
+
+1. Run `npx playwright install chromium` once to install the browser.
+2. Run `npm run test:e2e` to build and test desktop and 375px mobile Chromium.
+3. Run `npx playwright show-report` to inspect results and failure traces.
+
+Use `npm run test:e2e:ui` for interactive debugging. Vitest remains separate under `npm test`.
+
+Coverage includes JavaScript-disabled and delayed-hydration privacy guards, drawing a natal chart with the real WebAssembly engine, and creating and closing a comparison. Place search uses a small local fixture, so tests need no GeoNames download or third-party service. This does not verify the generated production place dataset.
+
+The comparison-update regression for `ISSUES.md` issue 6 is marked as an expected failure. Playwright fails if it unexpectedly passes; remove that annotation when fixing the issue. CI runs the suite on pushes and pull requests to `main` and retains reports for 14 days.

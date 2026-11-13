@@ -409,12 +409,12 @@
       onfocusin={requestEngine}
       onsubmit={onSubmit}
     >
-      <noscript>
+      {#if !isHydrated}
         <p class="text-ink-muted text-sm">
           JavaScript is required to calculate your chart in your browser. Enable
           it to enter your birth details.
         </p>
-      </noscript>
+      {/if}
       <!-- Disable inputs and submit buttons together so native clicks and
            Enter cannot submit birth details before hydration. -->
       <fieldset

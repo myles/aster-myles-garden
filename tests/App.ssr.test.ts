@@ -32,7 +32,7 @@ describe("App before hydration", () => {
     const { body } = render(App);
     const { window } = new JSDOM(body);
 
-    expect(window.document.querySelector("noscript")?.textContent).toContain(
+    expect(window.document.querySelector("form")?.textContent).toContain(
       "JavaScript is required",
     );
   });
