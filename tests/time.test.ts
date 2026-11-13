@@ -97,6 +97,16 @@ describe("toUtc", () => {
     );
   });
 
+  it.each([
+    ["2024-10-27", "02:30", "Europe/Berlin", "2024-10-27T00:30:00.000Z"],
+    ["2024-03-31", "02:30", "Europe/Berlin", "2024-03-31T01:30:00.000Z"],
+    ["2024-04-07", "01:45", "Australia/Lord_Howe", "2024-04-06T14:45:00.000Z"],
+    ["2024-10-06", "02:15", "Australia/Lord_Howe", "2024-10-05T15:45:00.000Z"],
+    ["2011-12-30", "12:00", "Pacific/Apia", "2011-12-30T22:00:00.000Z"],
+  ])("resolves %s %s in %s consistently", (date, time, zone, expected) => {
+    expect(at(date, time, zone)).toBe(expected);
+  });
+
   it("handles zones east of UTC across midnight", () => {
     expect(at("2000-01-01", "05:00", "Asia/Tokyo")).toBe(
       "1999-12-31T20:00:00.000Z",

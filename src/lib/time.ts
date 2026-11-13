@@ -1,5 +1,6 @@
 const MS_PER_DAY = 86_400_000;
 const MS_PER_MINUTE = 60_000;
+const OFFSET_WINDOW_MS = 2 * MS_PER_DAY;
 
 /** Julian day of the Unix epoch, 1970-01-01T00:00:00Z. */
 const UNIX_EPOCH_JULIAN_DAY = 2_440_587.5;
@@ -130,22 +131,23 @@ function getOffsetMs(timeZone: string, epochMs: number): number {
 export function toUtc(local: LocalDateTime, timeZone: string): Date {
   const naiveMs = toNaiveMs(local);
 
-  // The offset at the naive instant is a first guess; re-check it at the
-  // resulting instant in case a transition lies between the two.
-  const firstOffsetMs = getOffsetMs(timeZone, naiveMs);
-  const firstGuessMs = naiveMs - firstOffsetMs;
-  const secondOffsetMs = getOffsetMs(timeZone, firstGuessMs);
+  // Sample both sides, including full-day jumps across the date line.
+  // A single guess can land after a transition and hide an earlier match.
+  const offsets = new Set([
+    getOffsetMs(timeZone, naiveMs - OFFSET_WINDOW_MS),
+    getOffsetMs(timeZone, naiveMs),
+    getOffsetMs(timeZone, naiveMs + OFFSET_WINDOW_MS),
+  ]);
+  const candidates = [...offsets].map((offset) => naiveMs - offset);
+  const matches = candidates.filter(
+    (epochMs) => epochMs + getOffsetMs(timeZone, epochMs) === naiveMs,
+  );
 
-  if (secondOffsetMs === firstOffsetMs) {
-    return new Date(firstGuessMs);
-  }
-
-  const secondGuessMs = naiveMs - secondOffsetMs;
-  if (getOffsetMs(timeZone, secondGuessMs) === secondOffsetMs) {
-    return new Date(secondGuessMs);
-  }
-
-  return new Date(firstGuessMs);
+  // Repeated times have two matches: choose the earlier instant. Gaps
+  // have none: the later candidate uses the pre-transition offset.
+  return new Date(
+    matches.length > 0 ? Math.min(...matches) : Math.max(...candidates),
+  );
 }
 
 /** Offset of a time zone from UTC at the given instant, in minutes. */

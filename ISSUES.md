@@ -14,7 +14,7 @@ The rendered form has no explicit submission method or action, so browsers defau
 
 **Verification:** Identified from the rendered HTML and form implementation; not exercised in a real browser.
 
-### 2. Daylight-saving transitions resolve inconsistently
+### 2. Daylight-saving transitions resolve inconsistently — fixed
 
 **Location:** `src/lib/time.ts`, `toUtc`.
 
@@ -23,6 +23,8 @@ The conversion does not consistently implement its documented policy of choosing
 **Suggested fix:** Resolve ambiguous and nonexistent local times consistently, with an explicit policy. Add regression tests for zones east of UTC alongside the existing Toronto cases.
 
 **Verification:** Reproduced by calling the time-conversion functions directly.
+
+**Resolution:** `toUtc` now checks offsets on both sides of a transition, chooses the earlier matching instant for repeated times, and uses the pre-transition offset for skipped times. Regression tests cover Berlin, Lord Howe’s half-hour transitions and Apia’s skipped day alongside the existing Toronto cases. All five new cases failed before the fix and pass afterwards.
 
 ## P2 — Fix next
 
