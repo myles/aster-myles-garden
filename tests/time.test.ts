@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   getOffsetMinutes,
+  parseLocalDate,
   parseLocalDateTime,
+  parseLocalTime,
   toJulianDay,
   toUtc,
 } from "@/lib/time";
@@ -21,6 +23,32 @@ describe("parseLocalDateTime", () => {
   it("rejects malformed input", () => {
     expect(() => parseLocalDateTime("15/05/1990", "14:30")).toThrow();
     expect(() => parseLocalDateTime("1990-05-15", "2pm")).toThrow();
+  });
+});
+
+describe("parseLocalDate", () => {
+  it("parses a date input value", () => {
+    expect(parseLocalDate("1990-05-15")).toEqual({
+      year: 1990,
+      month: 5,
+      day: 15,
+    });
+  });
+
+  it("rejects malformed input", () => {
+    expect(() => parseLocalDate("15/05/1990")).toThrow(
+      'Invalid date: "15/05/1990"',
+    );
+  });
+});
+
+describe("parseLocalTime", () => {
+  it("parses a time input value", () => {
+    expect(parseLocalTime("09:05")).toEqual({ hour: 9, minute: 5 });
+  });
+
+  it("rejects malformed input", () => {
+    expect(() => parseLocalTime("2pm")).toThrow('Invalid time: "2pm"');
   });
 });
 

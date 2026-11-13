@@ -9,10 +9,10 @@
 - [x] Aspect lines and orbs
 - [x] Export chart as PNG/SVG
 - [x] Shareable chart links
+- [x] Unknown birth time: a noon chart without houses or angles, noting any body that changed sign that day
 
 ## Charts
 
-- [ ] Unknown birth time: draw a noon chart and hide the houses and angles, which depend on the exact time.
 - [ ] Compare two birth charts
 - [ ] Transits: today's sky laid over the natal chart.
 - [ ] Composite and solar return charts

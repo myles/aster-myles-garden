@@ -8,19 +8,28 @@
 
 import type { BirthDetails } from "@/lib/chart";
 import { DEFAULT_HOUSE_SYSTEM, HouseSystem, isHouseSystem } from "@/lib/houses";
-import { parseLocalDateTime, type LocalDateTime } from "@/lib/time";
+import {
+  parseLocalDate,
+  parseLocalTime,
+  type LocalDate,
+  type LocalTime,
+} from "@/lib/time";
 
 const DATE_PARAM = "date";
 const TIME_PARAM = "time";
 const PLACE_PARAM = "place";
 const HOUSE_PARAM = "house";
 
+/** Spelled out, so a link that lost its time reads as broken. */
+const UNKNOWN_TIME_VALUE = "unknown";
+
 const PLACE_ID_PATTERN = /^[1-9]\d*$/;
 
 /** Form values carried by a share link, as the form's inputs hold them. */
 export type SharedDetails = {
   date: string;
-  time: string;
+  /** Undefined when the birth time isn't known. */
+  time?: string;
   placeId: number;
   houseSystem: HouseSystem;
 };
@@ -28,8 +37,8 @@ export type SharedDetails = {
 export function buildShareUrl(details: BirthDetails, siteUrl: string): string {
   const url = new URL("/", siteUrl);
   const params = new URLSearchParams({
-    [DATE_PARAM]: formatDate(details.local),
-    [TIME_PARAM]: formatTime(details.local),
+    [DATE_PARAM]: formatDate(details.date),
+    [TIME_PARAM]: details.time ? formatTime(details.time) : UNKNOWN_TIME_VALUE,
     [PLACE_PARAM]: String(details.place.id),
     [HOUSE_PARAM]: details.houseSystem,
   });
@@ -60,8 +69,13 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
     throw new Error("The link is missing its date, time or place.");
   }
 
-  // Throws on a malformed date or time.
-  parseLocalDateTime(date, time);
+  const isTimeUnknown = time === UNKNOWN_TIME_VALUE;
+
+  // Throw on a malformed date or time.
+  parseLocalDate(date);
+  if (!isTimeUnknown) {
+    parseLocalTime(time);
+  }
 
   if (!PLACE_ID_PATTERN.test(place)) {
     throw new Error(`The link's place isn't valid: "${place}".`);
@@ -71,18 +85,23 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
     throw new Error(`The link's house system isn't known: "${house}".`);
   }
 
-  return { date, time, placeId: Number(place), houseSystem: house };
+  return {
+    date,
+    time: isTimeUnknown ? undefined : time,
+    placeId: Number(place),
+    houseSystem: house,
+  };
 }
 
 /** Example: 1 Jan 2000 → "2000-01-01", as `<input type="date">` holds it. */
-function formatDate(local: LocalDateTime): string {
-  const year = String(local.year).padStart(4, "0");
-  return `${year}-${pad(local.month)}-${pad(local.day)}`;
+function formatDate(date: LocalDate): string {
+  const year = String(date.year).padStart(4, "0");
+  return `${year}-${pad(date.month)}-${pad(date.day)}`;
 }
 
 /** Example: 9:05 → "09:05", as `<input type="time">` holds it. */
-function formatTime(local: LocalDateTime): string {
-  return `${pad(local.hour)}:${pad(local.minute)}`;
+function formatTime(time: LocalTime): string {
+  return `${pad(time.hour)}:${pad(time.minute)}`;
 }
 
 function pad(value: number): string {

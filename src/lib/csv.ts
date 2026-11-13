@@ -4,7 +4,7 @@
 import { ASPECT_INFO } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
 import type { Chart } from "@/lib/chart";
-import { formatDegrees } from "@/lib/format";
+import { formatDegrees, formatPlacement } from "@/lib/format";
 import { formatLongitude } from "@/lib/zodiac";
 
 type Row = string[];
@@ -13,9 +13,11 @@ type Row = string[];
 const CSV_LINE_BREAK = "\r\n";
 
 /** Without a byte-order mark, Excel reads UTF-8 glyphs as Latin-1. */
-const UTF8_BOM = "﻿";
+const UTF8_BOM = "\uFEFF";
 
-const POSITION_HEADINGS: Row = ["Body", "Position", "House"];
+const POSITION_HEADINGS: Row = ["Body", "Position"];
+/** Only charts with a birth time have houses. */
+const HOUSE_HEADING = "House";
 const ASPECT_HEADINGS: Row = ["Pair", "Aspect", "Orb"];
 
 const NO_ASPECTS_TEXT = "No major aspects within orb.";
@@ -24,15 +26,18 @@ const NO_ASPECTS_TEXT = "No major aspects within orb.";
 const NEEDS_QUOTES_PATTERN = /[",\r\n]/;
 
 export function buildChartCsv(chart: Chart): string {
+  const positionHeadings = chart.houses
+    ? [...POSITION_HEADINGS, HOUSE_HEADING]
+    : POSITION_HEADINGS;
   const positions = buildPositionRows(chart);
   const aspects = buildAspectRows(chart);
   const bodyRowCount = Math.max(positions.length, aspects.length);
-  const blankPositions = POSITION_HEADINGS.map(() => "");
+  const blankPositions = positionHeadings.map(() => "");
   const blankAspects = ASPECT_HEADINGS.map(() => "");
 
   const rows: Row[] = [
-    ["Positions", "", "", "", "Aspects", "", ""],
-    [...POSITION_HEADINGS, "", ...ASPECT_HEADINGS],
+    ["Positions", ...blankPositions.slice(1), "", "Aspects", "", ""],
+    [...positionHeadings, "", ...ASPECT_HEADINGS],
   ];
 
   for (let index = 0; index < bodyRowCount; index++) {
@@ -47,20 +52,21 @@ export function buildChartCsv(chart: Chart): string {
 }
 
 function buildPositionRows(chart: Chart): Row[] {
+  const { houses } = chart;
   const bodies = chart.bodies.map((placed) => {
     const info = BODY_INFO[placed.body];
-    const retrograde = placed.isRetrograde ? " ℞" : "";
+    const row = [`${info.glyph} ${info.name}`, formatPlacement(placed)];
 
-    return [
-      `${info.glyph} ${info.name}`,
-      formatLongitude(placed.longitude) + retrograde,
-      String(placed.house),
-    ];
+    return houses ? [...row, String(placed.house)] : row;
   });
 
+  if (!houses) {
+    return bodies;
+  }
+
   const angles = [
-    ["Ascendant", formatLongitude(chart.houses.ascendant), ""],
-    ["Midheaven", formatLongitude(chart.houses.midheaven), ""],
+    ["Ascendant", formatLongitude(houses.ascendant), ""],
+    ["Midheaven", formatLongitude(houses.midheaven), ""],
   ];
 
   return [...bodies, ...angles];

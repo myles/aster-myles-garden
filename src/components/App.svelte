@@ -13,13 +13,14 @@
   } from "@/lib/houses";
   import { findPlace, loadPlaceIndex, type Place } from "@/lib/places";
   import { parseShareHash } from "@/lib/share";
-  import { parseLocalDateTime } from "@/lib/time";
+  import { parseLocalDate, parseLocalTime } from "@/lib/time";
   import { onMount } from "svelte";
 
   const houseSystems = Object.values(HouseSystem);
 
   let date = $state("");
   let time = $state("");
+  let isTimeUnknown = $state(false);
   let houseSystem: string = $state(DEFAULT_HOUSE_SYSTEM);
   let place: Place | undefined = $state.raw();
   let chart: Chart | undefined = $state.raw();
@@ -46,7 +47,8 @@
       }
 
       date = shared.date;
-      time = shared.time;
+      time = shared.time ?? "";
+      isTimeUnknown = shared.time === undefined;
       houseSystem = shared.houseSystem;
       requestEngine();
 
@@ -76,8 +78,18 @@
   }
 
   async function draw(): Promise<void> {
-    if (!date || !time) {
+    const isTimeMissing = !time && !isTimeUnknown;
+
+    if (!date && isTimeMissing) {
       error = "Enter both a date and a time.";
+      return;
+    }
+    if (!date) {
+      error = "Enter a date.";
+      return;
+    }
+    if (isTimeMissing) {
+      error = "Enter a time, or tick “I don't know the time”.";
       return;
     }
     if (!place) {
@@ -95,7 +107,8 @@
     try {
       await loadChartEngine();
       chart = createChart({
-        local: parseLocalDateTime(date, time),
+        date: parseLocalDate(date),
+        time: isTimeUnknown ? undefined : parseLocalTime(time),
         place,
         houseSystem,
       });
@@ -111,8 +124,9 @@
     void draw();
   }
 
-  // Switching house systems redraws an existing chart in place.
-  function onHouseSystemChange(): void {
+  // Changing the house system or whether the time is known redraws an
+  // existing chart in place.
+  function redrawIfDrawn(): void {
     if (chart) {
       void draw();
     }
@@ -146,13 +160,26 @@
         id="birth-time"
         name="time"
         type="time"
-        required
-        class="border-rule bg-paper rounded border px-3 py-2"
+        required={!isTimeUnknown}
+        disabled={isTimeUnknown}
+        class="border-rule bg-paper rounded border px-3 py-2 disabled:opacity-50"
         bind:value={time}
       />
       <p class="text-ink-muted text-xs">
-        Local clock time where you were born.
+        {isTimeUnknown
+          ? "The chart is cast for noon, without houses."
+          : "Local clock time where you were born."}
       </p>
+      <label class="mt-1 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="timeUnknown"
+          class="accent-accent size-4"
+          bind:checked={isTimeUnknown}
+          onchange={redrawIfDrawn}
+        />
+        I don't know the time
+      </label>
     </div>
 
     <PlacePicker bind:selected={place} />
@@ -164,14 +191,18 @@
       <select
         id="house-system"
         name="houseSystem"
-        class="border-rule bg-paper rounded border px-3 py-2"
+        class="border-rule bg-paper rounded border px-3 py-2 disabled:opacity-50"
         bind:value={houseSystem}
-        onchange={onHouseSystemChange}
+        disabled={isTimeUnknown}
+        onchange={redrawIfDrawn}
       >
         {#each houseSystems as system (system)}
           <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
         {/each}
       </select>
+      {#if isTimeUnknown}
+        <p class="text-ink-muted text-xs">Houses need a birth time.</p>
+      {/if}
     </div>
 
     <button

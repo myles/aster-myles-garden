@@ -2,6 +2,7 @@
 // between the UI and the ephemeris driver.
 
 import { findAspects, type Aspect } from "@/lib/aspects";
+import type { Body } from "@/lib/bodies";
 import {
   calculateBodies,
   calculateHouses,
@@ -11,17 +12,26 @@ import {
 } from "@/lib/ephemeris";
 import { findHouse, type HouseSystem } from "@/lib/houses";
 import type { Place } from "@/lib/places";
-import { toJulianDay, toUtc, type LocalDateTime } from "@/lib/time";
+import { toJulianDay, toUtc, type LocalDate, type LocalTime } from "@/lib/time";
+import { getSign, type Sign } from "@/lib/zodiac";
 
 export type BirthDetails = {
-  local: LocalDateTime;
+  date: LocalDate;
+  /** Undefined when the birth time isn't known. */
+  time?: LocalTime;
   place: Place;
   houseSystem: HouseSystem;
 };
 
 export type PlacedBody = BodyPosition & {
-  house: number;
+  /** Undefined when the birth time, and so the houses, aren't known. */
+  house?: number;
   isRetrograde: boolean;
+  /**
+   * Only when the birth time isn't known: every sign the body is in at
+   * some point on the birth date. Two signs means it crossed that day.
+   */
+  possibleSigns?: Sign[];
 };
 
 export type Chart = {
@@ -29,9 +39,15 @@ export type Chart = {
   bornAt: Date;
   julianDay: number;
   bodies: PlacedBody[];
-  houses: HousePositions;
+  /** Undefined when the birth time isn't known. */
+  houses?: HousePositions;
   aspects: Aspect[];
 };
+
+/** Without a birth time, the chart is cast for the middle of the day. */
+const UNKNOWN_TIME_STANDIN: LocalTime = { hour: 12, minute: 0 };
+const DAY_START: LocalTime = { hour: 0, minute: 0 };
+const DAY_END: LocalTime = { hour: 23, minute: 59 };
 
 /** Fetches the calculation engine. Resolve before calling createChart. */
 export function loadChartEngine(): Promise<void> {
@@ -40,21 +56,26 @@ export function loadChartEngine(): Promise<void> {
 
 /** Builds a chart. Requires loadChartEngine() to have resolved. */
 export function createChart(details: BirthDetails): Chart {
-  const bornAt = toUtc(details.local, details.place.timeZone);
+  const time = details.time ?? UNKNOWN_TIME_STANDIN;
+  const bornAt = toUtc({ ...details.date, ...time }, details.place.timeZone);
   const julianDay = toJulianDay(bornAt);
 
   const positions = calculateBodies(julianDay);
-  const houses = calculateHouses(
-    julianDay,
-    details.place.latitude,
-    details.place.longitude,
-    details.houseSystem,
-  );
+  const houses = details.time
+    ? calculateHouses(
+        julianDay,
+        details.place.latitude,
+        details.place.longitude,
+        details.houseSystem,
+      )
+    : undefined;
+  const possibleSigns = details.time ? undefined : findPossibleSigns(details);
 
   const bodies = positions.map((position) => ({
     ...position,
-    house: findHouse(position.longitude, houses.cusps),
+    house: houses && findHouse(position.longitude, houses.cusps),
     isRetrograde: position.speed < 0,
+    possibleSigns: possibleSigns?.get(position.body),
   }));
 
   return {
@@ -65,4 +86,29 @@ export function createChart(details: BirthDetails): Chart {
     houses,
     aspects: findAspects(positions),
   };
+}
+
+/**
+ * Finds the signs each body passes through on the birth date, by
+ * comparing its positions at the start and end of that local day. No
+ * body moves fast enough to cross two sign boundaries in a day.
+ */
+function findPossibleSigns(details: BirthDetails): Map<Body, Sign[]> {
+  const calculateAt = (time: LocalTime) =>
+    calculateBodies(
+      toJulianDay(toUtc({ ...details.date, ...time }, details.place.timeZone)),
+    );
+  const atStart = calculateAt(DAY_START);
+  const atEnd = calculateAt(DAY_END);
+
+  return new Map(
+    atStart.map((start, index) => {
+      // getSign returns shared Sign objects, so a Set drops a repeat.
+      const signs = new Set([
+        getSign(start.longitude),
+        getSign(atEnd[index].longitude),
+      ]);
+      return [start.body, [...signs]];
+    }),
+  );
 }

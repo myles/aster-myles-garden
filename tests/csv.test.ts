@@ -4,9 +4,9 @@ import { ASPECT_INFO, AspectType } from "@/lib/aspects";
 import { Body, BODY_INFO } from "@/lib/bodies";
 import { buildChartCsv } from "@/lib/csv";
 
-import { CHART } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 
-const UTF8_BOM = "﻿";
+const UTF8_BOM = "\uFEFF";
 
 const SUN = `${BODY_INFO[Body.Sun].glyph} Sun`;
 const MARS = `${BODY_INFO[Body.Mars].glyph} Mars`;
@@ -61,5 +61,17 @@ describe("buildChartCsv", () => {
     } finally {
       sun.name = original;
     }
+  });
+});
+
+describe("buildChartCsv without a birth time", () => {
+  it("drops the House column and the angles", () => {
+    expect(parseLines(buildChartCsv(CHART_WITHOUT_TIME))).toEqual([
+      "Positions,,,Aspects,,",
+      "Body,Position,,Pair,Aspect,Orb",
+      `${SUN},10° 00′ Capricorn,,${SUN_MARS_ROW}`,
+      `${MARS},10° 00′ Cancer ℞ (may be Leo),,,,`,
+      "",
+    ]);
   });
 });

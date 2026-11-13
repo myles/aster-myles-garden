@@ -1,3 +1,6 @@
+import type { PlacedBody } from "@/lib/chart";
+import { formatLongitude, getSign } from "@/lib/zodiac";
+
 const MINUTES_PER_DEGREE = 60;
 const COORDINATE_DECIMALS = 2;
 
@@ -22,6 +25,22 @@ export function formatCoordinates(latitude: number, longitude: number): string {
     `${north} ${latitude < 0 ? "S" : "N"}, ` +
     `${east} ${longitude < 0 ? "W" : "E"}`
   );
+}
+
+/**
+ * A body's position as the tables show it. Without a birth time, a body
+ * that changed sign that day names the other sign it may be in.
+ * Example: "29° 40′ Cancer ℞ (may be Leo)".
+ */
+export function formatPlacement(placed: PlacedBody): string {
+  const sign = getSign(placed.longitude);
+  const otherSign = placed.possibleSigns?.find(
+    (candidate) => candidate !== sign,
+  );
+  const retrograde = placed.isRetrograde ? " ℞" : "";
+  const uncertainty = otherSign ? ` (may be ${otherSign.name})` : "";
+
+  return formatLongitude(placed.longitude) + retrograde + uncertainty;
 }
 
 /** Turns anything thrown into a message fit to show a person. */

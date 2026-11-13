@@ -7,37 +7,58 @@ const UNIX_EPOCH_JULIAN_DAY = 2_440_587.5;
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_PATTERN = /^(\d{2}):(\d{2})$/;
 
-/** A wall-clock reading with no time zone attached. */
-export type LocalDateTime = {
+/** A calendar date with no time zone attached. */
+export type LocalDate = {
   year: number;
   month: number;
   day: number;
+};
+
+/** A wall-clock time of day with no time zone attached. */
+export type LocalTime = {
   hour: number;
   minute: number;
 };
+
+/** A wall-clock reading with no time zone attached. */
+export type LocalDateTime = LocalDate & LocalTime;
+
+/**
+ * Parses the value of `<input type="date">`.
+ * Example: "1990-05-15" → { year: 1990, month: 5, day: 15 }.
+ */
+export function parseLocalDate(date: string): LocalDate {
+  const match = DATE_PATTERN.exec(date);
+  if (!match) {
+    throw new Error(`Invalid date: "${date}"`);
+  }
+
+  return {
+    year: Number(match[1]),
+    month: Number(match[2]),
+    day: Number(match[3]),
+  };
+}
+
+/**
+ * Parses the value of `<input type="time">`.
+ * Example: "14:30" → { hour: 14, minute: 30 }.
+ */
+export function parseLocalTime(time: string): LocalTime {
+  const match = TIME_PATTERN.exec(time);
+  if (!match) {
+    throw new Error(`Invalid time: "${time}"`);
+  }
+
+  return { hour: Number(match[1]), minute: Number(match[2]) };
+}
 
 /**
  * Parses the values of `<input type="date">` and `<input type="time">`.
  * Example: ("1990-05-15", "14:30") → { year: 1990, month: 5, ... }.
  */
 export function parseLocalDateTime(date: string, time: string): LocalDateTime {
-  const dateMatch = DATE_PATTERN.exec(date);
-  if (!dateMatch) {
-    throw new Error(`Invalid date: "${date}"`);
-  }
-
-  const timeMatch = TIME_PATTERN.exec(time);
-  if (!timeMatch) {
-    throw new Error(`Invalid time: "${time}"`);
-  }
-
-  return {
-    year: Number(dateMatch[1]),
-    month: Number(dateMatch[2]),
-    day: Number(dateMatch[3]),
-    hour: Number(timeMatch[1]),
-    minute: Number(timeMatch[2]),
-  };
+  return { ...parseLocalDate(date), ...parseLocalTime(time) };
 }
 
 /**

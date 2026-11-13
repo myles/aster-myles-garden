@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { HouseSystem } from "@/lib/houses";
 import { buildShareUrl, parseShareHash } from "@/lib/share";
 
-import { CHART } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 
 const SITE_URL = "https://aster.myles.garden";
 
@@ -18,7 +18,8 @@ describe("buildShareUrl", () => {
   it("pads dates and times the way form inputs hold them", () => {
     const details = {
       ...CHART.details,
-      local: { year: 987, month: 3, day: 4, hour: 5, minute: 6 },
+      date: { year: 987, month: 3, day: 4 },
+      time: { hour: 5, minute: 6 },
     };
 
     const { hash } = new URL(buildShareUrl(details, SITE_URL));
@@ -27,6 +28,11 @@ describe("buildShareUrl", () => {
       date: "0987-03-04",
       time: "05:06",
     });
+  });
+
+  it("says when the birth time is unknown", () => {
+    const url = buildShareUrl(CHART_WITHOUT_TIME.details, SITE_URL);
+    expect(url).toContain("&time=unknown&");
   });
 
   it("keeps the details out of the query string", () => {
@@ -45,6 +51,11 @@ describe("parseShareHash", () => {
       placeId: 2643743,
       houseSystem: HouseSystem.Equal,
     });
+  });
+
+  it("reads an unknown birth time", () => {
+    const shared = parseShareHash("#date=2000-01-01&time=unknown&place=1");
+    expect(shared).toMatchObject({ date: "2000-01-01", time: undefined });
   });
 
   it("accepts an encoded colon in the time", () => {

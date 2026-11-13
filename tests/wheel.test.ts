@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { drawWheel, spreadLongitudes } from "@/lib/wheel";
 import { separateDegrees } from "@/lib/zodiac";
 
-import { CHART } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 
 describe("spreadLongitudes", () => {
   it("leaves well-separated bodies alone", () => {
@@ -81,5 +81,46 @@ describe("drawWheel", () => {
     expect(count(".wheel-body-retrograde")).toBe(0);
     expect(count(".wheel-aspect")).toBe(0);
     expect(svg.querySelector("g.wheel-body")).toBe(sun);
+  });
+});
+
+describe("drawWheel without a birth time", () => {
+  let svg: SVGSVGElement;
+
+  const count = (selector: string) => svg.querySelectorAll(selector).length;
+
+  beforeEach(() => {
+    svg = document.createElementNS(SVG_NAMESPACE, "svg");
+    drawWheel(svg, CHART_WITHOUT_TIME);
+  });
+
+  it("leaves out houses and angles", () => {
+    expect(count(".wheel-cusp")).toBe(0);
+    expect(count(".wheel-house-number")).toBe(0);
+    expect(count(".wheel-axis")).toBe(0);
+    expect(count(".wheel-axis-label")).toBe(0);
+  });
+
+  it("still draws signs, bodies and aspects", () => {
+    expect(count("path.wheel-sign")).toBe(12);
+    expect(count("g.wheel-body")).toBe(2);
+    expect(count(".wheel-aspect")).toBe(1);
+  });
+
+  it("puts 0° Aries at nine o'clock", () => {
+    const aries = svg.querySelector(".wheel-sign-glyph");
+    // Aries' glyph sits mid-sign, 15° below the left of the wheel.
+    expect(Number(aries?.getAttribute("x"))).toBeLessThan(60);
+    expect(Number(aries?.getAttribute("y"))).toBeGreaterThan(300);
+  });
+
+  it("clears houses left by a chart with a time", () => {
+    drawWheel(svg, CHART);
+    expect(count(".wheel-cusp")).toBe(12);
+
+    drawWheel(svg, CHART_WITHOUT_TIME);
+
+    expect(count(".wheel-cusp")).toBe(0);
+    expect(count(".wheel-axis-label")).toBe(0);
   });
 });

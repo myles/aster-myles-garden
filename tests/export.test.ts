@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ExportFormat, exportTables, exportWheel } from "@/lib/export";
 import { drawWheel } from "@/lib/wheel";
 
-import { CHART } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SVG_MIME = "image/svg+xml";
@@ -63,6 +63,12 @@ describe("exportWheel", () => {
     expect(downloads).toHaveLength(1);
     expect(downloads[0].filename).toBe("aster-london-2000-01-01-1200.svg");
     expect(downloads[0].blob.type).toBe(SVG_MIME);
+  });
+
+  it("leaves the time out of the filename when it's unknown", async () => {
+    await exportWheel(svg, CHART_WITHOUT_TIME, ExportFormat.Svg);
+
+    expect(downloads[0].filename).toBe("aster-london-2000-01-01.svg");
   });
 
   it("strips accents and punctuation from the filename", async () => {

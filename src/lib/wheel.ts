@@ -5,6 +5,7 @@
 import { ASPECT_INFO } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
 import type { Chart, PlacedBody } from "@/lib/chart";
+import type { HousePositions } from "@/lib/ephemeris";
 import { HOUSE_COUNT } from "@/lib/houses";
 import {
   DEGREES_PER_CIRCLE,
@@ -35,6 +36,9 @@ const ANGLE_LABEL_RADIUS_PX = 164;
 const ANGLE_LABEL_OFFSET_DEGREES = 4;
 
 const MAJOR_TICK_INTERVAL_DEGREES = 5;
+
+/** Where a natal chart without an ascendant starts: 0° Aries. */
+const NATURAL_WHEEL_START_DEGREES = 0;
 
 /** Bodies closer than this are fanned out so their glyphs don't overlap. */
 const MIN_GLYPH_SEPARATION_DEGREES = 8;
@@ -180,8 +184,19 @@ function measureTicks(ascendant: number): Segment[] {
   });
 }
 
-function drawHouses(parent: Parent, chart: Chart): void {
-  const { cusps, ascendant } = chart.houses;
+/** Without houses, clears any a previous chart left behind. */
+function clearMarks(parent: Parent): void {
+  joinLines(parent, []);
+  joinLabels(parent, []);
+}
+
+function drawHouses(parent: Parent, houses: HousePositions | undefined): void {
+  if (!houses) {
+    clearMarks(parent);
+    return;
+  }
+
+  const { cusps, ascendant } = houses;
 
   joinLines(
     parent,
@@ -208,8 +223,13 @@ function drawHouses(parent: Parent, chart: Chart): void {
 }
 
 /** The four angles get heavier axes, drawn right across the wheel. */
-function drawAxes(parent: Parent, chart: Chart): void {
-  const { ascendant, midheaven } = chart.houses;
+function drawAxes(parent: Parent, houses: HousePositions | undefined): void {
+  if (!houses) {
+    clearMarks(parent);
+    return;
+  }
+
+  const { ascendant, midheaven } = houses;
   const axes = [
     { longitude: ascendant, label: "AC" },
     { longitude: ascendant + 180, label: "DC" },
@@ -346,8 +366,7 @@ function measureBody(
   };
 }
 
-function drawBodies(parent: Parent, chart: Chart): void {
-  const { ascendant } = chart.houses;
+function drawBodies(parent: Parent, chart: Chart, ascendant: number): void {
   const display = spreadLongitudes(chart.bodies.map((b) => b.longitude));
   const marks = chart.bodies.map((body, index) =>
     measureBody(body, display[index], ascendant),
@@ -371,8 +390,7 @@ function drawBodies(parent: Parent, chart: Chart): void {
     });
 }
 
-function measureAspects(chart: Chart): Segment[] {
-  const { ascendant } = chart.houses;
+function measureAspects(chart: Chart, ascendant: number): Segment[] {
   const longitudes = new Map(
     chart.bodies.map((body) => [body.body, body.longitude]),
   );
@@ -399,7 +417,9 @@ function selectLayer(svg: Parent, layer: Layer): Parent {
  * new chart: existing elements are updated rather than duplicated.
  */
 export function drawWheel(element: SVGSVGElement, chart: Chart): void {
-  const { ascendant } = chart.houses;
+  // Without a birth time there's no ascendant, so the wheel starts at
+  // 0° Aries instead, as a natural chart does.
+  const ascendant = chart.houses?.ascendant ?? NATURAL_WHEEL_START_DEGREES;
   const svg: Parent = select(element);
 
   svg
@@ -431,8 +451,8 @@ export function drawWheel(element: SVGSVGElement, chart: Chart): void {
     { radius: HOUSE_RING_RADIUS_PX, className: "wheel-ring wheel-ring--faint" },
     { radius: ASPECT_RADIUS_PX, className: "wheel-ring" },
   ]);
-  drawHouses(layers.houses, chart);
-  drawAxes(layers.axes, chart);
-  joinLines(layers.aspects, measureAspects(chart));
-  drawBodies(layers.bodies, chart);
+  drawHouses(layers.houses, chart.houses);
+  drawAxes(layers.axes, chart.houses);
+  joinLines(layers.aspects, measureAspects(chart, ascendant));
+  drawBodies(layers.bodies, chart, ascendant);
 }

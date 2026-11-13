@@ -157,16 +157,24 @@ function downloadBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url));
 }
 
-/** Example: London on 1 Jan 2000, 12:00 → "aster-london-2000-01-01-1200". */
+/**
+ * Example: London on 1 Jan 2000, 12:00 → "aster-london-2000-01-01-1200".
+ * Without a birth time, the time part is left off.
+ */
 function buildFilename(chart: Chart, extension: string): string {
-  const { local, place } = chart.details;
+  const { date, time, place } = chart.details;
   const pad = (value: number) => String(value).padStart(2, "0");
-  const date = `${local.year}-${pad(local.month)}-${pad(local.day)}`;
-  const time = `${pad(local.hour)}${pad(local.minute)}`;
+  const parts = [
+    FILENAME_PREFIX,
+    slugify(place.name),
+    `${date.year}-${pad(date.month)}-${pad(date.day)}`,
+  ];
 
-  const name = slugify(place.name);
+  if (time) {
+    parts.push(`${pad(time.hour)}${pad(time.minute)}`);
+  }
 
-  return `${FILENAME_PREFIX}-${name}-${date}-${time}.${extension}`;
+  return `${parts.join("-")}.${extension}`;
 }
 
 /** Example: "São Paulo" → "sao-paulo". */

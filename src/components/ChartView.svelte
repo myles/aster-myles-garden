@@ -5,7 +5,11 @@
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
   import type { Chart } from "@/lib/chart";
-  import { formatCoordinates, formatDegrees } from "@/lib/format";
+  import {
+    formatCoordinates,
+    formatDegrees,
+    formatPlacement,
+  } from "@/lib/format";
   import { HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
   import { formatLongitude } from "@/lib/zodiac";
@@ -14,21 +18,39 @@
 
   let wheel: SVGSVGElement | undefined = $state();
 
-  const subheading = $derived(
-    [
-      formatBirthMoment(chart),
-      formatCoordinates(
-        chart.details.place.latitude,
-        chart.details.place.longitude,
-      ),
-      HOUSE_SYSTEM_NAMES[chart.details.houseSystem],
-    ].join(" · "),
+  const coordinates = $derived(
+    formatCoordinates(
+      chart.details.place.latitude,
+      chart.details.place.longitude,
+    ),
   );
 
-  const angles = $derived([
-    { name: "Ascendant", longitude: chart.houses.ascendant },
-    { name: "Midheaven", longitude: chart.houses.midheaven },
-  ]);
+  // Without a birth time there are no houses, so no house system either.
+  const subheading = $derived(
+    chart.houses
+      ? [
+          formatBirthMoment(chart),
+          coordinates,
+          HOUSE_SYSTEM_NAMES[chart.details.houseSystem],
+        ].join(" · ")
+      : [formatBirthDate(chart), "Time unknown", coordinates].join(" · "),
+  );
+
+  const angles = $derived(
+    chart.houses
+      ? [
+          { name: "Ascendant", longitude: chart.houses.ascendant },
+          { name: "Midheaven", longitude: chart.houses.midheaven },
+        ]
+      : [],
+  );
+
+  function formatBirthDate(chart: Chart): string {
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone: chart.details.place.timeZone,
+      dateStyle: "long",
+    }).format(chart.bornAt);
+  }
 
   function formatBirthMoment(chart: Chart): string {
     const { timeZone } = chart.details.place;
@@ -57,6 +79,16 @@
   <h2 class="font-serif text-2xl">{formatPlace(chart.details.place)}</h2>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
 
+  {#if !chart.houses}
+    <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">
+      Without a birth time, this chart is cast for noon. Houses, the ascendant
+      and the midheaven depend on the exact time, so they're left out. The Moon
+      moves about 13° a day, so it may be up to 7° either side of where it's
+      shown, and any body that changed sign that day says which other sign it
+      may be in.
+    </p>
+  {/if}
+
   <ChartWheel {chart} bind:svg={wheel} />
 
   <div class="grid gap-8 xl:grid-cols-2">
@@ -67,7 +99,9 @@
           <tr class="border-rule border-b">
             <th scope="col" class="py-1.5 font-normal">Body</th>
             <th scope="col" class="py-1.5 font-normal">Position</th>
-            <th scope="col" class="py-1.5 text-right font-normal">House</th>
+            {#if chart.houses}
+              <th scope="col" class="py-1.5 text-right font-normal">House</th>
+            {/if}
           </tr>
         </thead>
         <tbody>
@@ -75,12 +109,10 @@
             {@const info = BODY_INFO[placed.body]}
             <tr class="border-rule/60 border-b">
               <td class="py-1.5">{info.glyph} {info.name}</td>
-              <td class="py-1.5">
-                {formatLongitude(placed.longitude)}{placed.isRetrograde
-                  ? " ℞"
-                  : ""}
-              </td>
-              <td class="py-1.5 text-right tabular-nums">{placed.house}</td>
+              <td class="py-1.5">{formatPlacement(placed)}</td>
+              {#if chart.houses}
+                <td class="py-1.5 text-right tabular-nums">{placed.house}</td>
+              {/if}
             </tr>
           {/each}
           {#each angles as angle (angle.name)}

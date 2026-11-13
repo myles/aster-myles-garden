@@ -17,11 +17,19 @@ That link draws a chart for 15 May 1990 at 2:30 pm in Toronto, Ontario, Canada, 
 | Parameter | Required | Format | Notes |
 | --- | --- | --- | --- |
 | `date` | Yes | `YYYY-MM-DD` | Birth date, e.g. `1990-05-15`. |
-| `time` | Yes | `HH:MM`, 24-hour | Local clock time at the birthplace, e.g. `14:30`. Aster works out the historical time zone and daylight saving offset itself; do not convert to UTC. |
+| `time` | Yes | `HH:MM`, 24-hour, or `unknown` | Local clock time at the birthplace, e.g. `14:30`. Aster works out the historical time zone and daylight saving offset itself; do not convert to UTC. Use `unknown` when the birth time isn't known. |
 | `place` | Yes | GeoNames ID | A number identifying the birthplace, e.g. `6167865` for Toronto. See below. |
 | `house` | No | House system | One of `placidus`, `koch`, `wholeSign`, `equal`, `porphyry`, `regiomontanus` or `campanus`. Defaults to `placidus`. |
 
 If a parameter is missing or malformed, or the place isn't in Aster's index, the page shows an error instead of a chart.
+
+### Unknown birth time
+
+With `time=unknown`, Aster casts the chart for local noon and leaves out the houses, ascendant and midheaven, which depend on the exact time. The `house` parameter is then ignored. A body that changes sign during the birth date, most often the Moon, is shown with the other sign it may be in, e.g. "29° 40′ Cancer (may be Leo)":
+
+```
+https://aster.myles.garden/#date=1990-05-15&time=unknown&place=6167865
+```
 
 ## Finding a place's GeoNames ID
 
@@ -41,8 +49,8 @@ Some common IDs:
 
 ## What the chart shows
 
-- A chart wheel with the ascendant at nine o'clock, zodiac signs coloured by element, house cusps, the four angles (AC, DC, MC, IC) and aspect lines.
-- A Positions table: each body's sign, degree, retrograde status and house, plus the Ascendant and Midheaven.
+- A chart wheel with the ascendant (or 0° Aries, without a birth time) at nine o'clock, zodiac signs coloured by element, house cusps, the four angles (AC, DC, MC, IC) and aspect lines.
+- A Positions table: each body's sign, degree, retrograde status and house, plus the Ascendant and Midheaven. Without a birth time, houses and angles are left out.
 - An Aspects table: each major aspect between two bodies, with its orb.
 - Downloads of the wheel as SVG or PNG and of both tables as CSV, and a Copy link button that produces a link in the format above.
 

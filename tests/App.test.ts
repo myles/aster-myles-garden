@@ -8,7 +8,7 @@ import { createChart, loadChartEngine } from "@/lib/chart";
 import { HouseSystem } from "@/lib/houses";
 import { loadPlaceIndex } from "@/lib/places";
 
-import { CHART } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 import { PLACE_INDEX } from "./fixtures/places";
 
 vi.mock("@/lib/chart", () => ({
@@ -85,12 +85,60 @@ describe("App", () => {
       await screen.findByRole("heading", { name: CHART_HEADING }),
     ).toBeTruthy();
     expect(createChart).toHaveBeenCalledWith({
-      local: { year: 2000, month: 1, day: 1, hour: 12, minute: 0 },
+      date: { year: 2000, month: 1, day: 1 },
+      time: { hour: 12, minute: 0 },
       place: expect.objectContaining({ name: "London", region: "England" }),
       houseSystem: HouseSystem.Placidus,
     });
     expect(screen.getByRole("img", { name: "Natal chart wheel" })).toBeTruthy();
     expect(screen.getByText("Opposition", { exact: false })).toBeTruthy();
+  });
+
+  it("asks for a time, or for the box to be ticked", async () => {
+    render(App);
+
+    await fireEvent.input(screen.getByLabelText("Date"), {
+      target: { value: "2000-01-01" },
+    });
+    await submit();
+
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Enter a time, or tick “I don't know the time”.",
+    );
+  });
+
+  it("draws a chart without a birth time", async () => {
+    vi.mocked(createChart).mockReturnValue(CHART_WITHOUT_TIME);
+    render(App);
+
+    await fireEvent.input(screen.getByLabelText("Date"), {
+      target: { value: "2000-01-01" },
+    });
+    await fireEvent.click(screen.getByLabelText("I don't know the time"));
+    await choosePlace();
+    await submit();
+
+    expect(createChart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        date: { year: 2000, month: 1, day: 1 },
+        time: undefined,
+      }),
+    );
+    expect(await screen.findByText(/this chart is cast for noon/)).toBeTruthy();
+    expect(screen.queryByRole("columnheader", { name: "House" })).toBeNull();
+    expect(screen.queryByText("Ascendant")).toBeNull();
+    expect(screen.getByText("10° 00′ Cancer ℞ (may be Leo)")).toBeTruthy();
+  });
+
+  it("disables the time and house system without a birth time", async () => {
+    render(App);
+
+    await fireEvent.click(screen.getByLabelText("I don't know the time"));
+
+    expect(screen.getByLabelText<HTMLInputElement>("Time").disabled).toBe(true);
+    expect(
+      screen.getByLabelText<HTMLSelectElement>("House system").disabled,
+    ).toBe(true);
   });
 
   it("redraws when the house system changes", async () => {
@@ -151,7 +199,8 @@ describe("App opened from a share link", () => {
 
     await vi.waitFor(() =>
       expect(createChart).toHaveBeenCalledWith({
-        local: { year: 2000, month: 1, day: 1, hour: 12, minute: 0 },
+        date: { year: 2000, month: 1, day: 1 },
+        time: { hour: 12, minute: 0 },
         place: expect.objectContaining({ id: 6058560, region: "Ontario" }),
         houseSystem: HouseSystem.Koch,
       }),
@@ -178,6 +227,19 @@ describe("App opened from a share link", () => {
         expect.objectContaining({ houseSystem: HouseSystem.Koch }),
       ),
     );
+  });
+
+  it("opens a link without a birth time", async () => {
+    openLink("#date=2000-01-01&time=unknown&place=6058560");
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenCalledWith(
+        expect.objectContaining({ time: undefined }),
+      ),
+    );
+    expect(
+      screen.getByLabelText<HTMLInputElement>("I don't know the time").checked,
+    ).toBe(true);
   });
 
   it("does nothing without a share link", async () => {
