@@ -23,6 +23,49 @@ export class SpaceChartStore {
     }
   }
 
+  async createSpace(): Promise<string> {
+    const response = await this._session.fetchHandler(
+      "/xrpc/com.atproto.space.createSpace",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          spaceType: this._config.spaceType,
+          skey: this._config.spaceKey,
+          policy: { $type: "com.atproto.personalspace.policy" },
+        }),
+      },
+    );
+    const body = await response.json();
+    if (!response.ok) {
+      if (body?.error !== "SpaceAlreadyExists") {
+        throw new Error(
+          `Couldn't create the Space (${body?.error ?? response.status}).`,
+        );
+      }
+      // Reuse only a verified personal Space; never reset its policies.
+      const params = new URLSearchParams({ space: this._config.space });
+      const existing = await this._session.fetchHandler(
+        `/xrpc/com.atproto.space.getSpace?${params}`,
+      );
+      const description = await existing.json();
+      if (
+        !existing.ok ||
+        description?.space !== this._config.space ||
+        description?.policy?.$type !== "com.atproto.personalspace.policy"
+      ) {
+        throw new Error(
+          "The existing Space could not be verified as personal.",
+        );
+      }
+      return description.space;
+    }
+    if (body?.space !== this._config.space) {
+      throw new Error("The PDS returned an unexpected Space URI.");
+    }
+    return body.space;
+  }
+
   async loadChart(): Promise<BirthDetails | undefined> {
     const params = new URLSearchParams(this._getRecordParams());
     const response = await this._session.fetchHandler(

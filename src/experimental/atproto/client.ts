@@ -3,7 +3,10 @@ import { SpaceChartStore } from "./store";
 
 export type TrialClient = {
   did?: string;
-  charts?: Pick<SpaceChartStore, "loadChart" | "saveChart" | "deleteChart">;
+  charts?: Pick<
+    SpaceChartStore,
+    "createSpace" | "loadChart" | "saveChart" | "deleteChart"
+  >;
   signIn(): Promise<void>;
   signOut(): Promise<void>;
   dispose(): Promise<void>;

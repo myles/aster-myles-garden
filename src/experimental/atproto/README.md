@@ -1,6 +1,6 @@
 # Personal AT Protocol Spaces trial
 
-This is branch-only work on `save-birth-chart-to-atproto`. The first slice is OAuth sign-in and saving, loading and deleting the signed-in person's own chart in an existing Space. It is not the public-PDS publishing flow described in the original roadmap. Friend discovery and comparison integration are deferred.
+This is branch-only work on `save-birth-chart-to-atproto`. The first slice is OAuth sign-in and saving, loading and deleting the signed-in person's own chart in a personal Space created after sign-in. It is not the public-PDS publishing flow described in the original roadmap. Friend discovery and comparison integration are deferred.
 
 ## Boundaries
 
@@ -21,17 +21,17 @@ All writes target `com.atproto.space.*`, the session's DID, the configured owner
 
 ## Set up a trial
 
-1. Obtain a Spaces-capable alpha account and an existing Space owned by that account. Use an already registered Space type, with appropriate membership policies. This implementation does not create Spaces or publish lexicons on your behalf.
+1. Obtain a Spaces-capable alpha account. The default Space type is `garden.myles.aster.trial`; its draft declaration is in `lexicons/garden.myles.aster.trial.json`. The provider must be able to resolve that declaration during OAuth consent. Publishing lexicons is still an external setup step.
 2. Copy `.env.example` to `.env` locally and set `ASTER_ATPROTO_TRIAL=true`.
-3. Set `ASTER_ATPROTO_DID` to the account DID, and `ASTER_ATPROTO_SPACE` to its complete `at://…/space/…/…` URI.
+3. Set `ASTER_ATPROTO_DID` to the account DID. Leave `ASTER_ATPROTO_SPACE` blank: Aster derives a stable personal Space reference from your DID and the default type. The optional override supports an existing personal Space you own.
 4. Set `ASTER_ATPROTO_ORIGIN` to the exact origin you will visit. Use `http://127.0.0.1:4321` locally, or an HTTPS origin for a branch deployment. Localhost is deliberately normalised by requiring the numeric loopback host.
 5. Start Astro and visit `/trials/atproto/` at that origin. A deployment must expose `/trials/atproto/client-metadata.json` publicly so the authorization server can discover its OAuth metadata. Restart or rebuild after changing configuration.
-6. Sign in through the provider. The application never asks for an account password or app password.
+6. Sign in through the provider, then press **Create my Aster Space**. Aster requests `com.atproto.space.createSpace` with `spaceType`, key `self` and `com.atproto.personalspace.policy`. It uses the returned `space` URI automatically; no copying is required. After a refresh, the same button reopens the existing Space after checking its personal policy. Existing non-personal Spaces are rejected without changing them. If you signed in before creation support was added, sign out and back in to grant the new creation permission.
 7. Enter test birth details, confirm they are yours, and press **Save my chart**. Birth time is omitted unless explicitly selected. Use **Load my saved chart**, **Open my saved chart in Aster**, or **Delete my saved chart** to verify the round trip.
 
 The OAuth SDK stores its session keys and tokens in browser storage. Those credentials are sensitive: do not copy them into `.env`, logs, fixtures or issue reports. The four configuration values are public build settings, not credentials. There are no example passwords, tokens or invitation codes in this package.
 
-OAuth requests `atproto` plus a single `space:` scope, limited to the configured type, own authority, Space key and chart collection. Actions are `read_self`, `create`, `update` and `delete`. There is no friend access, repository-wide scope, Space administration or automatic remote save. The Space type must resolve for OAuth consent; publishing or registering a new type requires separate setup outside this branch.
+OAuth requests `atproto` plus a single `space:` scope, limited to the configured type, own authority, Space key and chart collection. Actions are `read_self`, `create`, `update` and `delete`. The additional `manage=create` permission allows creating that Space. No update/delete management permission is requested, and record saves remain explicit. There is no friend access or repository-wide scope. The Space type must resolve for OAuth consent; publishing or registering a new type requires separate setup outside this branch.
 
 ## Record format
 
@@ -39,7 +39,7 @@ The draft lexicon is in `lexicons/garden.myles.aster.chart.json`. It stores birt
 
 The adapter validates records before writing and after reading. In particular it checks calendar validity and time ranges locally, since the main application's input parsers currently check only string shape. Loaded listed places become coordinate places; their calculation inputs are preserved without depending on a particular GeoNames index. The record is replaced at the same key when saving again. Deleting removes that record, not the Space or any other data.
 
-Space access is not end-to-end encryption. Your PDS and authorized Space participants or applications can read its data. Changing access later does not retract copies others already made. Use test data during this alpha. If your Space is publicly readable, the chart will be too: this client does not inspect or change Space membership policies.
+Space access is not end-to-end encryption. Your PDS and authorized Space participants or applications can read its data. Changing access later does not retract copies others already made. Use test data during this alpha. The creation flow uses a personal policy and verifies that policy before reopening an existing Space. It never silently converts an existing Space or adds members.
 
 ## Verification and maintenance
 
@@ -49,6 +49,6 @@ The browser OAuth SDK and its alpha dependency chain are pinned to `0.0.0-spaces
 
 The SDK currently brings npm audit's high-severity Zod advisory, “Zod can exhaust memory while validating oversized constrained collections” (`zod <4.6.6`), through its Zod 3 dependency chain. A forced major-version override would risk breaking OAuth validation and has not been applied. Treat this as an unresolved alpha dependency risk; keep the trial disabled outside the personal branch.
 
-A live OAuth/PDS round trip still requires the actual trial DID, Space URI and provider. Unit tests use fake sessions; they do not prove provider interoperability or the Space's privacy policy.
+A live OAuth/PDS round trip still requires the actual trial DID and provider, plus provider-side resolution of the Space type declaration. Unit tests use fake sessions; they do not prove provider interoperability or the Space's privacy policy.
 
 References: [Spaces alpha](https://atproto.com/blog/atproto-spaces-alpha), [current proposal](https://github.com/bluesky-social/proposals/tree/main/0016-permissioned-data), [reference record schemas](https://github.com/bluesky-social/atproto/tree/permissioned-data/lexicons/com/atproto/space).

@@ -48,6 +48,71 @@ describe("SpaceChartStore", () => {
         ),
     ).toThrow("restricted");
   });
+  it("creates a personal Space and returns its URI", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler.mockResolvedValue(Response.json({ space: CONFIG.space }));
+    expect(await store.createSpace()).toBe(CONFIG.space);
+    expect(fetchHandler.mock.calls[0][0]).toBe(
+      "/xrpc/com.atproto.space.createSpace",
+    );
+    expect(JSON.parse(fetchHandler.mock.calls[0][1].body)).toEqual({
+      spaceType: CONFIG.spaceType,
+      skey: CONFIG.spaceKey,
+      policy: { $type: "com.atproto.personalspace.policy" },
+    });
+  });
+  it("rejects an unexpected URI after creation", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler.mockResolvedValue(Response.json({ space: "at://wrong" }));
+    await expect(store.createSpace()).rejects.toThrow("unexpected Space URI");
+  });
+  it("reopens an existing personal Space", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler
+      .mockResolvedValueOnce(
+        Response.json(
+          { error: "SpaceAlreadyExists" },
+          { status: HTTP_STATUS_BAD_REQUEST },
+        ),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          space: CONFIG.space,
+          policy: { $type: "com.atproto.personalspace.policy" },
+        }),
+      );
+    expect(await store.createSpace()).toBe(CONFIG.space);
+    expect(fetchHandler.mock.calls[1][0]).toContain(
+      "/xrpc/com.atproto.space.getSpace?",
+    );
+  });
+  it.each([
+    { space: "at://wrong/space/example.test.type/self" },
+    { space: CONFIG.space, policy: { $type: "public" } },
+  ])("rejects an unsafe existing Space: %j", async (body) => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler
+      .mockResolvedValueOnce(
+        Response.json(
+          { error: "SpaceAlreadyExists" },
+          { status: HTTP_STATUS_BAD_REQUEST },
+        ),
+      )
+      .mockResolvedValueOnce(Response.json(body));
+    await expect(store.createSpace()).rejects.toThrow();
+  });
+  it("surfaces creation failures", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler.mockResolvedValue(
+      Response.json(
+        { error: "UnsupportedPolicy" },
+        { status: HTTP_STATUS_BAD_REQUEST },
+      ),
+    );
+    await expect(store.createSpace()).rejects.toThrow("UnsupportedPolicy");
+    expect(fetchHandler).toHaveBeenCalledTimes(1);
+  });
+
   it("loads only the configured account and Space", async () => {
     const { store, fetchHandler } = createStore();
     fetchHandler.mockResolvedValue(Response.json({ value: RECORD }));

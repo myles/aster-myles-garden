@@ -18,6 +18,11 @@ describe("readTrialConfig", () => {
   it("accepts the owner's existing Space", () => {
     expect(readTrialConfig(ENV)).toEqual(CONFIG);
   });
+  it("derives the personal Space when no URI is supplied", () => {
+    expect(readTrialConfig({ ...ENV, ASTER_ATPROTO_SPACE: undefined })).toEqual(
+      CONFIG,
+    );
+  });
   it.each([
     { ASTER_ATPROTO_DID: "" },
     { ASTER_ATPROTO_SPACE: CONFIG.space.replace(CONFIG.allowedDid, OTHER_DID) },
@@ -45,7 +50,7 @@ describe("buildClientMetadata", () => {
     expect(metadata.scope).toContain("authority=self");
     expect(metadata.scope).toContain("action=read_self");
     expect(metadata.scope).not.toContain("repo:");
-    expect(metadata.scope).not.toContain("manage=");
+    expect(metadata.scope).toContain("manage=create");
     expect(metadata.application_type).toBe("native");
   });
   it("publishes HTTPS metadata and a fixed callback", () => {
