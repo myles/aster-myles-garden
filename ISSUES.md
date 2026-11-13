@@ -56,9 +56,19 @@ The parsers validate string shape but not calendar validity or time ranges. `202
 
 **Verification:** Direct conversion reproduced the normalisation. A temporary regression test confirmed that a shared link with `date=2024-02-31&time=99:99` does not throw.
 
+### 6. Comparison updates can leave mismatched charts
+
+**Location:** `src/components/App.svelte`, `draw`.
+
+Draw a comparison, clear the second person's place, then change the house system. The application updates your chart before attempting to rebuild theirs. Their calculation fails, leaving their previous chart alongside your updated chart. The comparison is labelled with the new house system even though the two charts now use different systems. A raw error appears: `Cannot read properties of undefined (reading 'timeZone')`.
+
+**Suggested fix:** Validate both forms before rebuilding a comparison. Calculate both charts before replacing either displayed chart, so a failure preserves a consistent result. Show an actionable validation message beside the incomplete form.
+
+**Verification:** Reproduced in the browser by switching between Koch and Placidus after clearing the second person's place.
+
 ## P3 — Usability
 
-### 6. Place suggestions do not reopen after leaving the field
+### 7. Place suggestions do not reopen after leaving the field
 
 **Location:** `src/components/PlacePicker.svelte`, `loadIndex` and keyboard handling.
 
@@ -68,11 +78,34 @@ Search for London, move focus away, then return to the place field and press Arr
 
 **Verification:** Reproduced with a temporary component regression test.
 
+### 8. Mobile wheel labels are too small
+
+**Location:** `src/components/ChartWheel.svelte`; wheel sizing in `src/lib/wheel.ts`.
+
+At a 375px viewport, the comparison wheel scales its degree labels to roughly 5px. The chart fits the screen, but reading the labels requires substantial magnification.
+
+**Suggested fix:** Provide an enlarged wheel view or zoom controls. Retain the position tables and written description as readable alternatives.
+
+**Verification:** Inspected the rendered natal and comparison wheels at a 375px viewport.
+
+### 9. Successful submission leaves the wheel below the viewport
+
+**Location:** `src/components/App.svelte`, successful chart and comparison submission.
+
+On mobile, focus remains on **Draw chart** or **Compare charts** after calculation. The result heading appears near the bottom of the viewport, while the wheel remains below the visible area, requiring the visitor to scroll to inspect the result.
+
+**Suggested fix:** Scroll to and focus the result heading after a successful submission on narrow layouts. Preserve the form position when validation fails.
+
+**Verification:** Reproduced at a 375px by 812px viewport. After drawing a natal chart, the result heading began at 722px and the wheel began at 854px, below the viewport.
+
 ## Review checks and limitations
 
 - All 270 existing tests passed.
 - Astro type checking completed without errors or warnings.
 - The production build and formatting checks passed.
 - Two temporary regression tests reproduced issues 5 and 6; both were removed after the review.
-- Browser access was unavailable. Mobile layout, visual contrast and real-browser interactions were not verified.
+- Browser access became available for a follow-up review. Layouts were checked at widths of 320px, 375px and 1280px, with no horizontal overflow found in the tested views.
+- Browser checks covered natal charts, comparisons, transits, unknown birth times, saving and using a test chart, and reopening a shared chart link. The saved test chart was removed afterwards.
+- SVG, PNG and CSV downloads completed. The exported comparison PNG was visually inspected.
+- Dark mode and a full accessibility audit remain unchecked.
 - No application fixes were made as part of the review.
