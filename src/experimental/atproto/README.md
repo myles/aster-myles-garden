@@ -21,7 +21,7 @@ All writes target `com.atproto.space.*`, the session's DID, the configured owner
 
 ## Set up a trial
 
-1. Obtain a Spaces-capable alpha account. The default Space type is `garden.myles.aster.trial`; its draft declaration is in `lexicons/garden.myles.aster.trial.json`. The provider must be able to resolve that declaration during OAuth consent. Publishing lexicons is still an external setup step.
+1. Obtain a Spaces-capable alpha account. The default Space type is `garden.myles.aster.space`; its draft declaration is in `lexicons/garden.myles.aster.space.json`. The provider must be able to resolve that declaration during OAuth consent. Publishing lexicons is still an external setup step.
 2. Copy `.env.example` to `.env` locally and set `ASTER_ATPROTO_TRIAL=true`.
 3. Set `ASTER_ATPROTO_DID` to the account DID. Leave `ASTER_ATPROTO_SPACE` blank: Aster derives a stable personal Space reference from your DID and the default type. The optional override supports an existing personal Space you own.
 4. Set `ASTER_ATPROTO_ORIGIN` to the exact origin you will visit. Use `http://127.0.0.1:4321` locally, or an HTTPS origin for a branch deployment. Localhost is deliberately normalised by requiring the numeric loopback host.
@@ -52,3 +52,11 @@ The SDK currently brings npm audit's high-severity Zod advisory, “Zod can exha
 A live OAuth/PDS round trip still requires the actual trial DID and provider, plus provider-side resolution of the Space type declaration. Unit tests use fake sessions; they do not prove provider interoperability or the Space's privacy policy.
 
 References: [Spaces alpha](https://atproto.com/blog/atproto-spaces-alpha), [current proposal](https://github.com/bluesky-social/proposals/tree/main/0016-permissioned-data), [reference record schemas](https://github.com/bluesky-social/atproto/tree/permissioned-data/lexicons/com/atproto/space).
+
+## Pre-publication review
+
+The Space's consent label is `title: "myles.garden"`, using the field supported by the pinned November alpha SDK. The old `name` field has been removed. The record remains `garden.myles.aster.chart`, with a singleton `self` key, optional birth time and calculation inputs rather than computed results.
+
+Tests validate both declarations with `@atproto/lex-document` and validate emitted records against the chart schema compiled by the same SDK. Runtime validation now counts the place-name bound as UTF-8 bytes and checks `updatedAt` with the protocol's datetime validator. Regression tests reproduce both mismatches before their fixes.
+
+The Space type is `garden.myles.aster.space`, dedicated to Aster, with the display title `myles.garden`. It declares only `garden.myles.aster.chart`. Other garden apps should use separate Space types so their read grants do not include birth details. Renaming a Space type does not migrate data already saved under it. Clear any `ASTER_ATPROTO_SPACE` override that still points at the old type and sign in again to grant access to the new type. Both declarations still require publication and DNS resolution before live OAuth can succeed.
