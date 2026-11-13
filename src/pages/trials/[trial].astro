@@ -1,0 +1,19 @@
+---
+import TrialApp from "@/experimental/atproto/TrialApp.svelte";
+import { getTrialPaths } from "@/experimental/atproto/build";
+import "@/styles/global.css";
+
+export const getStaticPaths = getTrialPaths;
+const { config } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Aster · personal AT Protocol trial</title>
+  </head>
+  <body><TrialApp {config} client:load /></body>
+</html>

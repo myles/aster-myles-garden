@@ -43,5 +43,6 @@ export default defineConfig({
       "--strictPort",
     url: BASE_URL,
     reuseExistingServer: false,
+    env: { ASTER_ATPROTO_TRIAL: "false" },
   },
 });

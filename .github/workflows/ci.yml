@@ -142,6 +142,9 @@ jobs:
       - name: Run browser tests
         run: npm run test:e2e
 
+      - name: Run isolated AT Protocol trial tests
+        run: npm run test:e2e:atproto
+
       - name: Upload browser reports
         if: always()
         uses: actions/upload-artifact@v7

@@ -32,12 +32,14 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:linux": "scripts/e2e-linux-run.sh",
+    "test:e2e:atproto": "playwright test --config playwright.atproto.config.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@astrojs/svelte": "^9.1.6",
     "@astrojs/vercel": "^11.0.22",
+    "@atproto/oauth-client-browser": "0.0.0-spaces-alpha-20261112204144",
     "@fontsource-variable/bitter": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
     "@myles-garden/styles": "^1.1.0",
@@ -83,7 +85,24 @@
   "overrides": {
     "@vercel/routing-utils": {
       "path-to-regexp": "^6.3.0"
-    }
+    },
+    "@atproto-labs/did-resolver": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto-labs/handle-resolver": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto-labs/identity-resolver": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/common-web": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/did": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/jwk": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/jwk-jose": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/jwk-webcrypto": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/lex-data": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/lex-json": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/lexicon": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/oauth-client": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/oauth-client-browser": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/oauth-resolver": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/oauth-types": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/syntax": "0.0.0-spaces-alpha-20261112204144",
+    "@atproto/xrpc": "0.0.0-spaces-alpha-20261112204144"
   },
   "engines": {
     "node": ">=22.12.0"
