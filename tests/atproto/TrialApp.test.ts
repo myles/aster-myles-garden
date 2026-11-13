@@ -107,6 +107,27 @@ describe("personal trial UI", () => {
         .getAttribute("href"),
     ).toContain("time=unknown");
   });
+  it("preserves loaded AI preferences when saving the form", async () => {
+    const aiPreferences = {
+      training: { allow: false, updatedAt: "2026-11-13T12:00:00Z" },
+    };
+    charts.loadChart.mockResolvedValue({ ...CHART.details, aiPreferences });
+    render(TrialApp, { config: CONFIG });
+    await loadChart();
+    await fireEvent.click(
+      screen.getByLabelText(
+        "These are my own details and I want to store them in my Space",
+      ),
+    );
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Save my chart" }),
+    );
+    expect(charts.saveChart).toHaveBeenCalledWith(
+      expect.objectContaining({ aiPreferences }),
+      TimeDisclosure.Omit,
+    );
+  });
+
   it("includes time only when explicitly selected", async () => {
     render(TrialApp, { config: CONFIG });
     await loadChart();

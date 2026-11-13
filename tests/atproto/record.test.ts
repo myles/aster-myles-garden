@@ -5,6 +5,7 @@ import {
   parseChartRecord,
   TimeDisclosure,
 } from "@/experimental/atproto/record";
+import { HouseSystem } from "@/lib/houses";
 
 import { CHART } from "../fixtures/chart";
 
@@ -16,63 +17,114 @@ const RECORD = buildChartRecord(
 );
 
 describe("chart records", () => {
-  it("round-trips calculation inputs without computed chart data", () => {
-    const details = parseChartRecord(RECORD);
-    expect(details).toEqual({
+  it("stores a datetime and a community geo object", () => {
+    expect(RECORD).toMatchObject({
+      bornAt: "2000-01-01T12:00:00.000Z",
+      isBirthTimeKnown: true,
+      location: { latitude: "51.5", longitude: "-0.12", name: "London" },
+    });
+    expect(RECORD).not.toHaveProperty("birthDate");
+    expect(RECORD).not.toHaveProperty("birthTime");
+    expect(parseChartRecord(RECORD)).toEqual({
       ...CHART.details,
       place: { ...CHART.details.place, id: undefined, region: "", country: "" },
     });
-    expect(RECORD.updatedAt).toBe(UPDATED_AT.toISOString());
-    expect(RECORD).not.toHaveProperty("bodies");
-    expect(RECORD).not.toHaveProperty("bornAt");
   });
-  it("omits time entirely when requested", () => {
+  it("omits the actual time and uses local noon when withheld", () => {
+    const details = {
+      ...CHART.details,
+      time: { hour: 3, minute: 17 },
+      place: { ...CHART.details.place, timeZone: "Asia/Tokyo" },
+    };
+    const record = buildChartRecord(details, TimeDisclosure.Omit, UPDATED_AT);
+    expect(record.bornAt).toBe("2000-01-01T03:00:00.000Z");
+    expect(record.isBirthTimeKnown).toBe(false);
+    expect(parseChartRecord(record).time).toBeUndefined();
+    expect(parseChartRecord(record).date).toEqual(details.date);
+  });
+  it("keeps an unknown birth time unknown", () => {
     const record = buildChartRecord(
-      CHART.details,
-      TimeDisclosure.Omit,
+      { ...CHART.details, time: undefined },
+      TimeDisclosure.Include,
       UPDATED_AT,
     );
-    expect(record).not.toHaveProperty("birthTime");
+    expect(record.isBirthTimeKnown).toBe(false);
     expect(parseChartRecord(record).time).toBeUndefined();
   });
-  it("preserves an unknown time", () => {
-    expect(
-      buildChartRecord(
-        { ...CHART.details, time: undefined },
-        TimeDisclosure.Include,
-        UPDATED_AT,
-      ),
-    ).not.toHaveProperty("birthTime");
+  it("preserves optional AI preferences without inventing defaults", () => {
+    const aiPreferences = {
+      training: { allow: false, updatedAt: UPDATED_AT.toISOString() },
+      inference: { allow: true, updatedAt: UPDATED_AT.toISOString() },
+    };
+    const record = buildChartRecord(
+      { ...CHART.details, aiPreferences },
+      TimeDisclosure.Include,
+      UPDATED_AT,
+    );
+    expect(parseChartRecord(record).aiPreferences).toEqual(aiPreferences);
+    expect(RECORD).not.toHaveProperty("aiPreferences");
   });
   it.each([
-    null,
-    { ...RECORD, $type: "wrong" },
-    { ...RECORD, birthDate: "2024-02-31" },
-    { ...RECORD, birthDate: "0000-01-01" },
-    { ...RECORD, birthDate: "not a date" },
-    { ...RECORD, birthTime: "24:00" },
-    { ...RECORD, birthTime: "12:60" },
-    { ...RECORD, birthTime: 12 },
-    { ...RECORD, coordinates: "91, 0" },
-    { ...RECORD, coordinates: "0, Infinity" },
-    { ...RECORD, timeZone: "not/a/zone" },
-    { ...RECORD, houseSystem: "unknown" },
-    { ...RECORD, updatedAt: "yesterday" },
-    { ...RECORD, updatedAt: "2026" },
-    { ...RECORD, placeName: "é".repeat(101) },
-  ])("rejects invalid remote records: %j", (record) => {
-    expect(() => parseChartRecord(record)).toThrow();
+    ["2024-10-27", "02:30", "Europe/Berlin", "2024-10-27T00:30:00.000Z"],
+    ["1880-01-01", "12:00", "America/Toronto", "1880-01-01T17:17:32.000Z"],
+  ])("round-trips %s %s in %s", (date, time, zone, expected) => {
+    const [year, month, day] = date.split("-").map(Number);
+    const [hour, minute] = time.split(":").map(Number);
+    const details = {
+      ...CHART.details,
+      date: { year, month, day },
+      time: { hour, minute },
+      place: { ...CHART.details.place, timeZone: zone },
+    };
+    const record = buildChartRecord(
+      details,
+      TimeDisclosure.Include,
+      UPDATED_AT,
+    );
+    expect(record.bornAt).toBe(expected);
+    expect(parseChartRecord(record)).toMatchObject({
+      date: details.date,
+      time: details.time,
+    });
   });
-  it("rejects invalid outbound values too", () => {
+  it("rejects a skipped calendar date instead of saving another day", () => {
     expect(() =>
       buildChartRecord(
         {
           ...CHART.details,
-          date: { year: 2024, month: 2, day: 31 },
+          date: { year: 2011, month: 12, day: 30 },
+          time: undefined,
+          place: { ...CHART.details.place, timeZone: "Pacific/Apia" },
         },
         TimeDisclosure.Omit,
         UPDATED_AT,
       ),
+    ).toThrow();
+  });
+  it.each([
+    null,
+    { ...RECORD, bornAt: "2024" },
+    { ...RECORD, isBirthTimeKnown: "false" },
+    { ...RECORD, location: { latitude: "91", longitude: "0" } },
+    { ...RECORD, timeZone: "invalid" },
+    { ...RECORD, houseSystem: "invalid" },
+    { ...RECORD, updatedAt: "2026" },
+    { ...RECORD, location: { ...RECORD.location, name: "é".repeat(101) } },
+    {
+      ...RECORD,
+      aiPreferences: { training: { allow: "yes", updatedAt: "2026" } },
+    },
+    { ...RECORD, isBirthTimeKnown: false, bornAt: "2000-01-01T01:30:00Z" },
+  ])("rejects malformed records: %j", (record) => {
+    expect(() => parseChartRecord(record)).toThrow();
+  });
+  it.each([
+    { ...CHART.details, date: { year: 2024, month: 2, day: 31 } },
+    { ...CHART.details, time: { hour: 24, minute: 0 } },
+    { ...CHART.details, houseSystem: "bad" as HouseSystem },
+  ])("rejects invalid outbound details", (details) => {
+    expect(() =>
+      buildChartRecord(details, TimeDisclosure.Include, UPDATED_AT),
     ).toThrow();
   });
 });

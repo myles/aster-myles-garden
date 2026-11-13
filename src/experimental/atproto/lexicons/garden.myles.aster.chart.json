@@ -9,34 +9,34 @@
       "record": {
         "type": "object",
         "required": [
-          "birthDate",
-          "coordinates",
+          "bornAt",
+          "isBirthTimeKnown",
+          "location",
           "timeZone",
-          "placeName",
           "houseSystem",
           "updatedAt"
         ],
         "properties": {
-          "birthDate": {
+          "bornAt": {
             "type": "string",
-            "minLength": 10,
-            "maxLength": 10
+            "format": "datetime",
+            "description": "Birth instant; local noon if time is unknown or omitted."
           },
-          "birthTime": {
-            "type": "string",
-            "minLength": 5,
-            "maxLength": 5
+          "isBirthTimeKnown": {
+            "type": "boolean",
+            "description": "Whether the birth time is known and disclosed."
           },
-          "coordinates": {
-            "type": "string",
-            "description": "Comma-separated decimal latitude and longitude."
+          "location": {
+            "type": "ref",
+            "ref": "community.lexicon.location.geo#main"
+          },
+          "aiPreferences": {
+            "type": "ref",
+            "ref": "community.lexicon.preference.ai#preferenceSet",
+            "description": "Chart-specific AI preferences; omission declares none."
           },
           "timeZone": {
             "type": "string"
-          },
-          "placeName": {
-            "type": "string",
-            "maxLength": 200
           },
           "houseSystem": {
             "type": "string",
