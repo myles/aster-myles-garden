@@ -44,6 +44,8 @@ A small API, in the same style as the other myles.garden sites, so the garden's 
 
 Connect Aster to your AT Protocol account (such as Bluesky) to keep your chart in your own PDS and compare charts with friends. Entirely optional: everything else keeps working without an account.
 
+**On hold** until [AT Protocol Spaces](https://atproto.com/blog/atproto-spaces-alpha) are more widely available. Spaces are in alpha; this starts once they're something most people can use.
+
 - [ ] Sign in with your AT Protocol account.
 - [ ] Save your own birth chart to your PDS, as a record in an Aster lexicon.
 - [ ] Compare with friends: list the people you follow who have saved an Aster chart, and compare yours with theirs.
