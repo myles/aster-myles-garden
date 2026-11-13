@@ -12,6 +12,7 @@
 - [x] Unknown birth time: a noon chart without houses or angles, noting any body that changed sign that day
 - [x] Compare two birth charts: a bi-wheel, the aspects between them, and house overlays both ways
 - [x] Transits: the sky at any moment, defaulting to now, against the natal chart, with aspects within 2°
+- [x] Saved charts: named, in the browser only, to fill either form with one press
 
 ## Charts
 
@@ -27,7 +28,6 @@
 
 ## App
 
-- [ ] Save charts locally, in the browser only.
 - [ ] Work offline as an installed app, using a service worker.
 - [ ] A written description of the wheel for screen readers.
 

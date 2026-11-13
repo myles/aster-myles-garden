@@ -7,6 +7,8 @@
   import ComparisonView from "@/components/ComparisonView.svelte";
   import TransitView from "@/components/TransitView.svelte";
   import { Panel } from "@/components/panel";
+  import SaveChartRow from "@/components/SaveChartRow.svelte";
+  import SavedChartList from "@/components/SavedChartList.svelte";
   import {
     createChart,
     loadChartEngine,
@@ -21,6 +23,13 @@
     isHouseSystem,
   } from "@/lib/houses";
   import { findPlace, loadPlaceIndex, type Place } from "@/lib/places";
+  import {
+    addSavedChart,
+    getBrowserStorage,
+    readSavedCharts,
+    removeSavedChart,
+    type SavedChart,
+  } from "@/lib/saved-charts";
   import { parseShareHash, type SharedPerson } from "@/lib/share";
   import { compareCharts } from "@/lib/synastry";
   import {
@@ -61,6 +70,9 @@
   let transitTime = $state("");
   let transitsAt: Date | undefined = $state.raw();
   let transitError = $state("");
+  let savedCharts: SavedChart[] = $state.raw([]);
+  // Why saved charts can't be used, e.g. the browser blocks storage.
+  let savedChartsError = $state("");
   let error = $state("");
   let compareError = $state("");
   let isDrawing = $state(false);
@@ -90,6 +102,7 @@
     const onHashChange = () => void openSharedLink();
 
     transitTimeZone = getLocalTimeZone();
+    loadSavedCharts();
     void openSharedLink();
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
@@ -144,6 +157,63 @@
       isTimeUnknown: person.time === undefined,
       place,
     };
+  }
+
+  function loadSavedCharts(): void {
+    try {
+      savedCharts = readSavedCharts(getBrowserStorage());
+    } catch (cause) {
+      savedChartsError = describeError(cause);
+    }
+  }
+
+  /** Saves a form under a name; returns why it couldn't, or undefined. */
+  function saveForm(form: BirthForm, name: string): string | undefined {
+    const problem = findProblem(form);
+    if (problem) {
+      return problem;
+    }
+
+    try {
+      savedCharts = addSavedChart(getBrowserStorage(), {
+        name,
+        date: form.date,
+        time: form.isTimeUnknown ? undefined : form.time,
+        place: form.place!,
+      });
+      return undefined;
+    } catch (cause) {
+      return describeError(cause);
+    }
+  }
+
+  function forgetSavedChart(saved: SavedChart): void {
+    try {
+      savedCharts = removeSavedChart(getBrowserStorage(), saved.id);
+      savedChartsError = "";
+    } catch (cause) {
+      savedChartsError = describeError(cause);
+    }
+  }
+
+  function toForm(saved: SavedChart): BirthForm {
+    return {
+      date: saved.date,
+      time: saved.time ?? "",
+      isTimeUnknown: saved.time === undefined,
+      place: saved.place,
+    };
+  }
+
+  // Using a saved chart fills the form and draws it straight away.
+  function useSavedForYou(saved: SavedChart): void {
+    yours = toForm(saved);
+    void draw();
+  }
+
+  function useSavedForThem(saved: SavedChart): void {
+    theirs = toForm(saved);
+    void compare();
   }
 
   // Start fetching the WASM engine as soon as someone engages a form.
@@ -327,6 +397,12 @@
       onfocusin={requestEngine}
       onsubmit={onSubmit}
     >
+      <SavedChartList
+        charts={savedCharts}
+        onUse={useSavedForYou}
+        onForget={forgetSavedChart}
+      />
+
       <BirthFields
         idPrefix="birth"
         timeHint="Local clock time where you were born."
@@ -373,6 +449,12 @@
       >
         {error}
       </p>
+
+      <SaveChartRow
+        idPrefix="birth"
+        blockedReason={savedChartsError || undefined}
+        onSave={(name) => saveForm(yours, name)}
+      />
     </form>
 
     {#if chart && panel === Panel.None}
@@ -483,6 +565,12 @@
           </p>
         </div>
 
+        <SavedChartList
+          charts={savedCharts}
+          onUse={useSavedForThem}
+          onForget={forgetSavedChart}
+        />
+
         <BirthFields
           idPrefix="compare"
           timeHint="Local clock time where they were born."
@@ -517,6 +605,12 @@
         >
           {compareError}
         </p>
+
+        <SaveChartRow
+          idPrefix="compare"
+          blockedReason={savedChartsError || undefined}
+          onSave={(name) => saveForm(theirs, name)}
+        />
       </form>
     {/if}
   </div>

@@ -7,6 +7,7 @@ import App from "@/components/App.svelte";
 import { createChart, loadChartEngine } from "@/lib/chart";
 import { HouseSystem } from "@/lib/houses";
 import { loadPlaceIndex } from "@/lib/places";
+import { addSavedChart, readSavedCharts } from "@/lib/saved-charts";
 import { toUtc } from "@/lib/time";
 import { createTransits } from "@/lib/transits";
 
@@ -36,6 +37,11 @@ vi.mock("@/lib/places", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/places")>()),
   loadPlaceIndex: vi.fn(),
 }));
+
+// Saved charts live in localStorage, which jsdom keeps between tests.
+beforeEach(() => {
+  localStorage.clear();
+});
 
 async function fillDateTime(): Promise<void> {
   await fireEvent.input(screen.getByLabelText("Date"), {
@@ -567,5 +573,165 @@ describe("App showing transits", () => {
     expect(vi.mocked(createTransits).mock.lastCall?.[1]).toEqual(
       new Date("2026-11-13T20:05:00Z"),
     );
+  });
+});
+
+describe("App with saved charts", () => {
+  const TORONTO = PLACE_INDEX.entries[1].place;
+
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function yourForm() {
+    return within(screen.getByRole("form", { name: "Your birth details" }));
+  }
+
+  function saveAs(name: string): Promise<boolean> {
+    return fireEvent.input(yourForm().getByLabelText("Save as"), {
+      target: { value: name },
+    });
+  }
+
+  it("saves your details under a name, in this browser", async () => {
+    render(App);
+    await fillDateTime();
+    await choosePlace();
+
+    await saveAs("Me");
+    await fireEvent.click(yourForm().getByRole("button", { name: "Save" }));
+
+    expect(yourForm().getByText("Saved “Me”.")).toBeTruthy();
+    expect(yourForm().getByRole("button", { name: "Use Me" })).toBeTruthy();
+    expect(readSavedCharts(localStorage)).toEqual([
+      expect.objectContaining({
+        name: "Me",
+        date: "2000-01-01",
+        time: "12:00",
+        place: expect.objectContaining({ name: "London" }),
+      }),
+    ]);
+  });
+
+  it("saves on Enter without drawing the chart", async () => {
+    render(App);
+    await fillDateTime();
+    await choosePlace();
+    await saveAs("Me");
+
+    // jsdom doesn't submit forms on Enter as browsers do, so check that
+    // the key press was cancelled: fireEvent returns false when it was.
+    const isNotCancelled = await fireEvent.keyDown(
+      yourForm().getByLabelText("Save as"),
+      { key: "Enter" },
+    );
+
+    expect(isNotCancelled).toBe(false);
+    expect(readSavedCharts(localStorage)).toHaveLength(1);
+    expect(createChart).not.toHaveBeenCalled();
+  });
+
+  it("won't save details that aren't complete", async () => {
+    render(App);
+
+    await saveAs("Me");
+    await fireEvent.click(yourForm().getByRole("button", { name: "Save" }));
+
+    expect(yourForm().getByText("Enter both a date and a time.")).toBeTruthy();
+    expect(readSavedCharts(localStorage)).toEqual([]);
+  });
+
+  it("fills in and draws a saved chart", async () => {
+    addSavedChart(localStorage, {
+      name: "Sam",
+      date: "1990-05-15",
+      place: TORONTO,
+    });
+    render(App);
+
+    await fireEvent.click(yourForm().getByRole("button", { name: "Use Sam" }));
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenCalledWith({
+        date: { year: 1990, month: 5, day: 15 },
+        time: undefined,
+        place: TORONTO,
+        houseSystem: HouseSystem.Placidus,
+      }),
+    );
+    expect(yourForm().getByLabelText<HTMLInputElement>("Date").value).toBe(
+      "1990-05-15",
+    );
+    expect(
+      yourForm().getByLabelText<HTMLInputElement>("I don't know the time")
+        .checked,
+    ).toBe(true);
+  });
+
+  it("compares with a saved chart", async () => {
+    addSavedChart(localStorage, {
+      name: "Sam",
+      date: "1990-05-15",
+      time: "14:30",
+      place: TORONTO,
+    });
+    render(App);
+    await fillDateTime();
+    await choosePlace();
+    await submit();
+    await screen.findByRole("heading", { name: CHART_HEADING });
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+
+    const theirs = within(
+      screen.getByRole("form", { name: "Their birth details" }),
+    );
+    await fireEvent.click(theirs.getByRole("button", { name: "Use Sam" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Chart comparison" }),
+    ).toBeTruthy();
+    expect(createChart).toHaveBeenLastCalledWith(
+      expect.objectContaining({ place: TORONTO }),
+    );
+  });
+
+  it("forgets a saved chart", async () => {
+    addSavedChart(localStorage, {
+      name: "Sam",
+      date: "1990-05-15",
+      place: TORONTO,
+    });
+    render(App);
+
+    await fireEvent.click(
+      yourForm().getByRole("button", { name: "Forget Sam" }),
+    );
+
+    expect(yourForm().queryByRole("button", { name: "Use Sam" })).toBeNull();
+    expect(readSavedCharts(localStorage)).toEqual([]);
+  });
+
+  it("explains a browser that blocks storage", () => {
+    vi.spyOn(window, "localStorage", "get").mockImplementation(() => {
+      throw new DOMException("Access denied", "SecurityError");
+    });
+    render(App);
+
+    expect(
+      yourForm().getByText("This browser isn't letting the site save charts."),
+    ).toBeTruthy();
+    expect(
+      yourForm().getByRole<HTMLButtonElement>("button", { name: "Save" })
+        .disabled,
+    ).toBe(true);
   });
 });
