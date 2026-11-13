@@ -1,4 +1,4 @@
-import type { PlacedBody } from "@/lib/chart";
+import type { Chart, PlacedBody } from "@/lib/chart";
 import { formatLongitude, getSign } from "@/lib/zodiac";
 
 const MINUTES_PER_DEGREE = 60;
@@ -41,6 +41,37 @@ export function formatPlacement(placed: PlacedBody): string {
   const uncertainty = otherSign ? ` (may be ${otherSign.name})` : "";
 
   return formatLongitude(placed.longitude) + retrograde + uncertainty;
+}
+
+/** Example: "1 January 2000", in the birthplace's time zone. */
+export function formatBirthDate(chart: Chart): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: chart.details.place.timeZone,
+    dateStyle: "long",
+  }).format(chart.bornAt);
+}
+
+/** Example: "1 January 2000 at 12:00 GMT (12:00 UT)". */
+export function formatBirthMoment(chart: Chart): string {
+  const { timeZone } = chart.details.place;
+  const local = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(chart.bornAt);
+  // en-US knows abbreviations such as "EDT"; elsewhere it gives "GMT+1".
+  const zone = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "short",
+  })
+    .formatToParts(chart.bornAt)
+    .find((part) => part.type === "timeZoneName")?.value;
+  const universal = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    timeStyle: "short",
+  }).format(chart.bornAt);
+
+  return `${local} ${zone ?? ""} (${universal} UT)`;
 }
 
 /** Turns anything thrown into a message fit to show a person. */

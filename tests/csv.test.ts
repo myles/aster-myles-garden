@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { ASPECT_INFO, AspectType } from "@/lib/aspects";
 import { Body, BODY_INFO } from "@/lib/bodies";
-import { buildChartCsv } from "@/lib/csv";
+import { buildChartCsv, buildComparisonCsv } from "@/lib/csv";
+import { compareCharts } from "@/lib/synastry";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 
@@ -73,5 +74,52 @@ describe("buildChartCsv without a birth time", () => {
       `${MARS},10° 00′ Cancer ℞ (may be Leo),,,,`,
       "",
     ]);
+  });
+});
+
+describe("buildComparisonCsv", () => {
+  // Their Sun at 190° squares your Sun and Mars, and sits in your 7th.
+  const theirs = {
+    ...CHART,
+    bodies: [{ ...CHART.bodies[0], longitude: 190, house: 7 }],
+  };
+  const SQUARE = `${ASPECT_INFO[AspectType.Square].glyph} Square`;
+
+  it("lays out both people's positions and the aspects between them", () => {
+    expect(
+      parseLines(buildComparisonCsv(compareCharts(CHART, theirs))),
+    ).toEqual([
+      "Your positions,,,,,Their positions,,,,,Aspects between you,,,",
+      "Body,Position,House,Their house,,Body,Position,House,Your house,," +
+        "Yours,Aspect,Theirs,Orb",
+      `${SUN},10° 00′ Capricorn,10,10,,${SUN},10° 00′ Libra,7,7,,` +
+        `${SUN},${SQUARE},${SUN},0° 00′`,
+      `${MARS},10° 00′ Cancer ℞,4,4,,Ascendant,0° 00′ Aries,,,,` +
+        `${MARS},${SQUARE},${SUN},0° 00′`,
+      "Ascendant,0° 00′ Aries,,,,Midheaven,0° 00′ Capricorn,,,,,,,",
+      "Midheaven,0° 00′ Capricorn,,,,,,,,,,,,",
+      "",
+    ]);
+  });
+
+  it("leaves out houses that need a missing birth time", () => {
+    const lines = parseLines(
+      buildComparisonCsv(compareCharts(CHART_WITHOUT_TIME, theirs)),
+    );
+
+    // You have no houses, so neither your House nor their "Your house".
+    expect(lines[1]).toBe(
+      "Body,Position,Their house,,Body,Position,House,,Yours,Aspect,Theirs,Orb",
+    );
+  });
+
+  it("says so when there are no aspects between you", () => {
+    const apart = {
+      ...CHART,
+      bodies: [{ ...CHART.bodies[0], longitude: 325 }],
+    };
+    const lines = parseLines(buildComparisonCsv(compareCharts(CHART, apart)));
+
+    expect(lines[2]).toMatch(/,,No major aspects between you\.,,,$/);
   });
 });

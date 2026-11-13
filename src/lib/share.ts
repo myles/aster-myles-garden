@@ -26,22 +26,58 @@ const UNKNOWN_TIME_VALUE = "unknown";
 const PLACE_ID_PATTERN = /^[1-9]\d*$/;
 
 /** Form values carried by a share link, as the form's inputs hold them. */
-export type SharedDetails = {
+/** One person's birth details, as the form's inputs hold them. */
+export type SharedPerson = {
   date: string;
   /** Undefined when the birth time isn't known. */
   time?: string;
   placeId: number;
-  houseSystem: HouseSystem;
 };
 
-export function buildShareUrl(details: BirthDetails, siteUrl: string): string {
+/** Form values carried by a share link. */
+export type SharedDetails = SharedPerson & {
+  houseSystem: HouseSystem;
+  /** The second person, when the link is for a comparison. */
+  comparedWith?: SharedPerson;
+};
+
+/** How a person's fields are named in a link and in its errors. */
+type PersonParams = {
+  suffix: string;
+  subject: string;
+  possessive: string;
+};
+
+const FIRST_PERSON: PersonParams = {
+  suffix: "",
+  subject: "The link",
+  possessive: "The link's",
+};
+
+/** A comparison's second person: "date2", "time2" and "place2". */
+const SECOND_PERSON: PersonParams = {
+  suffix: "2",
+  subject: "The link's second chart",
+  possessive: "The second chart's",
+};
+
+/**
+ * Builds a link that reopens a chart, or a comparison when `comparedWith`
+ * is given. The house system is shared by both charts.
+ */
+export function buildShareUrl(
+  details: BirthDetails,
+  siteUrl: string,
+  comparedWith?: BirthDetails,
+): string {
   const url = new URL("/", siteUrl);
-  const params = new URLSearchParams({
-    [DATE_PARAM]: formatDate(details.date),
-    [TIME_PARAM]: details.time ? formatTime(details.time) : UNKNOWN_TIME_VALUE,
-    [PLACE_PARAM]: String(details.place.id),
-    [HOUSE_PARAM]: details.houseSystem,
-  });
+  const params = new URLSearchParams();
+
+  writePerson(params, details, FIRST_PERSON);
+  params.set(HOUSE_PARAM, details.houseSystem);
+  if (comparedWith) {
+    writePerson(params, comparedWith, SECOND_PERSON);
+  }
 
   // ":" is safe in a hash; leaving it bare keeps "12:00" readable.
   url.hash = params.toString().replaceAll("%3A", ":");
@@ -56,17 +92,51 @@ export function buildShareUrl(details: BirthDetails, siteUrl: string): string {
  */
 export function parseShareHash(hash: string): SharedDetails | undefined {
   const params = new URLSearchParams(hash.replace(/^#/, ""));
-  const date = params.get(DATE_PARAM);
-  const time = params.get(TIME_PARAM);
-  const place = params.get(PLACE_PARAM);
+  const person = readPerson(params, FIRST_PERSON);
+
+  if (!person) {
+    return undefined;
+  }
+
   const house = params.get(HOUSE_PARAM) ?? DEFAULT_HOUSE_SYSTEM;
+  if (!isHouseSystem(house)) {
+    throw new Error(`The link's house system isn't known: "${house}".`);
+  }
+
+  return {
+    ...person,
+    houseSystem: house,
+    comparedWith: readPerson(params, SECOND_PERSON),
+  };
+}
+
+function writePerson(
+  params: URLSearchParams,
+  details: BirthDetails,
+  person: PersonParams,
+): void {
+  const time = details.time ? formatTime(details.time) : UNKNOWN_TIME_VALUE;
+
+  params.set(DATE_PARAM + person.suffix, formatDate(details.date));
+  params.set(TIME_PARAM + person.suffix, time);
+  params.set(PLACE_PARAM + person.suffix, String(details.place.id));
+}
+
+/** Undefined when the link has none of this person's fields. */
+function readPerson(
+  params: URLSearchParams,
+  person: PersonParams,
+): SharedPerson | undefined {
+  const date = params.get(DATE_PARAM + person.suffix);
+  const time = params.get(TIME_PARAM + person.suffix);
+  const place = params.get(PLACE_PARAM + person.suffix);
 
   if (date === null && time === null && place === null) {
     return undefined;
   }
 
   if (date === null || time === null || place === null) {
-    throw new Error("The link is missing its date, time or place.");
+    throw new Error(`${person.subject} is missing its date, time or place.`);
   }
 
   const isTimeUnknown = time === UNKNOWN_TIME_VALUE;
@@ -78,18 +148,13 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
   }
 
   if (!PLACE_ID_PATTERN.test(place)) {
-    throw new Error(`The link's place isn't valid: "${place}".`);
-  }
-
-  if (!isHouseSystem(house)) {
-    throw new Error(`The link's house system isn't known: "${house}".`);
+    throw new Error(`${person.possessive} place isn't valid: "${place}".`);
   }
 
   return {
     date,
     time: isTimeUnknown ? undefined : time,
     placeId: Number(place),
-    houseSystem: house,
   };
 }
 

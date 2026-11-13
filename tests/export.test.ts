@@ -3,7 +3,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ExportFormat, exportTables, exportWheel } from "@/lib/export";
-import { drawWheel } from "@/lib/wheel";
+import { compareCharts } from "@/lib/synastry";
+import { drawBiWheel, drawWheel } from "@/lib/wheel";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 
@@ -178,5 +179,36 @@ describe("exportWheel", () => {
     expect(await downloads[0].blob.text()).toContain(
       "Body,Position,House,,Pair,Aspect,Orb",
     );
+  });
+
+  it("names a comparison after both charts", async () => {
+    const synastry = compareCharts(CHART, CHART_WITHOUT_TIME);
+
+    await exportWheel(svg, CHART, ExportFormat.Svg, synastry);
+
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-and-london-2000-01-01.svg",
+    );
+  });
+
+  it("downloads a comparison's tables as CSV", async () => {
+    exportTables(CHART, compareCharts(CHART, CHART));
+
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-and-london-2000-01-01-1200.csv",
+    );
+    expect(await downloads[0].blob.text()).toContain("Aspects between you");
+  });
+
+  it("sizes a bi-wheel's file and backdrop to its wider view", async () => {
+    drawBiWheel(svg, compareCharts(CHART, CHART));
+
+    await exportWheel(svg, CHART, ExportFormat.Svg);
+    const file = await parseSvgDownload();
+
+    expect(file.getAttribute("width")).toBe("780");
+    const backdrop = file.querySelector(":scope > rect");
+    expect(backdrop?.getAttribute("x")).toBe("-90");
+    expect(backdrop?.getAttribute("width")).toBe("780");
   });
 });

@@ -75,6 +75,7 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 3. The chart is calculated and drawn as an SVG wheel.
 4. Adjust the house system if you'd like a different one.
 5. Press **Copy link** to share the chart. The link carries the date, time, GeoNames place ID and house system in its `#` fragment, which browsers never send to the server, and opening it fills in the form and draws the same chart.
+6. Press **Compare with someone else** under the form to add a second person. The chart becomes a bi-wheel, with their planets outside the zodiac, plus the aspects between you and where each person's planets fall in the other's houses.
 
 ## Roadmap
 

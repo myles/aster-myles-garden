@@ -87,3 +87,53 @@ describe("parseShareHash", () => {
     expect(() => parseShareHash(search)).toThrow(message);
   });
 });
+
+describe("share links for a comparison", () => {
+  const THEIRS = {
+    ...CHART_WITHOUT_TIME.details,
+    date: { year: 1990, month: 5, day: 15 },
+  };
+
+  it("adds the second chart's date, time and place", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, THEIRS);
+
+    expect(url).toBe(
+      "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
+        "&place=2643743&house=equal" +
+        "&date2=1990-05-15&time2=unknown&place2=2643743",
+    );
+  });
+
+  it("reads both charts back", () => {
+    const { hash } = new URL(buildShareUrl(CHART.details, SITE_URL, THEIRS));
+
+    expect(parseShareHash(hash)).toEqual({
+      date: "2000-01-01",
+      time: "12:00",
+      placeId: 2643743,
+      houseSystem: HouseSystem.Equal,
+      comparedWith: { date: "1990-05-15", time: undefined, placeId: 2643743 },
+    });
+  });
+
+  it("has no second chart in a single chart's link", () => {
+    const shared = parseShareHash("#date=2000-01-01&time=12:00&place=1");
+    expect(shared?.comparedWith).toBeUndefined();
+  });
+
+  it.each([
+    [
+      "a second chart missing its place",
+      "#date=2000-01-01&time=12:00&place=1&date2=1990-05-15&time2=12:00",
+      "second chart is missing",
+    ],
+    [
+      "a second chart with a bad place",
+      "#date=2000-01-01&time=12:00&place=1" +
+        "&date2=1990-05-15&time2=12:00&place2=x",
+      "second chart's place",
+    ],
+  ])("rejects %s", (_, hash, message) => {
+    expect(() => parseShareHash(hash)).toThrow(message);
+  });
+});

@@ -3,8 +3,14 @@
   import type { Chart } from "@/lib/chart";
   import { ExportFormat, exportTables, exportWheel } from "@/lib/export";
   import { describeError } from "@/lib/format";
+  import type { Synastry } from "@/lib/synastry";
 
-  let { chart, wheel }: { chart: Chart; wheel?: SVGSVGElement } = $props();
+  // With a synastry, the downloads cover the whole comparison.
+  let {
+    chart,
+    synastry,
+    wheel,
+  }: { chart: Chart; synastry?: Synastry; wheel?: SVGSVGElement } = $props();
 
   let error = $state("");
   let isExporting = $state(false);
@@ -32,7 +38,7 @@
     if (!wheel) {
       throw new Error("The wheel hasn't been drawn yet.");
     }
-    return exportWheel(wheel, chart, format);
+    return exportWheel(wheel, chart, format, synastry);
   }
 </script>
 
@@ -95,7 +101,7 @@
           class={buttonClass}
           aria-label="Download tables as CSV"
           disabled={isExporting}
-          onclick={() => download(() => exportTables(chart))}
+          onclick={() => download(() => exportTables(chart, synastry))}
         >
           {@render downloadIcon()} CSV
         </button>

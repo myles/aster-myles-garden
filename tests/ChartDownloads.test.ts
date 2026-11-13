@@ -34,7 +34,7 @@ describe("ChartDownloads", () => {
     await press(name);
 
     const wheel = document.querySelector("svg.wheel");
-    expect(exportWheel).toHaveBeenCalledWith(wheel, CHART, format);
+    expect(exportWheel).toHaveBeenCalledWith(wheel, CHART, format, undefined);
   });
 
   it("exports the tables as CSV", async () => {
@@ -42,7 +42,7 @@ describe("ChartDownloads", () => {
 
     await press("Download tables as CSV");
 
-    expect(exportTables).toHaveBeenCalledWith(CHART);
+    expect(exportTables).toHaveBeenCalledWith(CHART, undefined);
   });
 
   it("groups the buttons by what they save", () => {

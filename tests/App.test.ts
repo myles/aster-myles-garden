@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from "@testing-library/svelte";
+import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "@/components/App.svelte";
@@ -269,5 +269,183 @@ describe("App opened from a share link", () => {
       ),
     );
     expect(createChart).not.toHaveBeenCalled();
+  });
+});
+
+describe("App comparing two charts", () => {
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  function theirForm(): HTMLElement {
+    return screen.getByRole("form", { name: "Their birth details" });
+  }
+
+  async function drawYourChart(): Promise<void> {
+    await fillDateTime();
+    await choosePlace();
+    await submit();
+    await screen.findByRole("heading", { name: CHART_HEADING });
+  }
+
+  async function fillTheirForm(): Promise<void> {
+    const form = within(theirForm());
+    await fireEvent.input(form.getByLabelText("Date"), {
+      target: { value: "1990-05-15" },
+    });
+    await fireEvent.input(form.getByLabelText("Time"), {
+      target: { value: "14:30" },
+    });
+
+    const place = form.getByLabelText("Place");
+    await fireEvent.focus(place);
+    await fireEvent.input(place, { target: { value: "toronto" } });
+    await fireEvent.keyDown(place, { key: "Enter" });
+  }
+
+  function pressCompare(): Promise<boolean> {
+    return fireEvent.click(
+      within(theirForm()).getByRole("button", { name: "Compare charts" }),
+    );
+  }
+
+  it("offers a comparison only once your chart is drawn", async () => {
+    render(App);
+    const compare = () =>
+      screen.queryByRole("button", { name: "Compare with someone else" });
+
+    expect(compare()).toBeNull();
+
+    await drawYourChart();
+
+    expect(compare()).toBeTruthy();
+  });
+
+  it("opens their form below yours, ready to type", async () => {
+    render(App);
+    await drawYourChart();
+
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+
+    expect(theirForm()).toBeTruthy();
+    await vi.waitFor(() =>
+      expect(document.activeElement?.id).toBe("compare-date"),
+    );
+  });
+
+  it("draws the comparison with your house system", async () => {
+    render(App);
+    await drawYourChart();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+
+    await fillTheirForm();
+    await pressCompare();
+
+    expect(
+      await screen.findByRole("heading", { name: "Chart comparison" }),
+    ).toBeTruthy();
+    expect(createChart).toHaveBeenLastCalledWith({
+      date: { year: 1990, month: 5, day: 15 },
+      time: { hour: 14, minute: 30 },
+      place: expect.objectContaining({ name: "Toronto" }),
+      houseSystem: HouseSystem.Placidus,
+    });
+    expect(
+      screen.getByRole("img", { name: "Chart comparison wheel" }),
+    ).toBeTruthy();
+    expect(
+      screen.getByRole("heading", { name: "Aspects between you" }),
+    ).toBeTruthy();
+  });
+
+  it("explains a problem in their form beside it", async () => {
+    render(App);
+    await drawYourChart();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+
+    await pressCompare();
+
+    expect(within(theirForm()).getByRole("alert").textContent).toContain(
+      "Enter both a date and a time.",
+    );
+  });
+
+  it("goes back to your chart when you stop comparing", async () => {
+    render(App);
+    await drawYourChart();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+    await fillTheirForm();
+    await pressCompare();
+    await screen.findByRole("heading", { name: "Chart comparison" });
+
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Stop comparing" }),
+    );
+
+    expect(
+      screen.queryByRole("form", { name: "Their birth details" }),
+    ).toBeNull();
+    expect(screen.getByRole("heading", { name: CHART_HEADING })).toBeTruthy();
+  });
+
+  it("redraws both charts when the house system changes", async () => {
+    render(App);
+    await drawYourChart();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+    await fillTheirForm();
+    await pressCompare();
+    await screen.findByRole("heading", { name: "Chart comparison" });
+    vi.mocked(createChart).mockClear();
+
+    await fireEvent.change(screen.getByLabelText("House system"), {
+      target: { value: HouseSystem.Koch },
+    });
+
+    await vi.waitFor(() => expect(createChart).toHaveBeenCalledTimes(2));
+    for (const [details] of vi.mocked(createChart).mock.calls) {
+      expect(details.houseSystem).toBe(HouseSystem.Koch);
+    }
+  });
+
+  it("opens a comparison from a share link", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/#date=2000-01-01&time=12:00&place=2643743&house=koch" +
+        "&date2=1990-05-15&time2=unknown&place2=6167865",
+    );
+    render(App);
+
+    expect(
+      await screen.findByRole("heading", { name: "Chart comparison" }),
+    ).toBeTruthy();
+    expect(createChart).toHaveBeenLastCalledWith({
+      date: { year: 1990, month: 5, day: 15 },
+      time: undefined,
+      place: expect.objectContaining({ name: "Toronto" }),
+      houseSystem: HouseSystem.Koch,
+    });
+    expect(
+      within(theirForm()).getByLabelText<HTMLInputElement>(
+        "I don't know the time",
+      ).checked,
+    ).toBe(true);
   });
 });

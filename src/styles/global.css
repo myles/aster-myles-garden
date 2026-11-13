@@ -200,6 +200,15 @@ body {
   fill: var(--challenging);
 }
 
+/* The bi-wheel's second chart, on the ring outside the zodiac. */
+.wheel-body--outer .wheel-body-glyph {
+  fill: var(--accent);
+}
+
+.wheel-body--outer .wheel-body-pointer {
+  stroke: var(--accent);
+}
+
 .wheel-aspect {
   stroke-width: 1;
   stroke-opacity: 0.75;

@@ -31,6 +31,16 @@ With `time=unknown`, Aster casts the chart for local noon and leaves out the hou
 https://aster.myles.garden/#date=1990-05-15&time=unknown&place=6167865
 ```
 
+### Comparing two charts
+
+Add a second person with `date2`, `time2` and `place2`, in the same formats as `date`, `time` and `place`. The page then draws a comparison: a bi-wheel with the first chart inside and the second outside, the aspects between the two charts, and where each person's planets fall in the other's houses. Both charts use `house`.
+
+```
+https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&date2=1988-11-02&time2=unknown&place2=2643743
+```
+
+That link compares someone born in Toronto at 2:30 pm on 15 May 1990 with someone born in London on 2 November 1988 at an unknown time.
+
 ## Finding a place's GeoNames ID
 
 Aster knows the cities in GeoNames' `cities15000` list: places with a population over 15,000. For a smaller town, use the nearest city in the list.
@@ -53,6 +63,7 @@ Some common IDs:
 - A Positions table: each body's sign, degree, retrograde status and house, plus the Ascendant and Midheaven. Without a birth time, houses and angles are left out.
 - An Aspects table: each major aspect between two bodies, with its orb.
 - Downloads of the wheel as SVG or PNG and of both tables as CSV, and a Copy link button that produces a link in the format above.
+- In a comparison: the bi-wheel, an Aspects between you table, and each person's positions with a column for the house it falls in on the other person's chart.
 
 ## More
 

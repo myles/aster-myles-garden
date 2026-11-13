@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   describeError,
+  formatBirthDate,
+  formatBirthMoment,
   formatCoordinates,
   formatDegrees,
   formatPlacement,
@@ -51,6 +53,20 @@ describe("formatPlacement", () => {
 
   it("adds nothing when the sign is certain", () => {
     expect(formatPlacement(sunWithoutTime)).toBe("10° 00′ Capricorn");
+  });
+});
+
+describe("formatBirthDate", () => {
+  it("gives the date in the birthplace's time zone", () => {
+    expect(formatBirthDate(CHART)).toBe("1 January 2000");
+  });
+});
+
+describe("formatBirthMoment", () => {
+  it("gives local time, zone and universal time", () => {
+    expect(formatBirthMoment(CHART)).toBe(
+      "1 January 2000 at 12:00 GMT (12:00 UT)",
+    );
   });
 });
 

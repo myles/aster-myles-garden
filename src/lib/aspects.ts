@@ -91,9 +91,7 @@ function matchAspect(separation: number): AspectMatch | undefined {
  * the lunar node are left out to keep the wheel readable.
  */
 export function findAspects(positions: BodyPosition[]): Aspect[] {
-  const planets = positions.filter(
-    (position) => BODY_INFO[position.body].kind === BodyKind.Planet,
-  );
+  const planets = selectPlanets(positions);
   const aspects: Aspect[] = [];
 
   for (let i = 0; i < planets.length; i++) {
@@ -117,4 +115,39 @@ export function findAspects(positions: BodyPosition[]): Aspect[] {
   }
 
   return aspects.sort((a, b) => a.orbDegrees - b.orbDegrees);
+}
+
+/**
+ * Finds the major aspects between two charts' planets, tightest first.
+ * Each aspect's first body comes from `firstChart` and its second from
+ * `secondChart`, so a body can aspect its own counterpart (Sun–Sun).
+ */
+export function findAspectsBetween(
+  firstChart: BodyPosition[],
+  secondChart: BodyPosition[],
+): Aspect[] {
+  const aspects: Aspect[] = [];
+
+  for (const first of selectPlanets(firstChart)) {
+    for (const second of selectPlanets(secondChart)) {
+      const match = matchAspect(
+        separateDegrees(first.longitude, second.longitude),
+      );
+
+      if (!match) {
+        continue;
+      }
+
+      aspects.push({ first: first.body, second: second.body, ...match });
+    }
+  }
+
+  return aspects.sort((a, b) => a.orbDegrees - b.orbDegrees);
+}
+
+/** Points such as the lunar node are left out to keep the wheel readable. */
+function selectPlanets(positions: BodyPosition[]): BodyPosition[] {
+  return positions.filter(
+    (position) => BODY_INFO[position.body].kind === BodyKind.Planet,
+  );
 }

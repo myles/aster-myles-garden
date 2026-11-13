@@ -9,9 +9,16 @@
     type PlaceIndex,
   } from "@/lib/places";
 
-  const OPTION_ID_PREFIX = "place-option-";
+  // id is the input's; the list, status and options derive theirs from it,
+  // so two pickers can share a page.
+  let {
+    id = "birth-place",
+    selected = $bindable(),
+  }: { id?: string; selected?: Place } = $props();
 
-  let { selected = $bindable() }: { selected?: Place } = $props();
+  const optionsId = $derived(`${id}-options`);
+  const statusId = $derived(`${id}-status`);
+  const optionIdPrefix = $derived(`${id}-option-`);
 
   let index: PlaceIndex | undefined;
   let query = $state("");
@@ -21,7 +28,7 @@
 
   const isOpen = $derived(results.length > 0);
   const activeId = $derived(
-    activeIndex < 0 ? undefined : `${OPTION_ID_PREFIX}${activeIndex}`,
+    activeIndex < 0 ? undefined : `${optionIdPrefix}${activeIndex}`,
   );
 
   $effect(() => {
@@ -138,9 +145,9 @@
 </script>
 
 <div class="relative flex flex-col gap-1.5">
-  <label for="birth-place" class="text-sm font-medium">Place</label>
+  <label for={id} class="text-sm font-medium">Place</label>
   <input
-    id="birth-place"
+    {id}
     name="place"
     type="text"
     required
@@ -150,9 +157,9 @@
     role="combobox"
     aria-autocomplete="list"
     aria-expanded={String(isOpen)}
-    aria-controls="place-options"
+    aria-controls={optionsId}
     aria-activedescendant={activeId}
-    aria-describedby="place-status"
+    aria-describedby={statusId}
     class="border-rule bg-paper rounded border px-3 py-2"
     value={query}
     onfocus={loadIndex}
@@ -161,7 +168,7 @@
     onblur={close}
   />
   <ul
-    id="place-options"
+    id={optionsId}
     role="listbox"
     aria-label="Matching places"
     hidden={!isOpen}
@@ -169,7 +176,7 @@
   >
     {#each results as place, optionIndex (optionIndex)}
       <li
-        id={`${OPTION_ID_PREFIX}${optionIndex}`}
+        id={`${optionIdPrefix}${optionIndex}`}
         role="option"
         aria-selected={String(optionIndex === activeIndex)}
         class="aria-selected:bg-accent/15 cursor-pointer px-3 py-1.5 text-sm"
@@ -179,7 +186,7 @@
       </li>
     {/each}
   </ul>
-  <p id="place-status" class="text-ink-muted text-xs" aria-live="polite">
+  <p id={statusId} class="text-ink-muted text-xs" aria-live="polite">
     {status}
   </p>
 </div>

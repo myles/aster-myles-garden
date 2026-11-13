@@ -1,12 +1,16 @@
 // Renders a chart as an SVG wheel with D3. Geometry is computed as plain
 // data first, then joined to the DOM, so redrawing a chart updates the
 // existing elements in place. Colours come from CSS classes.
+//
+// A bi-wheel compares two charts: the first inside the zodiac as usual,
+// the second on a ring outside it, with aspects between the two.
 
-import { ASPECT_INFO } from "@/lib/aspects";
+import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
 import type { Chart, PlacedBody } from "@/lib/chart";
 import type { HousePositions } from "@/lib/ephemeris";
 import { HOUSE_COUNT } from "@/lib/houses";
+import type { Synastry } from "@/lib/synastry";
 import {
   DEGREES_PER_CIRCLE,
   DEGREES_PER_SIGN,
@@ -16,7 +20,7 @@ import {
 import { select, type Selection } from "d3-selection";
 import { arc } from "d3-shape";
 
-export const WHEEL_SIZE_PX = 600;
+const WHEEL_SIZE_PX = 600;
 const CENTRE_PX = WHEEL_SIZE_PX / 2;
 
 const ZODIAC_OUTER_RADIUS_PX = 290;
@@ -35,6 +39,14 @@ const ASPECT_RADIUS_PX = 124;
 const ANGLE_LABEL_RADIUS_PX = 164;
 const ANGLE_LABEL_OFFSET_DEGREES = 4;
 
+// The bi-wheel's outer ring, outside the zodiac. Its viewBox grows by a
+// margin on every side so the inner wheel's geometry stays the same.
+const OUTER_BODY_GLYPH_RADIUS_PX = 322;
+const OUTER_BODY_DEGREE_RADIUS_PX = 348;
+const OUTER_BODY_RETROGRADE_RADIUS_PX = 364;
+const OUTER_RING_RADIUS_PX = 378;
+const BI_WHEEL_MARGIN_PX = 90;
+
 const MAJOR_TICK_INTERVAL_DEGREES = 5;
 
 /** Where a natal chart without an ascendant starts: 0° Aries. */
@@ -47,6 +59,8 @@ const SPREAD_ITERATIONS = 60;
 const COORDINATE_DECIMALS = 2;
 
 const WHEEL_TITLE_ID = "wheel-title";
+const WHEEL_TITLE = "Natal chart wheel";
+const BI_WHEEL_TITLE = "Chart comparison wheel";
 
 /** Paint order, back to front. Each layer is one <g>. */
 const LAYERS = [
@@ -58,6 +72,7 @@ const LAYERS = [
   "axes",
   "aspects",
   "bodies",
+  "outer-bodies",
 ] as const;
 
 type Layer = (typeof LAYERS)[number];
@@ -66,6 +81,43 @@ type Point = { x: number; y: number };
 type Segment = { from: Point; to: Point; className: string };
 type Label = { at: Point; text: string; className: string };
 type Ring = { radius: number; className: string };
+
+/** Where a chart's bodies sit: inside the zodiac, or outside it. */
+type BodyRing = {
+  /** The zodiac edge each body's pointer starts from. */
+  edgeRadius: number;
+  pointerEndRadius: number;
+  glyphRadius: number;
+  /** Where the leader from the pointer stops, just short of the glyph. */
+  leaderEndRadius: number;
+  degreeRadius: number;
+  retrogradeRadius: number;
+  className: string;
+  /** Prefixed to each body's tooltip, e.g. "Them: " → "Them: Venus". */
+  titlePrefix: string;
+};
+
+const INNER_BODY_RING: BodyRing = {
+  edgeRadius: ZODIAC_INNER_RADIUS_PX,
+  pointerEndRadius: ZODIAC_INNER_RADIUS_PX - BODY_POINTER_LENGTH_PX,
+  glyphRadius: BODY_GLYPH_RADIUS_PX,
+  leaderEndRadius: BODY_GLYPH_RADIUS_PX + BODY_LEADER_GAP_PX,
+  degreeRadius: BODY_DEGREE_RADIUS_PX,
+  retrogradeRadius: BODY_RETROGRADE_RADIUS_PX,
+  className: "wheel-body",
+  titlePrefix: "",
+};
+
+const OUTER_BODY_RING: BodyRing = {
+  edgeRadius: ZODIAC_OUTER_RADIUS_PX,
+  pointerEndRadius: ZODIAC_OUTER_RADIUS_PX + BODY_POINTER_LENGTH_PX,
+  glyphRadius: OUTER_BODY_GLYPH_RADIUS_PX,
+  leaderEndRadius: OUTER_BODY_GLYPH_RADIUS_PX - BODY_LEADER_GAP_PX,
+  degreeRadius: OUTER_BODY_DEGREE_RADIUS_PX,
+  retrogradeRadius: OUTER_BODY_RETROGRADE_RADIUS_PX,
+  className: "wheel-body wheel-body--outer",
+  titlePrefix: "Them: ",
+};
 
 type BodyMark = {
   key: string;
@@ -311,25 +363,22 @@ function measureBody(
   body: PlacedBody,
   displayLongitude: number,
   ascendant: number,
+  ring: BodyRing,
 ): BodyMark {
   const info = BODY_INFO[body.body];
   const degreeInSign = Math.floor(
     normalizeDegrees(body.longitude) % DEGREES_PER_SIGN,
   );
-  const pointerEnd = project(
-    body.longitude,
-    ascendant,
-    ZODIAC_INNER_RADIUS_PX - BODY_POINTER_LENGTH_PX,
-  );
+  const pointerEnd = project(body.longitude, ascendant, ring.pointerEndRadius);
 
   const labels: Label[] = [
     {
-      at: project(displayLongitude, ascendant, BODY_GLYPH_RADIUS_PX),
+      at: project(displayLongitude, ascendant, ring.glyphRadius),
       text: info.glyph,
       className: "wheel-body-glyph",
     },
     {
-      at: project(displayLongitude, ascendant, BODY_DEGREE_RADIUS_PX),
+      at: project(displayLongitude, ascendant, ring.degreeRadius),
       text: `${degreeInSign}°`,
       className: "wheel-body-degree",
     },
@@ -337,7 +386,7 @@ function measureBody(
 
   if (body.isRetrograde) {
     labels.push({
-      at: project(displayLongitude, ascendant, BODY_RETROGRADE_RADIUS_PX),
+      at: project(displayLongitude, ascendant, ring.retrogradeRadius),
       text: "℞",
       className: "wheel-body-retrograde",
     });
@@ -345,20 +394,16 @@ function measureBody(
 
   return {
     key: body.body,
-    name: info.name,
+    name: ring.titlePrefix + info.name,
     segments: [
       {
-        from: project(body.longitude, ascendant, ZODIAC_INNER_RADIUS_PX),
+        from: project(body.longitude, ascendant, ring.edgeRadius),
         to: pointerEnd,
         className: "wheel-body-pointer",
       },
       {
         from: pointerEnd,
-        to: project(
-          displayLongitude,
-          ascendant,
-          BODY_GLYPH_RADIUS_PX + BODY_LEADER_GAP_PX,
-        ),
+        to: project(displayLongitude, ascendant, ring.leaderEndRadius),
         className: "wheel-body-leader",
       },
     ],
@@ -366,10 +411,15 @@ function measureBody(
   };
 }
 
-function drawBodies(parent: Parent, chart: Chart, ascendant: number): void {
-  const display = spreadLongitudes(chart.bodies.map((b) => b.longitude));
-  const marks = chart.bodies.map((body, index) =>
-    measureBody(body, display[index], ascendant),
+function drawBodies(
+  parent: Parent,
+  bodies: PlacedBody[],
+  ascendant: number,
+  ring: BodyRing,
+): void {
+  const display = spreadLongitudes(bodies.map((b) => b.longitude));
+  const marks = bodies.map((body, index) =>
+    measureBody(body, display[index], ascendant, ring),
   );
 
   // Keyed by body so each <g> follows its body across redraws.
@@ -377,7 +427,7 @@ function drawBodies(parent: Parent, chart: Chart, ascendant: number): void {
     .selectAll<SVGGElement, BodyMark>("g.wheel-body")
     .data(marks, (d) => d.key)
     .join("g")
-    .attr("class", "wheel-body")
+    .attr("class", ring.className)
     .each(function (mark) {
       const group: Parent = select(this);
       group
@@ -390,16 +440,35 @@ function drawBodies(parent: Parent, chart: Chart, ascendant: number): void {
     });
 }
 
-function measureAspects(chart: Chart, ascendant: number): Segment[] {
-  const longitudes = new Map(
-    chart.bodies.map((body) => [body.body, body.longitude]),
-  );
+/**
+ * Lines across the centre for each aspect. An aspect's first body is
+ * looked up in `firstBodies` and its second in `secondBodies`, which are
+ * the same list on a single chart and different charts on a bi-wheel.
+ */
+function measureAspects(
+  aspects: Aspect[],
+  firstBodies: PlacedBody[],
+  secondBodies: PlacedBody[],
+  ascendant: number,
+): Segment[] {
+  const toLongitudes = (bodies: PlacedBody[]) =>
+    new Map(bodies.map((body) => [body.body, body.longitude]));
+  const firstLongitudes = toLongitudes(firstBodies);
+  const secondLongitudes = toLongitudes(secondBodies);
 
-  return chart.aspects
+  return aspects
     .filter((aspect) => ASPECT_INFO[aspect.type].angleDegrees > 0)
     .map((aspect) => ({
-      from: project(longitudes.get(aspect.first)!, ascendant, ASPECT_RADIUS_PX),
-      to: project(longitudes.get(aspect.second)!, ascendant, ASPECT_RADIUS_PX),
+      from: project(
+        firstLongitudes.get(aspect.first)!,
+        ascendant,
+        ASPECT_RADIUS_PX,
+      ),
+      to: project(
+        secondLongitudes.get(aspect.second)!,
+        ascendant,
+        ASPECT_RADIUS_PX,
+      ),
       className: `wheel-aspect wheel-aspect--${ASPECT_INFO[aspect.type].quality}`,
     }));
 }
@@ -417,13 +486,32 @@ function selectLayer(svg: Parent, layer: Layer): Parent {
  * new chart: existing elements are updated rather than duplicated.
  */
 export function drawWheel(element: SVGSVGElement, chart: Chart): void {
+  render(element, chart, undefined);
+}
+
+/**
+ * Draws a bi-wheel comparing two charts: the first inside, in its own
+ * houses, and the second on an outer ring. The centre shows the aspects
+ * between them. Safe to call on an <svg> that held either kind of wheel.
+ */
+export function drawBiWheel(element: SVGSVGElement, synastry: Synastry): void {
+  render(element, synastry.first, synastry);
+}
+
+function render(
+  element: SVGSVGElement,
+  chart: Chart,
+  synastry: Synastry | undefined,
+): void {
   // Without a birth time there's no ascendant, so the wheel starts at
   // 0° Aries instead, as a natural chart does.
   const ascendant = chart.houses?.ascendant ?? NATURAL_WHEEL_START_DEGREES;
+  const margin = synastry ? BI_WHEEL_MARGIN_PX : 0;
+  const size = WHEEL_SIZE_PX + margin * 2;
   const svg: Parent = select(element);
 
   svg
-    .attr("viewBox", `0 0 ${WHEEL_SIZE_PX} ${WHEEL_SIZE_PX}`)
+    .attr("viewBox", `${-margin} ${-margin} ${size} ${size}`)
     .attr("class", "wheel")
     .attr("role", "img")
     .attr("aria-labelledby", WHEEL_TITLE_ID);
@@ -431,7 +519,7 @@ export function drawWheel(element: SVGSVGElement, chart: Chart): void {
   // :scope keeps this from matching the bodies' own <title> elements.
   svg
     .selectAll(":scope > title")
-    .data(["Natal chart wheel"])
+    .data([synastry ? BI_WHEEL_TITLE : WHEEL_TITLE])
     .join("title")
     .attr("id", WHEEL_TITLE_ID)
     .text((d) => d);
@@ -441,7 +529,17 @@ export function drawWheel(element: SVGSVGElement, chart: Chart): void {
     LAYERS.map((layer) => [layer, selectLayer(svg, layer)]),
   ) as Record<Layer, Parent>;
 
+  const outerRings: Ring[] = synastry
+    ? [
+        {
+          radius: OUTER_RING_RADIUS_PX,
+          className: "wheel-ring wheel-ring--faint",
+        },
+      ]
+    : [];
+
   joinRings(layers["outer-ring"], [
+    ...outerRings,
     { radius: ZODIAC_OUTER_RADIUS_PX, className: "wheel-ring" },
   ]);
   drawSigns(layers.signs, ascendant);
@@ -453,6 +551,22 @@ export function drawWheel(element: SVGSVGElement, chart: Chart): void {
   ]);
   drawHouses(layers.houses, chart.houses);
   drawAxes(layers.axes, chart.houses);
-  joinLines(layers.aspects, measureAspects(chart, ascendant));
-  drawBodies(layers.bodies, chart, ascendant);
+  joinLines(
+    layers.aspects,
+    synastry
+      ? measureAspects(
+          synastry.aspects,
+          chart.bodies,
+          synastry.second.bodies,
+          ascendant,
+        )
+      : measureAspects(chart.aspects, chart.bodies, chart.bodies, ascendant),
+  );
+  drawBodies(layers.bodies, chart.bodies, ascendant, INNER_BODY_RING);
+  drawBodies(
+    layers["outer-bodies"],
+    synastry?.second.bodies ?? [],
+    ascendant,
+    OUTER_BODY_RING,
+  );
 }

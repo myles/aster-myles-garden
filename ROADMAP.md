@@ -10,10 +10,10 @@
 - [x] Export chart as PNG/SVG
 - [x] Shareable chart links
 - [x] Unknown birth time: a noon chart without houses or angles, noting any body that changed sign that day
+- [x] Compare two birth charts: a bi-wheel, the aspects between them, and house overlays both ways
 
 ## Charts
 
-- [ ] Compare two birth charts
 - [ ] Transits: today's sky laid over the natal chart.
 - [ ] Composite and solar return charts
 - [ ] Chiron, Lilith and the South Node

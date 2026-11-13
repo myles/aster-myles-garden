@@ -1,0 +1,88 @@
+// @vitest-environment jsdom
+
+import { fireEvent, render, screen, within } from "@testing-library/svelte";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import ComparisonView from "@/components/ComparisonView.svelte";
+import { compareCharts } from "@/lib/synastry";
+
+import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+
+// Their Sun at 190° squares your Sun and Mars.
+const THEIRS = {
+  ...CHART,
+  bodies: [{ ...CHART.bodies[0], longitude: 190, house: 7 }],
+};
+
+function table(name: string): HTMLElement {
+  const heading = screen.getByRole("heading", { name });
+  return heading.parentElement!.querySelector("table")!;
+}
+
+describe("ComparisonView", () => {
+  beforeEach(() => {
+    vi.stubGlobal("navigator", {
+      clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("draws a bi-wheel", () => {
+    render(ComparisonView, { synastry: compareCharts(CHART, THEIRS) });
+
+    expect(
+      screen.getByRole("img", { name: "Chart comparison wheel" }),
+    ).toBeTruthy();
+  });
+
+  it("lists the aspects between you", () => {
+    render(ComparisonView, { synastry: compareCharts(CHART, THEIRS) });
+
+    const rows = within(table("Aspects between you")).getAllByRole("row");
+    expect(rows).toHaveLength(1 + 2);
+    expect(rows[1].textContent).toContain("Square");
+  });
+
+  it("places each person's planets in the other's houses", () => {
+    render(ComparisonView, { synastry: compareCharts(CHART, THEIRS) });
+
+    expect(
+      within(table("Your positions")).getByRole("columnheader", {
+        name: "Their house",
+      }),
+    ).toBeTruthy();
+    expect(
+      within(table("Their positions")).getByRole("columnheader", {
+        name: "Your house",
+      }),
+    ).toBeTruthy();
+  });
+
+  it("explains and drops overlays into a chart without a time", () => {
+    render(ComparisonView, {
+      synastry: compareCharts(CHART_WITHOUT_TIME, THEIRS),
+    });
+
+    expect(
+      screen.getByText(/without a birth time is cast for noon/),
+    ).toBeTruthy();
+    expect(
+      within(table("Their positions")).queryByRole("columnheader", {
+        name: "Your house",
+      }),
+    ).toBeNull();
+  });
+
+  it("shares a link to the whole comparison", async () => {
+    render(ComparisonView, { synastry: compareCharts(CHART, THEIRS) });
+
+    await fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
+
+    expect(
+      screen.getByLabelText<HTMLInputElement>("Share link").value,
+    ).toContain("&date2=2000-01-01&time2=12:00&place2=2643743");
+  });
+});

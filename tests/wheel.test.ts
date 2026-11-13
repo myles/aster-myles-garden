@@ -2,7 +2,8 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { drawWheel, spreadLongitudes } from "@/lib/wheel";
+import { compareCharts } from "@/lib/synastry";
+import { drawBiWheel, drawWheel, spreadLongitudes } from "@/lib/wheel";
 import { separateDegrees } from "@/lib/zodiac";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
@@ -122,5 +123,65 @@ describe("drawWheel without a birth time", () => {
 
     expect(count(".wheel-cusp")).toBe(0);
     expect(count(".wheel-axis-label")).toBe(0);
+  });
+});
+
+describe("drawBiWheel", () => {
+  // Their Sun squares your Sun and your Mars: two lines, where your own
+  // chart has one (its Sun–Mars opposition).
+  const theirs = {
+    ...CHART,
+    bodies: [{ ...CHART.bodies[0], longitude: 190 }],
+  };
+  const synastry = compareCharts(CHART, theirs);
+
+  let svg: SVGSVGElement;
+
+  const count = (selector: string) => svg.querySelectorAll(selector).length;
+
+  beforeEach(() => {
+    svg = document.createElementNS(SVG_NAMESPACE, "svg");
+    drawBiWheel(svg, synastry);
+  });
+
+  it("widens the view to fit the outer ring", () => {
+    expect(svg.getAttribute("viewBox")).toBe("-90 -90 780 780");
+    expect(svg.querySelector(":scope > title")?.textContent).toBe(
+      "Chart comparison wheel",
+    );
+  });
+
+  it("draws your bodies inside and theirs outside", () => {
+    expect(count("g.wheel-body:not(.wheel-body--outer)")).toBe(2);
+    expect(count("g.wheel-body--outer")).toBe(1);
+    expect(svg.querySelector("g.wheel-body--outer title")?.textContent).toBe(
+      "Them: Sun",
+    );
+  });
+
+  it("draws their bodies outside the zodiac", () => {
+    const glyph = svg.querySelector(".wheel-body--outer .wheel-body-glyph");
+    const x = Number(glyph?.getAttribute("x")) - 300;
+    const y = Number(glyph?.getAttribute("y")) - 300;
+
+    expect(Math.hypot(x, y)).toBeCloseTo(322, 0);
+  });
+
+  it("draws aspects between the charts, not within yours", () => {
+    expect(synastry.aspects).toHaveLength(2);
+    expect(count(".wheel-aspect")).toBe(2);
+  });
+
+  it("keeps your houses", () => {
+    expect(count(".wheel-cusp")).toBe(12);
+  });
+
+  it("returns to a single wheel cleanly", () => {
+    drawWheel(svg, CHART);
+
+    expect(svg.getAttribute("viewBox")).toBe("0 0 600 600");
+    expect(count("g.wheel-body--outer")).toBe(0);
+    expect(count(".wheel-ring--faint")).toBe(1);
+    expect(count(".wheel-aspect")).toBe(1);
   });
 });

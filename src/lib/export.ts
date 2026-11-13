@@ -3,8 +3,8 @@
 // those are resolved and written onto each element before it leaves the page.
 
 import type { Chart } from "@/lib/chart";
-import { buildChartCsv } from "@/lib/csv";
-import { WHEEL_SIZE_PX } from "@/lib/wheel";
+import { buildChartCsv, buildComparisonCsv } from "@/lib/csv";
+import type { Synastry } from "@/lib/synastry";
 
 export enum ExportFormat {
   Svg = "svg",
@@ -35,31 +35,46 @@ const STYLED_PROPERTIES = [
 ] as const;
 
 /**
- * Downloads the wheel drawn in `svg` as a file named after the chart.
- * Colours follow the page's current light or dark theme.
+ * Downloads the wheel drawn in `svg` as a file named after the chart, or
+ * after both charts when it's a comparison. Colours follow the page's
+ * current light or dark theme.
  */
 export async function exportWheel(
   svg: SVGSVGElement,
   chart: Chart,
   format: ExportFormat,
+  synastry?: Synastry,
 ): Promise<void> {
-  const markup = serializeWheel(svg);
+  const { markup, sizePx } = serializeWheel(svg);
   const blob =
     format === ExportFormat.Svg
       ? new Blob([markup], { type: SVG_MIME_TYPE })
-      : await renderPng(markup);
+      : await renderPng(markup, sizePx);
 
-  downloadBlob(blob, buildFilename(chart, format));
+  downloadBlob(blob, buildFilename(listCharts(chart, synastry), format));
 }
 
-/** Downloads the Positions and Aspects tables, side by side, as CSV. */
-export function exportTables(chart: Chart): void {
-  const blob = new Blob([buildChartCsv(chart)], { type: CSV_MIME_TYPE });
+/**
+ * Downloads the chart's tables, side by side, as CSV: Positions and
+ * Aspects, or for a comparison, both people's positions and the aspects
+ * between them.
+ */
+export function exportTables(chart: Chart, synastry?: Synastry): void {
+  const csv = synastry ? buildComparisonCsv(synastry) : buildChartCsv(chart);
+  const blob = new Blob([csv], { type: CSV_MIME_TYPE });
 
-  downloadBlob(blob, buildFilename(chart, CSV_EXTENSION));
+  downloadBlob(blob, buildFilename(listCharts(chart, synastry), CSV_EXTENSION));
 }
 
-function serializeWheel(svg: SVGSVGElement): string {
+function listCharts(chart: Chart, synastry: Synastry | undefined): Chart[] {
+  return synastry ? [synastry.first, synastry.second] : [chart];
+}
+
+function serializeWheel(svg: SVGSVGElement): {
+  markup: string;
+  sizePx: number;
+} {
+  const viewBox = readViewBox(svg);
   const clone = svg.cloneNode(true) as SVGSVGElement;
 
   inlineStyle(svg, clone);
@@ -70,20 +85,44 @@ function serializeWheel(svg: SVGSVGElement): string {
 
   // A file has no page behind it, so it needs its own size and backdrop.
   // XMLSerializer adds the xmlns itself; setting it here doubles it.
-  clone.setAttribute("width", String(WHEEL_SIZE_PX));
-  clone.setAttribute("height", String(WHEEL_SIZE_PX));
+  clone.setAttribute("width", String(viewBox.sizePx));
+  clone.setAttribute("height", String(viewBox.sizePx));
   clone.removeAttribute("class");
 
+  // Cover the whole view box, which starts above and left of the origin
+  // on a bi-wheel.
   const backdrop = document.createElementNS(SVG_NAMESPACE, "rect");
-  backdrop.setAttribute("width", "100%");
-  backdrop.setAttribute("height", "100%");
+  backdrop.setAttribute("x", String(viewBox.x));
+  backdrop.setAttribute("y", String(viewBox.y));
+  backdrop.setAttribute("width", String(viewBox.sizePx));
+  backdrop.setAttribute("height", String(viewBox.sizePx));
   backdrop.setAttribute(
     "fill",
     getComputedStyle(document.body).backgroundColor,
   );
   clone.insertBefore(backdrop, clone.querySelector(":scope > g"));
 
-  return new XMLSerializer().serializeToString(clone);
+  return {
+    markup: new XMLSerializer().serializeToString(clone),
+    sizePx: viewBox.sizePx,
+  };
+}
+
+/** The wheel's square view box. Example: "-90 -90 780 780". */
+function readViewBox(svg: SVGSVGElement): {
+  x: number;
+  y: number;
+  sizePx: number;
+} {
+  const [x, y, sizePx] = (svg.getAttribute("viewBox") ?? "")
+    .split(" ")
+    .map(Number);
+
+  if ([x, y, sizePx].some((value) => !Number.isFinite(value))) {
+    throw new Error("The wheel hasn't been drawn yet.");
+  }
+
+  return { x, y, sizePx };
 }
 
 function inlineStyle(source: Element, target: Element): void {
@@ -103,14 +142,14 @@ function inlineStyle(source: Element, target: Element): void {
   );
 }
 
-async function renderPng(markup: string): Promise<Blob> {
+async function renderPng(markup: string, sizePx: number): Promise<Blob> {
   const url = URL.createObjectURL(new Blob([markup], { type: SVG_MIME_TYPE }));
 
   try {
     const image = await loadImage(url);
     const canvas = document.createElement("canvas");
-    canvas.width = WHEEL_SIZE_PX * PNG_SCALE;
-    canvas.height = WHEEL_SIZE_PX * PNG_SCALE;
+    canvas.width = sizePx * PNG_SCALE;
+    canvas.height = sizePx * PNG_SCALE;
 
     const context = canvas.getContext("2d");
     if (!context) {
@@ -159,13 +198,20 @@ function downloadBlob(blob: Blob, filename: string): void {
 
 /**
  * Example: London on 1 Jan 2000, 12:00 → "aster-london-2000-01-01-1200".
- * Without a birth time, the time part is left off.
+ * Two charts are joined with "and"; a chart without a birth time leaves
+ * its time part off.
  */
-function buildFilename(chart: Chart, extension: string): string {
+function buildFilename(charts: Chart[], extension: string): string {
+  const described = charts.map(describeChart).join("-and-");
+
+  return `${FILENAME_PREFIX}-${described}.${extension}`;
+}
+
+/** Example: London on 1 Jan 2000, 12:00 → "london-2000-01-01-1200". */
+function describeChart(chart: Chart): string {
   const { date, time, place } = chart.details;
   const pad = (value: number) => String(value).padStart(2, "0");
   const parts = [
-    FILENAME_PREFIX,
     slugify(place.name),
     `${date.year}-${pad(date.month)}-${pad(date.day)}`,
   ];
@@ -174,7 +220,7 @@ function buildFilename(chart: Chart, extension: string): string {
     parts.push(`${pad(time.hour)}${pad(time.minute)}`);
   }
 
-  return `${parts.join("-")}.${extension}`;
+  return parts.join("-");
 }
 
 /** Example: "São Paulo" → "sao-paulo". */

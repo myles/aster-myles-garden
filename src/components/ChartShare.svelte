@@ -6,7 +6,11 @@
   import { describeError } from "@/lib/format";
   import { buildShareUrl } from "@/lib/share";
 
-  let { details }: { details: BirthDetails } = $props();
+  // With comparedWith, the link reopens the whole comparison.
+  let {
+    details,
+    comparedWith,
+  }: { details: BirthDetails; comparedWith?: BirthDetails } = $props();
 
   let link = $state("");
   let status = $state("");
@@ -14,12 +18,13 @@
   // A new chart makes an old link stale.
   $effect(() => {
     void details;
+    void comparedWith;
     link = "";
     status = "";
   });
 
   async function share(): Promise<void> {
-    link = buildShareUrl(details, SITE_URL);
+    link = buildShareUrl(details, SITE_URL, comparedWith);
 
     try {
       await navigator.clipboard.writeText(link);

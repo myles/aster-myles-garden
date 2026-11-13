@@ -2,17 +2,18 @@
   import ChartDownloads from "@/components/ChartDownloads.svelte";
   import ChartShare from "@/components/ChartShare.svelte";
   import ChartWheel from "@/components/ChartWheel.svelte";
+  import PositionsTable from "@/components/PositionsTable.svelte";
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
   import type { Chart } from "@/lib/chart";
   import {
+    formatBirthDate,
+    formatBirthMoment,
     formatCoordinates,
     formatDegrees,
-    formatPlacement,
   } from "@/lib/format";
   import { HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
-  import { formatLongitude } from "@/lib/zodiac";
 
   let { chart }: { chart: Chart } = $props();
 
@@ -35,44 +36,6 @@
         ].join(" · ")
       : [formatBirthDate(chart), "Time unknown", coordinates].join(" · "),
   );
-
-  const angles = $derived(
-    chart.houses
-      ? [
-          { name: "Ascendant", longitude: chart.houses.ascendant },
-          { name: "Midheaven", longitude: chart.houses.midheaven },
-        ]
-      : [],
-  );
-
-  function formatBirthDate(chart: Chart): string {
-    return new Intl.DateTimeFormat("en-GB", {
-      timeZone: chart.details.place.timeZone,
-      dateStyle: "long",
-    }).format(chart.bornAt);
-  }
-
-  function formatBirthMoment(chart: Chart): string {
-    const { timeZone } = chart.details.place;
-    const local = new Intl.DateTimeFormat("en-GB", {
-      timeZone,
-      dateStyle: "long",
-      timeStyle: "short",
-    }).format(chart.bornAt);
-    // en-US knows abbreviations such as "EDT"; elsewhere it gives "GMT+1".
-    const zone = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      timeZoneName: "short",
-    })
-      .formatToParts(chart.bornAt)
-      .find((part) => part.type === "timeZoneName")?.value;
-    const universal = new Intl.DateTimeFormat("en-GB", {
-      timeZone: "UTC",
-      timeStyle: "short",
-    }).format(chart.bornAt);
-
-    return `${local} ${zone ?? ""} (${universal} UT)`;
-  }
 </script>
 
 <div>
@@ -92,39 +55,7 @@
   <ChartWheel {chart} bind:svg={wheel} />
 
   <div class="grid gap-8 xl:grid-cols-2">
-    <div>
-      <h3 class="mb-2 font-serif text-lg">Positions</h3>
-      <table class="w-full text-sm">
-        <thead class="text-ink-muted text-left">
-          <tr class="border-rule border-b">
-            <th scope="col" class="py-1.5 font-normal">Body</th>
-            <th scope="col" class="py-1.5 font-normal">Position</th>
-            {#if chart.houses}
-              <th scope="col" class="py-1.5 text-right font-normal">House</th>
-            {/if}
-          </tr>
-        </thead>
-        <tbody>
-          {#each chart.bodies as placed (placed.body)}
-            {@const info = BODY_INFO[placed.body]}
-            <tr class="border-rule/60 border-b">
-              <td class="py-1.5">{info.glyph} {info.name}</td>
-              <td class="py-1.5">{formatPlacement(placed)}</td>
-              {#if chart.houses}
-                <td class="py-1.5 text-right tabular-nums">{placed.house}</td>
-              {/if}
-            </tr>
-          {/each}
-          {#each angles as angle (angle.name)}
-            <tr class="border-rule/60 border-b">
-              <td class="py-1.5">{angle.name}</td>
-              <td class="py-1.5">{formatLongitude(angle.longitude)}</td>
-              <td class="py-1.5"></td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
+    <PositionsTable {chart} title="Positions" />
 
     <div>
       <h3 class="mb-2 font-serif text-lg">Aspects</h3>
