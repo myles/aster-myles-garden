@@ -1,1 +1,185 @@
 @import "tailwindcss";
+
+/* No web fonts: nothing is fetched from third parties. */
+@theme {
+  --font-serif:
+    "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-symbol:
+    "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols",
+    "Noto Sans Symbols 2", "DejaVu Sans", sans-serif;
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+}
+
+:root {
+  color-scheme: light dark;
+
+  --paper: #f6f3ec;
+  --panel: #fffdf8;
+  --ink: #1d1b2e;
+  --ink-muted: #5f5b72;
+  --rule: #d9d3c6;
+  --accent: #6b4fbb;
+
+  --fire: #c2410c;
+  --earth: #4d7c0f;
+  --air: #a16207;
+  --water: #1d4ed8;
+
+  --harmonious: #2563eb;
+  --challenging: #dc2626;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0f0e1a;
+    --panel: #18172a;
+    --ink: #ece8f6;
+    --ink-muted: #a29db8;
+    --rule: #34314d;
+    --accent: #b8a4ff;
+
+    --fire: #fb923c;
+    --earth: #a3e635;
+    --air: #facc15;
+    --water: #60a5fa;
+
+    --harmonious: #60a5fa;
+    --challenging: #f87171;
+  }
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Chart wheel ----------------------------------------------------------- */
+
+.wheel {
+  width: 100%;
+  height: auto;
+  font-family: var(--font-symbol);
+}
+
+.wheel-ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.wheel-ring--faint {
+  stroke: var(--rule);
+}
+
+.wheel-sign {
+  stroke: var(--rule);
+  stroke-width: 0.75;
+  fill-opacity: 0.08;
+}
+
+.wheel-sign--fire {
+  fill: var(--fire);
+}
+.wheel-sign--earth {
+  fill: var(--earth);
+}
+.wheel-sign--air {
+  fill: var(--air);
+}
+.wheel-sign--water {
+  fill: var(--water);
+}
+
+.wheel-sign-glyph {
+  font-size: 20px;
+}
+
+.wheel-sign-glyph--fire {
+  fill: var(--fire);
+}
+.wheel-sign-glyph--earth {
+  fill: var(--earth);
+}
+.wheel-sign-glyph--air {
+  fill: var(--air);
+}
+.wheel-sign-glyph--water {
+  fill: var(--water);
+}
+
+.wheel-tick {
+  stroke: var(--ink-muted);
+  stroke-width: 0.5;
+}
+
+.wheel-cusp {
+  stroke: var(--ink-muted);
+  stroke-width: 0.75;
+}
+
+.wheel-axis {
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.wheel-axis-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--ink);
+}
+
+.wheel-house-number {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  fill: var(--ink-muted);
+}
+
+.wheel-body-pointer {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.wheel-body-leader {
+  stroke: var(--ink-muted);
+  stroke-width: 0.5;
+}
+
+.wheel-body-glyph {
+  font-size: 22px;
+  fill: var(--ink);
+}
+
+.wheel-body-degree,
+.wheel-body-retrograde {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  fill: var(--ink-muted);
+}
+
+.wheel-body-retrograde {
+  fill: var(--challenging);
+}
+
+.wheel-aspect {
+  stroke-width: 1;
+  stroke-opacity: 0.75;
+}
+
+.wheel-aspect--harmonious {
+  stroke: var(--harmonious);
+}
+.wheel-aspect--challenging {
+  stroke: var(--challenging);
+}
+.wheel-aspect--neutral {
+  stroke: var(--ink-muted);
+}

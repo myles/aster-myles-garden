@@ -5,6 +5,7 @@ export default {
   ...mylesPrettierConfig,
   plugins: [
     "prettier-plugin-astro",
+    "prettier-plugin-svelte",
     "prettier-plugin-tailwindcss",
     "prettier-plugin-organize-imports",
     "prettier-plugin-astro-organize-imports",

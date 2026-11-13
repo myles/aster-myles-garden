@@ -1,8 +1,35 @@
 ---
+import App from "@/components/App.svelte";
+import { SOURCE_URL } from "@/consts";
 import Layout from "@/layouts/Layout.astro";
 ---
 
 <Layout>
-  <h1>Aster</h1>
-  <p>Coming soon...</p>
+  <div class="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 py-8 sm:px-6">
+    <header class="mb-8">
+      <h1 class="font-serif text-4xl tracking-tight">Aster</h1>
+      <p class="mt-1 text-ink-muted">
+        A natal chart, calculated in your browser. Nothing you enter leaves this
+        page.
+      </p>
+    </header>
+
+    <App client:load />
+
+    <footer class="mt-12 border-t border-rule pt-4 text-xs text-ink-muted">
+      <p>
+        Calculated with the{" "}
+        <a class="underline" href="https://www.astro.com/swisseph/"
+          >Swiss Ephemeris</a
+        >{" "}
+        by Astrodienst AG. Place data from{" "}
+        <a class="underline" href="https://www.geonames.org/">GeoNames</a>{" "}
+        (<a
+          class="underline"
+          href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a
+        >).{" "}
+        <a class="underline" href={SOURCE_URL}>Source code</a> under the AGPL.
+      </p>
+    </footer>
+  </div>
 </Layout>

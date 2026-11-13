@@ -53,24 +53,35 @@ npm install
 # 3. Run locally
 npm run dev
 
-# 4. Build
+# 4. Test
+npm test
+
+# 5. Build
 npm run build
 ```
+
+### Place data
+
+Place search runs offline against `public/data/places.json`, built from [GeoNames](https://www.geonames.org/) (CC BY 4.0) cities with a population over 15,000. To regenerate it:
+
+1. Download `cities15000.zip`, `admin1CodesASCII.txt` and `countryInfo.txt` from <https://download.geonames.org/export/dump/> into one directory.
+2. Unzip `cities15000.zip` there.
+3. Run `node scripts/places-build.mjs <that-directory>`.
 
 ## Usage
 
 1. Enter a birth date, time, and place.
-2. The place resolves to coordinates and the correct historical time zone.
+2. The place resolves, offline, to coordinates and an IANA time zone; the browser's time zone database supplies the historical offset, Local Mean Time included.
 3. The chart is calculated and drawn as an SVG wheel.
 4. Adjust the house system if you'd like a different one.
 
 ## Roadmap
 
-- [ ] Core calculation (planets, houses, angles)
-- [ ] SVG chart wheel
-- [ ] Place search + historical time zone lookup
-- [ ] House system selector
-- [ ] Aspect lines and orbs
+- [x] Core calculation (planets, houses, angles)
+- [x] SVG chart wheel
+- [x] Place search + historical time zone lookup
+- [x] House system selector
+- [x] Aspect lines and orbs
 - [ ] Export chart as PNG/SVG
 - [ ] Optional high-precision ephemeris files
 
@@ -85,4 +96,5 @@ If you want to build on this in a closed-source or permissively-licensed project
 ## Acknowledgements
 
 - [Swiss Ephemeris](https://www.astro.com/swisseph/) by Dieter Koch and Alois Treindl, Astrodienst AG — the calculation engine that makes this possible.
-- The maintainers of the WASM bindings that bring it to the web.
+- The maintainers of [`@swisseph/browser`](https://github.com/swisseph-js/swisseph), the WASM bindings that bring it to the web.
+- [GeoNames](https://www.geonames.org/) for place data, under CC BY 4.0.
