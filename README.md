@@ -86,6 +86,7 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 - [x] Export chart as PNG/SVG
 - [x] Shareable chart links
 - [ ] Optional high-precision ephemeris files
+- [ ] Compare two birth charts
 
 ## Licence
 
