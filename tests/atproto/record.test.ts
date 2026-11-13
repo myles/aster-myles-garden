@@ -58,6 +58,8 @@ describe("chart records", () => {
     { ...RECORD, timeZone: "not/a/zone" },
     { ...RECORD, houseSystem: "unknown" },
     { ...RECORD, updatedAt: "yesterday" },
+    { ...RECORD, updatedAt: "2026" },
+    { ...RECORD, placeName: "é".repeat(101) },
   ])("rejects invalid remote records: %j", (record) => {
     expect(() => parseChartRecord(record)).toThrow();
   });

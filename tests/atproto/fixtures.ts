@@ -4,8 +4,8 @@ export const TRIAL_DID = "did:plc:aaaaaaaaaaaaaaaaaaaaaaaa";
 export const OTHER_DID = "did:plc:bbbbbbbbbbbbbbbbbbbbbbbb";
 export const CONFIG: TrialConfig = {
   allowedDid: TRIAL_DID,
-  space: `at://${TRIAL_DID}/space/garden.myles.aster.trial/self`,
-  spaceType: "garden.myles.aster.trial",
+  space: `at://${TRIAL_DID}/space/garden.myles.aster.space/self`,
+  spaceType: "garden.myles.aster.space",
   spaceKey: "self",
   origin: "http://127.0.0.1:4321",
 };

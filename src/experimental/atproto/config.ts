@@ -2,7 +2,7 @@ export const TRIAL_PATH = "/trials/atproto/";
 export const METADATA_PATH = "/trials/atproto/client-metadata.json";
 export const CHART_COLLECTION = "garden.myles.aster.chart";
 export const CHART_RECORD_KEY = "self";
-const DEFAULT_SPACE_TYPE = "garden.myles.aster.trial";
+const DEFAULT_SPACE_TYPE = "garden.myles.aster.space";
 
 const DID_PATTERN = /^did:(plc:[a-z2-7]{24}|web:[A-Za-z0-9._:%-]+)$/;
 const SPACE_PATTERN = /^at:\/\/([^/]+)\/space\/([^/]+)\/([^/]+)$/;
