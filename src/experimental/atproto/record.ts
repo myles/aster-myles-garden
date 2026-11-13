@@ -1,3 +1,5 @@
+import { isDatetimeString } from "@atproto/syntax";
+
 import type { BirthDetails } from "@/lib/chart";
 
 import { isHouseSystem } from "@/lib/houses";
@@ -11,6 +13,8 @@ import {
 } from "@/lib/time";
 
 import { CHART_COLLECTION } from "./config";
+
+const MAX_PLACE_NAME_BYTES = 200;
 
 export enum TimeDisclosure {
   Omit = "omit",
@@ -63,10 +67,11 @@ export function parseChartRecord(value: unknown): BirthDetails {
     typeof record.timeZone !== "string" ||
     !isTimeZone(record.timeZone) ||
     typeof record.placeName !== "string" ||
-    record.placeName.length > 200 ||
+    new TextEncoder().encode(record.placeName).length > MAX_PLACE_NAME_BYTES ||
     typeof record.houseSystem !== "string" ||
     !isHouseSystem(record.houseSystem) ||
     typeof record.updatedAt !== "string" ||
+    !isDatetimeString(record.updatedAt) ||
     !Number.isFinite(Date.parse(record.updatedAt))
   ) {
     throw new Error("The saved Aster chart is malformed.");

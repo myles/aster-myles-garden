@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "record",
-      "description": "Own birth chart inputs for the Spaces trial.",
+      "description": "The author's own birth chart calculation inputs.",
       "key": "literal:self",
       "record": {
         "type": "object",
@@ -17,14 +17,27 @@
           "updatedAt"
         ],
         "properties": {
-          "birthDate": { "type": "string", "minLength": 10, "maxLength": 10 },
-          "birthTime": { "type": "string", "minLength": 5, "maxLength": 5 },
+          "birthDate": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 10
+          },
+          "birthTime": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 5
+          },
           "coordinates": {
             "type": "string",
             "description": "Comma-separated decimal latitude and longitude."
           },
-          "timeZone": { "type": "string" },
-          "placeName": { "type": "string", "maxLength": 200 },
+          "timeZone": {
+            "type": "string"
+          },
+          "placeName": {
+            "type": "string",
+            "maxLength": 200
+          },
           "houseSystem": {
             "type": "string",
             "enum": [
@@ -37,7 +50,10 @@
               "campanus"
             ]
           },
-          "updatedAt": { "type": "string", "format": "datetime" }
+          "updatedAt": {
+            "type": "string",
+            "format": "datetime"
+          }
         }
       }
     }
