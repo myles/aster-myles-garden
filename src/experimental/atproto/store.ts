@@ -1,7 +1,10 @@
-import type { BirthDetails } from "@/lib/chart";
-
 import { CHART_COLLECTION, CHART_RECORD_KEY, type TrialConfig } from "./config";
-import { buildChartRecord, parseChartRecord, TimeDisclosure } from "./record";
+import {
+  buildChartRecord,
+  parseChartRecord,
+  TimeDisclosure,
+  type ChartDetails,
+} from "./record";
 
 /** OAuth is handled by the SDK; the driver only receives its signed fetch. */
 export type TrialSession = {
@@ -66,7 +69,7 @@ export class SpaceChartStore {
     return body.space;
   }
 
-  async loadChart(): Promise<BirthDetails | undefined> {
+  async loadChart(): Promise<ChartDetails | undefined> {
     const params = new URLSearchParams(this._getRecordParams());
     const response = await this._session.fetchHandler(
       `/xrpc/com.atproto.space.getRecord?${params}`,
@@ -83,7 +86,7 @@ export class SpaceChartStore {
   }
 
   async saveChart(
-    details: BirthDetails,
+    details: ChartDetails,
     disclosure: TimeDisclosure,
   ): Promise<void> {
     await this._writeRecord("putRecord", {

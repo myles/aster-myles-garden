@@ -35,7 +35,11 @@ OAuth requests `atproto` plus a single `space:` scope, limited to the configured
 
 ## Record format
 
-The draft lexicon is in `lexicons/garden.myles.aster.chart.json`. It stores birth date, optional time, decimal coordinates as a string, place name, IANA time zone, house system and `updatedAt`. Floating-point coordinates are encoded as a string because Lexicon integers cannot represent them. It does not store computed positions, friends' details, comparisons or transits.
+The draft lexicon is in `lexicons/garden.myles.aster.chart.json`. It stores `bornAt` as a datetime, `isBirthTimeKnown`, a `location` reference to `community.lexicon.location.geo#main`, IANA `timeZone`, house system and `updatedAt`. Geo coordinates are separate decimal strings, with an optional location name. Birth date remains required input. Unknown or deliberately withheld birth times use noon on that date in the birthplace's time zone; `isBirthTimeKnown` is false, and loading the record restores an unknown time so houses and angles remain absent. The actual withheld time is never used to compute the persisted datetime.
+
+Optional `aiPreferences` references `community.lexicon.preference.ai#preferenceSet`. The four supported preferences are training, embedding, inference and synthetic content; each declares `allow` and its own `updatedAt`. Omission declares no preference. This embeds chart-specific metadata, not a standalone account-wide AI record, and does not enforce what other applications do. The current form preserves preferences from loaded records but does not yet provide controls for editing them.
+
+This replaces the unpublished draft's `birthDate`, `birthTime`, `coordinates` and `placeName` fields. Old draft records are rejected rather than silently reinterpreted; nothing has been published or migrated. The main Aster calculation model is unchanged.
 
 The adapter validates records before writing and after reading. In particular it checks calendar validity and time ranges locally, since the main application's input parsers currently check only string shape. Loaded listed places become coordinate places; their calculation inputs are preserved without depending on a particular GeoNames index. The record is replaced at the same key when saving again. Deleting removes that record, not the Space or any other data.
 
@@ -55,7 +59,7 @@ References: [Spaces alpha](https://atproto.com/blog/atproto-spaces-alpha), [curr
 
 ## Pre-publication review
 
-The Space's consent label is `title: "myles.garden"`, using the field supported by the pinned November alpha SDK. The old `name` field has been removed. The record remains `garden.myles.aster.chart`, with a singleton `self` key, optional birth time and calculation inputs rather than computed results.
+The Space's consent label is `title: "myles.garden"`, using the field supported by the pinned November alpha SDK. The old `name` field has been removed. The record remains `garden.myles.aster.chart`, with a singleton `self` key and calculation inputs rather than computed results.
 
 Tests validate both declarations with `@atproto/lex-document` and validate emitted records against the chart schema compiled by the same SDK. Runtime validation now counts the place-name bound as UTF-8 bytes and checks `updatedAt` with the protocol's datetime validator. Regression tests reproduce both mismatches before their fixes.
 

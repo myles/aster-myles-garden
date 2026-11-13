@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
 
   import BirthFields from "@/components/BirthFields.svelte";
-  import type { BirthDetails } from "@/lib/chart";
   import { describeError } from "@/lib/format";
   import {
     DEFAULT_HOUSE_SYSTEM,
@@ -20,7 +19,7 @@
 
   import { createTrialClient, type TrialClient } from "./client";
   import type { TrialConfig } from "./config";
-  import { TimeDisclosure } from "./record";
+  import { TimeDisclosure, type ChartDetails } from "./record";
 
   let { config }: { config: TrialConfig } = $props();
   let connection: TrialClient | undefined = $state.raw();
@@ -35,7 +34,7 @@
   let error = $state("");
   let status = $state("");
   let space = $state("");
-  let savedDetails: BirthDetails | undefined = $state.raw();
+  let savedDetails: ChartDetails | undefined = $state.raw();
 
   onMount(() => {
     let isMounted = true;
@@ -137,7 +136,10 @@
       if (!place) {
         throw new Error("Choose a place or enter its coordinates.");
       }
-      const details: BirthDetails = {
+      const details: ChartDetails = {
+        ...(savedDetails?.aiPreferences !== undefined
+          ? { aiPreferences: savedDetails.aiPreferences }
+          : {}),
         date: parseLocalDate(date),
         time: isTimeUnknown ? undefined : parseLocalTime(time),
         place,

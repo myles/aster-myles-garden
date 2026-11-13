@@ -13,12 +13,17 @@ import {
 } from "@/experimental/atproto/record";
 
 import { CHART } from "../fixtures/chart";
+import geo from "../fixtures/lexicons/community.lexicon.location.geo.json";
+import ai from "../fixtures/lexicons/community.lexicon.preference.ai.json";
 import { CONFIG } from "./fixtures";
 
 describe("published Lexicon drafts", () => {
-  it.each([chart, space])("validates $id with the pinned SDK", (document) => {
-    expect(() => lexiconDocumentSchema.parse(document)).not.toThrow();
-  });
+  it.each([chart, space, geo, ai])(
+    "validates $id with the pinned SDK",
+    (document) => {
+      expect(() => lexiconDocumentSchema.parse(document)).not.toThrow();
+    },
+  );
 
   it("uses the SDK's title field for the myles.garden consent label", () => {
     expect(space.defs.main).toHaveProperty("title", "myles.garden");
@@ -33,11 +38,20 @@ describe("published Lexicon drafts", () => {
     async (disclosure) => {
       const document = lexiconDocumentSchema.parse(chart);
       const validator = await LexiconSchemaBuilder.build(
-        new LexiconIterableIndexer([document]),
+        new LexiconIterableIndexer([
+          document,
+          lexiconDocumentSchema.parse(geo),
+          lexiconDocumentSchema.parse(ai),
+        ]),
         `${chart.id}#main`,
       );
       const record = buildChartRecord(
-        CHART.details,
+        {
+          ...CHART.details,
+          aiPreferences: {
+            training: { allow: false, updatedAt: "2026-11-13T12:00:00Z" },
+          },
+        },
         disclosure,
         new Date("2026-11-13T12:00:00Z"),
       );
