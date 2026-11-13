@@ -34,6 +34,7 @@
   let isBusy = $state(true);
   let error = $state("");
   let status = $state("");
+  let space = $state("");
   let savedDetails: BirthDetails | undefined = $state.raw();
 
   onMount(() => {
@@ -86,11 +87,22 @@
       await connection?.dispose();
       connection = undefined;
       savedDetails = undefined;
+      space = "";
       date = "";
       time = "";
       place = undefined;
       hasConfirmedOwnership = false;
       status = "Signed out.";
+    });
+  }
+
+  async function createSpace(): Promise<void> {
+    await runAction(async () => {
+      if (!connection?.charts) {
+        throw new Error("Sign in first.");
+      }
+      space = await connection.charts.createSpace();
+      status = "Your personal Aster Space is ready.";
     });
   }
 
@@ -174,53 +186,80 @@
 
   {#if connection?.did}
     <p class="mt-4 text-sm break-all">Signed in as {connection.did}</p>
+    {#if !space}
+      <button
+        type="button"
+        disabled={isBusy}
+        onclick={createSpace}
+        class="bg-accent text-paper mt-4 rounded px-4 py-2"
+      >
+        Create my Aster Space
+      </button>
+      <p class="mt-2 text-sm">
+        If your personal Aster Space already exists, this opens it instead.
+      </p>
+    {:else}
+      <p class="mt-2 text-sm break-all">Space: {space}</p>
+    {/if}
     <fieldset disabled={isBusy} class="mt-4 flex flex-wrap gap-3">
-      <button type="button" class="underline" onclick={loadSavedChart}>
+      <button
+        type="button"
+        disabled={!space}
+        class="underline"
+        onclick={loadSavedChart}
+      >
         Load my saved chart
       </button>
-      <button type="button" class="underline" onclick={deleteChart}>
+      <button
+        type="button"
+        disabled={!space}
+        class="underline"
+        onclick={deleteChart}
+      >
         Delete my saved chart
       </button>
       <button type="button" class="underline" onclick={signOut}>
         Sign out
       </button>
     </fieldset>
-    <form onsubmit={saveChart} class="mt-6">
-      <fieldset disabled={isBusy} class="flex min-w-0 flex-col gap-5">
-        <legend class="mb-4 font-serif text-xl">My birth details</legend>
-        <BirthFields
-          idPrefix="atproto"
-          timeHint="Local birth time. Omitted from the record by default."
-          bind:date
-          bind:time
-          bind:isTimeUnknown
-          bind:place
-        />
-        <label class="flex flex-col gap-2">
-          House system
-          <select bind:value={houseSystem} class="rounded border p-2">
-            {#each Object.values(HouseSystem) as system (system)}
-              <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
-            {/each}
-          </select>
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            bind:checked={shouldIncludeTime}
-            disabled={isTimeUnknown}
+    {#if space}
+      <form onsubmit={saveChart} class="mt-6">
+        <fieldset disabled={isBusy} class="flex min-w-0 flex-col gap-5">
+          <legend class="mb-4 font-serif text-xl">My birth details</legend>
+          <BirthFields
+            idPrefix="atproto"
+            timeHint="Local birth time. Omitted from the record by default."
+            bind:date
+            bind:time
+            bind:isTimeUnknown
+            bind:place
           />
-          Include my birth time in the saved record
-        </label>
-        <label>
-          <input type="checkbox" bind:checked={hasConfirmedOwnership} />
-          These are my own details and I want to store them in my Space
-        </label>
-        <button type="submit" class="bg-accent text-paper rounded px-4 py-2">
-          Save my chart
-        </button>
-      </fieldset>
-    </form>
+          <label class="flex flex-col gap-2">
+            House system
+            <select bind:value={houseSystem} class="rounded border p-2">
+              {#each Object.values(HouseSystem) as system (system)}
+                <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
+              {/each}
+            </select>
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              bind:checked={shouldIncludeTime}
+              disabled={isTimeUnknown}
+            />
+            Include my birth time in the saved record
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={hasConfirmedOwnership} />
+            These are my own details and I want to store them in my Space
+          </label>
+          <button type="submit" class="bg-accent text-paper rounded px-4 py-2">
+            Save my chart
+          </button>
+        </fieldset>
+      </form>
+    {/if}
   {:else}
     <button
       type="button"

@@ -1,0 +1,13 @@
+{
+  "lexicon": 1,
+  "id": "garden.myles.aster.trial",
+  "defs": {
+    "main": {
+      "type": "space",
+      "description": "Personal Aster birth chart trial.",
+      "key": "literal:self",
+      "name": "Aster personal chart",
+      "collections": ["garden.myles.aster.chart"]
+    }
+  }
+}

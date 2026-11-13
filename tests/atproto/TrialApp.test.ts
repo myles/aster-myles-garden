@@ -21,6 +21,7 @@ vi.mock("@/lib/places", async (importOriginal) => ({
 }));
 
 const charts = {
+  createSpace: vi.fn(),
   loadChart: vi.fn(),
   saveChart: vi.fn(),
   deleteChart: vi.fn(),
@@ -37,12 +38,18 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(createTrialClient).mockResolvedValue(client);
   vi.mocked(loadPlaceIndex).mockResolvedValue(PLACE_INDEX);
+  charts.createSpace.mockResolvedValue(CONFIG.space);
   charts.loadChart.mockResolvedValue(CHART.details);
   charts.saveChart.mockResolvedValue(undefined);
   charts.deleteChart.mockResolvedValue(undefined);
 });
 
 async function loadChart(): Promise<void> {
+  await fireEvent.click(
+    await screen.findByRole("button", {
+      name: "Create my Aster Space",
+    }),
+  );
   await fireEvent.click(
     await screen.findByRole("button", {
       name: "Load my saved chart",
@@ -52,6 +59,32 @@ async function loadChart(): Promise<void> {
 }
 
 describe("personal trial UI", () => {
+  it("creates a Space on request and uses its URI", async () => {
+    render(TrialApp, { config: CONFIG });
+    const button = await screen.findByRole("button", {
+      name: "Create my Aster Space",
+    });
+    expect(charts.createSpace).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText("Date")).toBeNull();
+    await fireEvent.click(button);
+    expect(charts.createSpace).toHaveBeenCalledTimes(1);
+    expect(screen.getByText(`Space: ${CONFIG.space}`)).toBeTruthy();
+    expect(screen.getByLabelText("Date")).toBeTruthy();
+  });
+  it("allows retry after Space creation fails", async () => {
+    charts.createSpace.mockRejectedValueOnce(new Error("Permission denied"));
+    render(TrialApp, { config: CONFIG });
+    const button = await screen.findByRole("button", {
+      name: "Create my Aster Space",
+    });
+    await fireEvent.click(button);
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Permission denied",
+    );
+    expect(screen.queryByLabelText("Date")).toBeNull();
+    await fireEvent.click(button);
+    expect(screen.getByLabelText("Date")).toBeTruthy();
+  });
   it("requires an explicit save and defaults to omitting time", async () => {
     render(TrialApp, { config: CONFIG });
     await loadChart();

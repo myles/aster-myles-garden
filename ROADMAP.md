@@ -64,7 +64,7 @@ Offer the page's own features as tools to an AI agent working in the browser, th
 
 Connect Aster to your AT Protocol account (such as Bluesky) to keep your chart in your own PDS and compare charts with friends. Entirely optional: everything else keeps working without an account.
 
-**Public rollout on hold** until [AT Protocol Spaces](https://atproto.com/blog/atproto-spaces-alpha) are more widely available. A personal trial is being built on `save-birth-chart-to-atproto`, isolated under [`src/experimental/atproto/`](src/experimental/atproto/README.md). It uses an existing permissioned Space for the configured account; the public-PDS flow and friend discovery below remain future work.
+**Public rollout on hold** until [AT Protocol Spaces](https://atproto.com/blog/atproto-spaces-alpha) are more widely available. A personal trial is being built on `save-birth-chart-to-atproto`, isolated under [`src/experimental/atproto/`](src/experimental/atproto/README.md). It creates or reopens a personal Space after sign-in for the configured account; the public-PDS flow and friend discovery below remain future work.
 
 - [ ] Sign in with your AT Protocol account.
 - [ ] Save your own birth chart to your PDS, as a record in an Aster lexicon.
