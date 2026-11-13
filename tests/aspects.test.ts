@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import type { BodyPosition } from "@/lib/ephemeris";
+
 import { AspectType, findAspects, findAspectsBetween } from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
-import type { BodyPosition } from "@/lib/ephemeris";
 
 const at = (body: Body, longitude: number): BodyPosition => ({
   body,

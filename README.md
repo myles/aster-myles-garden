@@ -96,3 +96,11 @@ If you want to build on this in a closed-source or permissively-licensed project
 - [Swiss Ephemeris](https://www.astro.com/swisseph/) by Dieter Koch and Alois Treindl, Astrodienst AG — the calculation engine that makes this possible.
 - The maintainers of [`@swisseph/browser`](https://github.com/swisseph-js/swisseph), the WASM bindings that bring it to the web.
 - [GeoNames](https://www.geonames.org/) for place data, under CC BY 4.0.
+
+## Code quality
+
+Run `npm run format` to check formatting and `npm run format:fix` to apply it. Oxfmt formats standard source and data files; Prettier handles Astro and Svelte files. Generated place data is excluded.
+
+Run `npm run lint` for oxlint, or `npm run lint:fix` for automatic fixes. Existing style issues are warnings; correctness checks remain errors.
+
+CI runs tests with coverage and JUnit reports, Astro checks, formatting and lint checks on pushes and pull requests to `main`. Use `npm run test:coverage` to generate coverage locally.

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import type { Chart } from "@/lib/chart";
+
 import { AspectType } from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
-import type { Chart } from "@/lib/chart";
 import { compareCharts } from "@/lib/synastry";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";

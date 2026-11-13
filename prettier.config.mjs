@@ -1,5 +1,6 @@
 import mylesPrettierConfig from "@mylesb/prettier-config";
 
+// Prettier handles Astro and Svelte; oxfmt formats the remaining files.
 /** @type {import("prettier").Config} */
 export default {
   ...mylesPrettierConfig,

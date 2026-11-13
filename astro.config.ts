@@ -1,8 +1,8 @@
+import svelte from "@astrojs/svelte";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
-import { SITE_URL } from "./src/consts";
 
-import svelte from "@astrojs/svelte";
+import { SITE_URL } from "./src/consts";
 
 /**
  * Emscripten's UMD footer in @swisseph/browser checks `typeof module`.

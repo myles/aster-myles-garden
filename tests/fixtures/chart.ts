@@ -1,10 +1,11 @@
 // A small, hand-built chart: two bodies in opposition, Equal houses.
 
+import type { Chart } from "@/lib/chart";
+import type { Transits } from "@/lib/transits";
+
 import { AspectType } from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
-import type { Chart } from "@/lib/chart";
 import { HouseSystem } from "@/lib/houses";
-import type { Transits } from "@/lib/transits";
 import { SIGNS } from "@/lib/zodiac";
 
 export const CHART: Chart = {
