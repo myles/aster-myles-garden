@@ -4,7 +4,7 @@ Review date: 13 November 2026. Findings are ordered by recommended fix priority.
 
 ## P1 — Fix first
 
-### 1. Birth details can reach the server if JavaScript fails
+### 1. Birth details can reach the server if JavaScript fails — fixed
 
 **Location:** `src/components/App.svelte`, birth-details form.
 
@@ -13,6 +13,8 @@ The rendered form has no explicit submission method or action, so browsers defau
 **Suggested fix:** Prevent native submission before the application is ready. Disable the form controls until hydration and provide a JavaScript-required message. Cover Enter-key submission as well as the submit button.
 
 **Verification:** Identified from the rendered HTML and form implementation; not exercised in a real browser.
+
+**Resolution:** The birth form renders with its controls inside a disabled fieldset, which is enabled only after hydration. This blocks native button and Enter-key submission before the app is ready and excludes birth fields from form data. A no-JavaScript message explains how to enable the form. Server-rendering regression tests failed before the fix and now confirm disabled controls and empty form data; a client test confirms controls become enabled after hydration. Real-browser keyboard submission remains unverified.
 
 ### 2. Daylight-saving transitions resolve inconsistently — fixed
 

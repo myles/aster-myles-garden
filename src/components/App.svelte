@@ -77,6 +77,7 @@
   let error = $state("");
   let compareError = $state("");
   let isDrawing = $state(false);
+  let isHydrated = $state(false);
   let hasRequestedEngine = false;
 
   const synastry = $derived(
@@ -100,6 +101,8 @@
   // Pasting another share link only changes the hash, which doesn't
   // reload the page, so listen for that too.
   onMount(() => {
+    isHydrated = true;
+
     const onHashChange = () => void openSharedLink();
 
     transitTimeZone = getLocalTimeZone();
@@ -406,64 +409,77 @@
       onfocusin={requestEngine}
       onsubmit={onSubmit}
     >
-      <SavedChartList
-        charts={savedCharts}
-        onUse={useSavedForYou}
-        onForget={forgetSavedChart}
-      />
+      <noscript>
+        <p class="text-ink-muted text-sm">
+          JavaScript is required to calculate your chart in your browser. Enable
+          it to enter your birth details.
+        </p>
+      </noscript>
+      <!-- Disable inputs and submit buttons together so native clicks and
+           Enter cannot submit birth details before hydration. -->
+      <fieldset
+        class="m-0 flex min-w-0 flex-col gap-5 border-0 p-0"
+        disabled={!isHydrated}
+      >
+        <SavedChartList
+          charts={savedCharts}
+          onUse={useSavedForYou}
+          onForget={forgetSavedChart}
+        />
 
-      <BirthFields
-        idPrefix="birth"
-        timeHint="Local clock time where you were born."
-        bind:date={yours.date}
-        bind:time={yours.time}
-        bind:isTimeUnknown={yours.isTimeUnknown}
-        bind:place={yours.place}
-        onTimeUnknownChange={redrawIfDrawn}
-      />
+        <BirthFields
+          idPrefix="birth"
+          timeHint="Local clock time where you were born."
+          bind:date={yours.date}
+          bind:time={yours.time}
+          bind:isTimeUnknown={yours.isTimeUnknown}
+          bind:place={yours.place}
+          onTimeUnknownChange={redrawIfDrawn}
+        />
 
-      <div class="flex flex-col gap-1.5">
-        <label for="house-system" class="text-sm font-medium">
-          House system
-        </label>
-        <select
-          id="house-system"
-          name="houseSystem"
-          class="border-rule bg-paper rounded border px-3 py-2 disabled:opacity-50"
-          bind:value={houseSystem}
-          disabled={isHouseSystemUnused}
-          onchange={redrawIfDrawn}
+        <div class="flex flex-col gap-1.5">
+          <label for="house-system" class="text-sm font-medium">
+            House system
+          </label>
+          <select
+            id="house-system"
+            name="houseSystem"
+            class="border-rule bg-paper rounded border px-3 py-2 disabled:opacity-50"
+            bind:value={houseSystem}
+            disabled={isHouseSystemUnused}
+            onchange={redrawIfDrawn}
+          >
+            {#each houseSystems as system (system)}
+              <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
+            {/each}
+          </select>
+          {#if isHouseSystemUnused}
+            <p class="text-ink-muted text-xs">Houses need a birth time.</p>
+          {/if}
+        </div>
+
+        <button
+          type="submit"
+          class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
+          disabled={isDrawing}
         >
-          {#each houseSystems as system (system)}
-            <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
-          {/each}
-        </select>
-        {#if isHouseSystemUnused}
-          <p class="text-ink-muted text-xs">Houses need a birth time.</p>
-        {/if}
-      </div>
+          Draw chart
+        </button>
 
-      <button
-        type="submit"
-        class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
-        disabled={isDrawing}
-      >
-        Draw chart
-      </button>
+        <p
+          role="alert"
+          class="text-sm text-[var(--challenging)]"
+          hidden={error.length === 0}
+        >
+          {error}
+        </p>
 
-      <p
-        role="alert"
-        class="text-sm text-[var(--challenging)]"
-        hidden={error.length === 0}
-      >
-        {error}
-      </p>
-
-      <SaveChartRow
-        idPrefix="birth"
-        blockedReason={savedChartsError || undefined}
-        onSave={(name) => saveForm(yours, name)}
-      />
+        <SaveChartRow
+          idPrefix="birth"
+          blockedReason={savedChartsError || undefined}
+          onSave={(name) => saveForm(yours, name)}
+        />
+      </fieldset>
     </form>
 
     {#if chart && panel === Panel.None}

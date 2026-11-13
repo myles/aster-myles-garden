@@ -74,6 +74,17 @@ describe("App", () => {
     Element.prototype.scrollIntoView = vi.fn();
   });
 
+  it("enables the birth controls after hydration", () => {
+    render(App);
+
+    const form = screen.getByRole("form", { name: "Your birth details" });
+    expect(form.querySelector("fieldset")?.disabled).toBe(false);
+    expect(screen.getByLabelText("Date").matches(":disabled")).toBe(false);
+    expect(
+      screen.getByRole("button", { name: "Draw chart" }).matches(":disabled"),
+    ).toBe(false);
+  });
+
   it("asks for a date and time first", async () => {
     render(App);
 
