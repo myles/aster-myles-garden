@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
-/* No web fonts: nothing is fetched from third parties. */
+/* Self-hosted via Fontsource: nothing is fetched from third parties. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/bitter";
+@import "@myles-garden/styles";
+
 @theme {
-  --font-serif:
-    "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --font-sans:
-    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-symbol:
     "Apple Symbols", "Segoe UI Symbol", "Noto Sans Symbols",
     "Noto Sans Symbols 2", "DejaVu Sans", sans-serif;
@@ -21,38 +21,64 @@
 :root {
   color-scheme: light dark;
 
-  --paper: #f6f3ec;
-  --panel: #fffdf8;
-  --ink: #1d1b2e;
-  --ink-muted: #5f5b72;
-  --rule: #d9d3c6;
-  --accent: #6b4fbb;
+  --paper: var(--color-parchment);
+  --panel: var(--color-chalk);
+  --ink: var(--color-inkwell);
+  --ink-muted: var(--color-ash);
+  --rule: color-mix(in srgb, var(--color-ash) 25%, var(--color-parchment));
+  --accent: var(--color-sage-dark);
 
-  --fire: #c2410c;
-  --earth: #4d7c0f;
-  --air: #a16207;
-  --water: #1d4ed8;
+  /*
+   * Most palette accents are pastels that fall below 3:1 on parchment, so
+   * they are darkened with inkwell. Challenging doubles as error text, so it
+   * is darkened further to clear 4.5:1.
+   */
+  --fire: color-mix(
+    in srgb,
+    var(--color-candy-gloss),
+    var(--color-inkwell) 40%
+  );
+  --earth: var(--color-sage-dark);
+  --air: color-mix(in srgb, var(--color-honey), var(--color-inkwell) 40%);
+  --water: color-mix(in srgb, var(--color-sky-wash), var(--color-inkwell) 40%);
 
-  --harmonious: #2563eb;
-  --challenging: #dc2626;
+  --harmonious: var(--color-french-blue);
+  --challenging: color-mix(
+    in srgb,
+    var(--color-candy-gloss),
+    var(--color-inkwell) 50%
+  );
 }
 
+/* The palette has no dark steps, so panel, muted ink and rules are mixed. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #0f0e1a;
-    --panel: #18172a;
-    --ink: #ece8f6;
-    --ink-muted: #a29db8;
-    --rule: #34314d;
-    --accent: #b8a4ff;
+    --paper: var(--color-midnight-soil);
+    --panel: color-mix(
+      in srgb,
+      var(--color-midnight-soil),
+      var(--color-parchment) 6%
+    );
+    --ink: var(--color-parchment);
+    --ink-muted: color-mix(
+      in srgb,
+      var(--color-ash),
+      var(--color-parchment) 45%
+    );
+    --rule: color-mix(
+      in srgb,
+      var(--color-ash),
+      var(--color-midnight-soil) 50%
+    );
+    --accent: var(--color-sage);
 
-    --fire: #fb923c;
-    --earth: #a3e635;
-    --air: #facc15;
-    --water: #60a5fa;
+    --fire: var(--color-candy-gloss);
+    --earth: var(--color-sage);
+    --air: var(--color-honey);
+    --water: var(--color-sky-wash);
 
-    --harmonious: #60a5fa;
-    --challenging: #f87171;
+    --harmonious: var(--color-sky-wash);
+    --challenging: var(--color-candy-gloss);
   }
 }
 
