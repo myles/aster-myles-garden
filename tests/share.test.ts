@@ -77,6 +77,26 @@ describe("parseShareHash", () => {
     ["a missing place", "#date=2000-01-01&time=12:00", "missing"],
     ["a bad date", "#date=yesterday&time=12:00&place=1", "Invalid date"],
     ["a bad time", "#date=2000-01-01&time=noon&place=1", "Invalid time"],
+    [
+      "an impossible date and time",
+      "#date=2024-02-31&time=99:99&place=1",
+      "Invalid date",
+    ],
+    [
+      "an impossible time",
+      "#date=2000-01-01&time=24:00&place=1",
+      "Invalid time",
+    ],
+    [
+      "an impossible transit date",
+      "#date=2000-01-01&time=12:00&place=1&transits=2024-02-31T12:00Z",
+      "transit moment",
+    ],
+    [
+      "an impossible transit time",
+      "#date=2000-01-01&time=12:00&place=1&transits=2026-11-13T24:00Z",
+      "transit moment",
+    ],
     ["a bad place", "#date=2000-01-01&time=12:00&place=-4", "place"],
     [
       "an unknown house system",

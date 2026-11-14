@@ -6,6 +6,7 @@ import {
   placesQuerySchemaV1,
 } from "@/lib/api/schemas";
 import { HouseSystem } from "@/lib/houses";
+import { parseLocalDate, parseLocalTime } from "@/lib/time";
 
 const VALID_REQUEST = {
   date: "1990-05-15",
@@ -92,4 +93,48 @@ describe("formatValidationError", () => {
     expect(message).not.toContain("1990-13-45");
     expect(message).not.toContain("123.456");
   });
+});
+
+describe("chartRequestSchemaV1 and the site's parsers", () => {
+  const isParsed = (parse: () => unknown): boolean => {
+    try {
+      parse();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // The API and the site validate separately; these keep them agreeing.
+  it.each([
+    "2024-02-29",
+    "2000-02-29",
+    "1990-05-15",
+    "2024-02-31",
+    "2023-02-29",
+    "1900-02-29",
+    "2024-04-31",
+    "2024-01-00",
+    "2024-13-01",
+    "15/05/1990",
+  ])("agrees on the date %s", (date) => {
+    const isAccepted = chartRequestSchemaV1.safeParse({
+      ...VALID_REQUEST,
+      date,
+    }).success;
+
+    expect(isAccepted).toBe(isParsed(() => parseLocalDate(date)));
+  });
+
+  it.each(["00:00", "23:59", "14:30", "24:00", "99:99", "12:60", "2:30"])(
+    "agrees on the time %s",
+    (time) => {
+      const isAccepted = chartRequestSchemaV1.safeParse({
+        ...VALID_REQUEST,
+        time,
+      }).success;
+
+      expect(isAccepted).toBe(isParsed(() => parseLocalTime(time)));
+    },
+  );
 });

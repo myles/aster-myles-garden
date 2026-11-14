@@ -46,6 +46,25 @@ describe("parseLocalDate", () => {
       'Invalid date: "15/05/1990"',
     );
   });
+
+  it.each(["2024-02-29", "2000-02-29", "0001-01-01", "2024-12-31"])(
+    "accepts the real date %s",
+    (date) => {
+      expect(() => parseLocalDate(date)).not.toThrow();
+    },
+  );
+
+  it.each([
+    "2024-02-31",
+    "2023-02-29",
+    "1900-02-29",
+    "2024-04-31",
+    "2024-01-00",
+    "2024-13-01",
+    "2024-00-10",
+  ])("rejects the impossible date %s", (date) => {
+    expect(() => parseLocalDate(date)).toThrow(`Invalid date: "${date}"`);
+  });
 });
 
 describe("parseLocalTime", () => {
@@ -56,6 +75,17 @@ describe("parseLocalTime", () => {
   it("rejects malformed input", () => {
     expect(() => parseLocalTime("2pm")).toThrow('Invalid time: "2pm"');
   });
+
+  it.each(["00:00", "23:59"])("accepts the real time %s", (time) => {
+    expect(() => parseLocalTime(time)).not.toThrow();
+  });
+
+  it.each(["24:00", "99:99", "12:60"])(
+    "rejects the impossible time %s",
+    (time) => {
+      expect(() => parseLocalTime(time)).toThrow(`Invalid time: "${time}"`);
+    },
+  );
 });
 
 describe("toUtc", () => {
