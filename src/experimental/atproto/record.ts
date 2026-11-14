@@ -1,8 +1,8 @@
 import { isDatetimeString } from "@atproto/syntax";
 
-import type { BirthDetails } from "@/lib/chart";
+import type { BirthDetails } from "@/lib/charts/chart";
 
-import { isHouseSystem } from "@/lib/houses";
+import { isHouseSystem } from "@/lib/astrology/houses";
 import { createCoordinatePlace, parseCoordinates } from "@/lib/places";
 import { isTimeZone, toLocal, toUtc } from "@/lib/time";
 
