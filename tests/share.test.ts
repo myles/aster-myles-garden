@@ -441,7 +441,7 @@ it("rejects an unknown solar return style", () => {
     parseShareHash(
       "#date=2000-01-01&time=12:00&place=1&return=2026&returnStyle=other",
     ),
-  ).toThrow("solar return style");
+  ).toThrow(`The link's solar return style isn't known: "other".`);
 });
 
 it("builds a link for the solar return comparison", () => {

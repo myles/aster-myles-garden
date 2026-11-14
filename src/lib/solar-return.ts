@@ -25,6 +25,10 @@ export enum SolarReturnStyle {
   BiWheel = "biWheel",
 }
 
+export function isSolarReturnStyle(value: string): value is SolarReturnStyle {
+  return Object.values(SolarReturnStyle).includes(value as SolarReturnStyle);
+}
+
 export type SolarReturn = {
   natal: Chart;
   /** The year of the birthday the return falls on, give or take a day. */

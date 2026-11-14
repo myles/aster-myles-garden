@@ -7,7 +7,7 @@ import type { HouseOverlay } from "@/lib/houses";
 import type { Transits } from "@/lib/transits";
 
 import { ASPECT_INFO, type Aspect, type AspectSettings } from "@/lib/aspects";
-import { BODY_INFO } from "@/lib/bodies";
+import { BODY_INFO, type Body } from "@/lib/bodies";
 import { formatDegrees, formatNoAspects, formatPlacement } from "@/lib/format";
 import { SolarReturnStyle, type SolarReturn } from "@/lib/solar-return";
 import { compareCharts, type Synastry } from "@/lib/synastry";
@@ -16,6 +16,9 @@ import { formatLongitude } from "@/lib/zodiac";
 type Row = string[];
 
 type Table = { title: string; headings: Row; rows: Row[] };
+
+/** Whose each body in a pair is, e.g. "Natal" → "☉ Natal Sun". */
+type PairLabels = { first: string; second: string };
 
 /** RFC 4180 separates records with CRLF. */
 const CSV_LINE_BREAK = "\r\n";
@@ -113,7 +116,6 @@ export function buildSolarReturnCsv(
   }
 
   const comparison = compareCharts(solarReturn.natal, solarReturn.chart);
-  const settings = solarReturn.natal.details.aspectSettings;
 
   return layOutSideBySide([
     buildPositionsTable("Positions", solarReturn.chart, {
@@ -122,11 +124,12 @@ export function buildSolarReturnCsv(
     }),
     {
       title: "Aspects to natal chart",
-      headings: ["Natal", "Aspect", "Return", "Orb"],
-      rows:
-        comparison.aspects.length > 0
-          ? buildCrossAspectRows(comparison)
-          : [[`${formatNoAspects(settings)} within orb.`, "", "", ""]],
+      headings: ASPECT_HEADINGS,
+      rows: buildAspectRows(
+        comparison.aspects,
+        solarReturn.natal.details.aspectSettings,
+        { first: "Natal", second: "Return" },
+      ),
     },
   ]);
 }
@@ -202,22 +205,28 @@ function buildPositionsTable(
 function buildAspectRows(
   aspects: Aspect[],
   settings: AspectSettings | undefined,
+  labels: PairLabels = { first: "", second: "" },
 ): Row[] {
   if (aspects.length === 0) {
     return [[`${formatNoAspects(settings)} within orb.`, "", ""]];
   }
 
   return aspects.map((aspect) => {
-    const first = BODY_INFO[aspect.first];
-    const second = BODY_INFO[aspect.second];
     const info = ASPECT_INFO[aspect.type];
 
     return [
-      `${first.glyph} ${first.name} – ${second.glyph} ${second.name}`,
+      `${nameBody(aspect.first, labels.first)} – ` +
+        nameBody(aspect.second, labels.second),
       `${info.glyph} ${info.name}`,
       formatDegrees(aspect.orbDegrees),
     ];
   });
+}
+
+/** Example: (Sun, "Natal") → "☉ Natal Sun"; (Sun, "") → "☉ Sun". */
+function nameBody(body: Body, label: string): string {
+  const { glyph, name } = BODY_INFO[body];
+  return [glyph, label, name].filter(Boolean).join(" ");
 }
 
 function buildCrossAspectRows({ aspects, first }: Synastry): Row[] {

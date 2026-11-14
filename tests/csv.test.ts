@@ -217,8 +217,16 @@ describe("buildSolarReturnCsv", () => {
     const csv = buildSolarReturnCsv(SOLAR_RETURN, SolarReturnStyle.BiWheel);
     expect(csv).toContain("Natal house");
     expect(csv).toContain("Aspects to natal chart");
-    expect(csv).toContain("Natal,Aspect,Return,Orb");
     expect(csv).toContain("Conjunction");
+  });
+
+  it("lays out cross aspects as the on-screen table does", () => {
+    const lines = parseLines(
+      buildSolarReturnCsv(SOLAR_RETURN, SolarReturnStyle.BiWheel),
+    );
+
+    expect(lines[1]).toMatch(/,,Pair,Aspect,Orb$/);
+    expect(lines[2]).toMatch(/,,\S+ Natal \w+ – \S+ Return \w+,[^,]+,[^,]+$/);
   });
 
   it("explains when there are no cross aspects", () => {
@@ -226,8 +234,10 @@ describe("buildSolarReturnCsv", () => {
       ...SOLAR_RETURN,
       chart: { ...SOLAR_RETURN.chart, bodies: [] },
     };
-    expect(
+    const lines = parseLines(
       buildSolarReturnCsv(solarReturn, SolarReturnStyle.BiWheel),
-    ).toContain("No major aspects within orb.");
+    );
+
+    expect(lines[2]).toMatch(/,,No major aspects within orb\.,,$/);
   });
 });

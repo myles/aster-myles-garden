@@ -7,7 +7,7 @@ import SolarReturnView from "@/components/SolarReturnView.svelte";
 import { HouseSystem } from "@/lib/houses";
 import { SolarReturnStyle } from "@/lib/solar-return";
 
-import { CHART, SOLAR_RETURN } from "./fixtures/chart";
+import { CHART, POLAR_CHART, SOLAR_RETURN } from "./fixtures/chart";
 
 describe("SolarReturnView", () => {
   beforeEach(() => {
@@ -114,6 +114,26 @@ describe("SolarReturnView", () => {
     render(SolarReturnView, { solarReturn: { ...SOLAR_RETURN, chart } });
 
     expect(screen.getByText(/so the return uses Porphyry/)).toBeTruthy();
+  });
+
+  it("names the natal houses the bi-wheel draws", () => {
+    render(SolarReturnView, {
+      solarReturn: { ...SOLAR_RETURN, natal: POLAR_CHART },
+      style: SolarReturnStyle.BiWheel,
+    });
+
+    expect(screen.getByText(/· Porphyry$/)).toBeTruthy();
+    expect(screen.getByText(/so your natal chart uses Porphyry/)).toBeTruthy();
+  });
+
+  it("drops the return's fallback note in the bi-wheel", () => {
+    render(SolarReturnView, {
+      solarReturn: { ...SOLAR_RETURN, chart: POLAR_CHART },
+      style: SolarReturnStyle.BiWheel,
+    });
+
+    expect(screen.queryByText(/so the return uses/)).toBeNull();
+    expect(screen.queryByText(/· Porphyry$/)).toBeNull();
   });
 
   it("shares a link that reopens the return", async () => {

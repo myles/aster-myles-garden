@@ -14,6 +14,8 @@ import {
   createSolarReturn,
   findCurrentReturnYear,
   findSolarReturn,
+  isSolarReturnStyle,
+  SolarReturnStyle,
 } from "@/lib/solar-return";
 import { toJulianDay } from "@/lib/time";
 import { separateDegrees } from "@/lib/zodiac";
@@ -198,5 +200,15 @@ describe("findCurrentReturnYear", () => {
     expect(findCurrentReturnYear(natal, new Date("2000-06-01T00:00Z"))).toBe(
       2001,
     );
+  });
+});
+
+describe("isSolarReturnStyle", () => {
+  it.each(Object.values(SolarReturnStyle))("accepts %s", (style) => {
+    expect(isSolarReturnStyle(style)).toBe(true);
+  });
+
+  it("rejects anything else", () => {
+    expect(isSolarReturnStyle("other")).toBe(false);
   });
 });

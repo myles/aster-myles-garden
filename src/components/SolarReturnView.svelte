@@ -25,9 +25,12 @@
 
   const chart = $derived(solarReturn.chart);
   const isBiWheel = $derived(style === SolarReturnStyle.BiWheel);
-  const comparison = $derived(compareCharts(solarReturn.natal, chart));
+  // Only the bi-wheel compares the return with the natal chart.
+  const comparison = $derived(
+    isBiWheel ? compareCharts(solarReturn.natal, chart) : undefined,
+  );
   const biWheel = $derived(
-    isBiWheel
+    comparison
       ? {
           inner: solarReturn.natal,
           outerBodies: chart.bodies,
@@ -39,11 +42,14 @@
       : undefined,
   );
 
+  // The bi-wheel draws the natal houses, so the labels follow those.
+  const housesChart = $derived(isBiWheel ? solarReturn.natal : chart);
+
   const subheading = $derived(
     [
       formatPlace(chart.details.place),
       formatBirthMoment(chart),
-      chart.houses && HOUSE_SYSTEM_NAMES[chart.houses.houseSystem],
+      housesChart.houses && HOUSE_SYSTEM_NAMES[housesChart.houses.houseSystem],
     ]
       .filter(Boolean)
       .join(" · "),
@@ -54,11 +60,11 @@
   );
 
   const fallbackNote = $derived(
-    chart.houses && usesFallbackHouses(chart)
+    housesChart.houses && usesFallbackHouses(housesChart)
       ? describeHouseFallback(
-          chart.details.houseSystem,
-          chart.houses.houseSystem,
-          "the return uses",
+          housesChart.details.houseSystem,
+          housesChart.houses.houseSystem,
+          isBiWheel ? "your natal chart uses" : "the return uses",
         )
       : undefined,
   );
@@ -112,10 +118,11 @@
     </p>
   {/if}
 
+  <!-- The bi-wheel is named by its own title. -->
   <ChartWheel
     {chart}
     {biWheel}
-    title="Solar return chart wheel"
+    title={biWheel ? undefined : "Solar return chart wheel"}
     bind:svg={wheel}
   />
 
@@ -123,7 +130,7 @@
     <PositionsTable
       {chart}
       title="Positions"
-      overlay={isBiWheel
+      overlay={comparison
         ? {
             heading: "Natal house",
             houses: comparison.secondInFirstHouses,
@@ -135,7 +142,7 @@
       title={isBiWheel ? "Aspects to natal chart" : "Aspects"}
       firstLabel={isBiWheel ? "Natal" : ""}
       secondLabel={isBiWheel ? "Return" : ""}
-      aspects={isBiWheel ? comparison.aspects : chart.aspects}
+      aspects={comparison ? comparison.aspects : chart.aspects}
       settings={chart.details.aspectSettings}
     />
   </div>

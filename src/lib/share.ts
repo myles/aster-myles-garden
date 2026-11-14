@@ -21,7 +21,7 @@ import {
   parseCoordinates,
   type Place,
 } from "@/lib/places";
-import { SolarReturnStyle } from "@/lib/solar-return";
+import { isSolarReturnStyle, SolarReturnStyle } from "@/lib/solar-return";
 import { ComparisonStyle, isComparisonStyle } from "@/lib/synastry";
 import {
   formatDateValue,
@@ -247,12 +247,8 @@ function readSolarReturn(
     throw new Error(`${RETURN_PLACE.subject} is missing its place.`);
   }
 
-  if (
-    style !== null &&
-    style !== SolarReturnStyle.Standalone &&
-    style !== SolarReturnStyle.BiWheel
-  ) {
-    throw new Error("Unknown solar return style.");
+  if (style !== null && !isSolarReturnStyle(style)) {
+    throw new Error(`The link's solar return style isn't known: "${style}".`);
   }
 
   return { year: Number(year), place, style: style ?? undefined };

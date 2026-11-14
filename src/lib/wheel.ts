@@ -39,8 +39,13 @@ const BODY_RETROGRADE_RADIUS_PX = 176;
 const HOUSE_RING_RADIUS_PX = 152;
 const HOUSE_NUMBER_RADIUS_PX = 138;
 const ASPECT_RADIUS_PX = 124;
-const ANGLE_LABEL_RADIUS_PX = 159;
 const ANGLE_LABEL_OFFSET_DEGREES = 4;
+// A two-letter angle label's bounds at its 11px font size, estimated.
+const ANGLE_LABEL_WIDTH_PX = 16;
+const ANGLE_LABEL_HEIGHT_PX = 13;
+/** The ℞ is the body annotation nearest the centre. */
+const RETROGRADE_HALF_SIZE_PX = 7;
+const ANGLE_LABEL_CLEARANCE_PX = 1;
 
 // The bi-wheel's outer ring, outside the zodiac. Its viewBox grows by a
 // margin on every side so the inner wheel's geometry stays the same.
@@ -101,12 +106,7 @@ type Layer = (typeof LAYERS)[number];
 
 type Point = { x: number; y: number };
 type Segment = { from: Point; to: Point; className: string };
-type Label = {
-  at: Point;
-  text: string;
-  className: string;
-  textAnchor?: "start" | "middle" | "end";
-};
+type Label = { at: Point; text: string; className: string };
 type Ring = { radius: number; className: string };
 
 /** Where a chart's bodies sit: inside the zodiac, or outside it. */
@@ -202,7 +202,7 @@ function joinLabels(parent: Parent, labels: Label[]): void {
     .attr("class", (d) => d.className)
     .attr("x", (d) => round(d.at.x))
     .attr("y", (d) => round(d.at.y))
-    .attr("text-anchor", (d) => d.textAnchor ?? "middle")
+    .attr("text-anchor", "middle")
     .attr("dominant-baseline", "central")
     .text((d) => d.text);
 }
@@ -329,22 +329,44 @@ function drawAxes(parent: Parent, houses: HousePositions | undefined): void {
   joinLabels(
     parent,
     axes.map((axis) => {
-      const at = project(
-        axis.longitude + ANGLE_LABEL_OFFSET_DEGREES,
-        ascendant,
-        ANGLE_LABEL_RADIUS_PX,
-      );
+      const longitude = axis.longitude + ANGLE_LABEL_OFFSET_DEGREES;
 
-      // Keep the text towards the centre, inside the bodies' annotation
-      // ring, even when a retrograde body sits directly on an angle.
       return {
-        at,
+        at: project(
+          longitude,
+          ascendant,
+          measureAngleLabelRadius(longitude, ascendant),
+        ),
         text: axis.label,
         className: "wheel-axis-label",
-        textAnchor: at.x < CENTRE_PX ? "start" : "end",
       };
     }),
   );
+}
+
+/**
+ * Fits an angle label between the house ring and the bodies' ℞ marks,
+ * so it stays clear of a retrograde body sitting right on the angle.
+ * Centred in the gap when its box fits. On a diagonal the box is deeper
+ * than the gap, so it keeps clear of the ℞ and crosses the faint house
+ * ring instead. The angular offset keeps it off its own axis.
+ */
+function measureAngleLabelRadius(longitude: number, ascendant: number): number {
+  const radians = ((180 + longitude - ascendant) * Math.PI) / 180;
+  const halfDepth =
+    (ANGLE_LABEL_WIDTH_PX / 2) * Math.abs(Math.cos(radians)) +
+    (ANGLE_LABEL_HEIGHT_PX / 2) * Math.abs(Math.sin(radians));
+  const inner = HOUSE_RING_RADIUS_PX + ANGLE_LABEL_CLEARANCE_PX;
+  const outer =
+    BODY_RETROGRADE_RADIUS_PX -
+    RETROGRADE_HALF_SIZE_PX -
+    ANGLE_LABEL_CLEARANCE_PX;
+
+  if (outer - inner >= halfDepth * 2) {
+    return (inner + outer) / 2;
+  }
+
+  return outer - halfDepth;
 }
 
 /**

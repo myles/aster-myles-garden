@@ -46,6 +46,58 @@ describe("spreadLongitudes", () => {
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
+type Box = { left: number; right: number; top: number; bottom: number };
+
+// Conservative text bounds at the wheel's 11px font size.
+const CHARACTER_WIDTH_PX = 7.5;
+const TEXT_HEIGHT_PX = 12;
+const TEXT_CLEARANCE_PX = 1;
+
+/** Where a <text> is drawn, from its anchor and centred baseline. */
+function estimateTextBox(text: Element): Box {
+  const x = Number(text.getAttribute("x"));
+  const y = Number(text.getAttribute("y"));
+  const width = (text.textContent?.length ?? 0) * CHARACTER_WIDTH_PX;
+  const anchor = text.getAttribute("text-anchor");
+  const left =
+    anchor === "start" ? x : anchor === "end" ? x - width : x - width / 2;
+
+  return {
+    left,
+    right: left + width,
+    top: y - TEXT_HEIGHT_PX / 2,
+    bottom: y + TEXT_HEIGHT_PX / 2,
+  };
+}
+
+function overlaps(a: Box, b: Box): boolean {
+  return (
+    a.left < b.right + TEXT_CLEARANCE_PX &&
+    a.right > b.left - TEXT_CLEARANCE_PX &&
+    a.top < b.bottom + TEXT_CLEARANCE_PX &&
+    a.bottom > b.top - TEXT_CLEARANCE_PX
+  );
+}
+
+/** Samples the line, which is enough at these sizes. */
+function crosses(line: Element, box: Box): boolean {
+  const [x1, y1, x2, y2] = ["x1", "y1", "x2", "y2"].map((name) =>
+    Number(line.getAttribute(name)),
+  );
+  const steps = 200;
+
+  for (let step = 0; step <= steps; step++) {
+    const x = x1 + ((x2 - x1) * step) / steps;
+    const y = y1 + ((y2 - y1) * step) / steps;
+
+    if (x > box.left && x < box.right && y > box.top && y < box.bottom) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 describe("drawWheel", () => {
   let svg: SVGSVGElement;
 
@@ -136,35 +188,36 @@ describe("drawWheel", () => {
         })),
       });
 
-      const labels = svg.querySelectorAll(".wheel-axis-label");
-      const annotations = svg.querySelectorAll(
-        ".wheel-body-degree, .wheel-body-retrograde",
-      );
+      const neighbours = [
+        ...svg.querySelectorAll(
+          ".wheel-body-degree, .wheel-body-retrograde, .wheel-house-number",
+        ),
+      ].map(estimateTextBox);
 
-      for (const label of labels) {
-        const x = Number(label.getAttribute("x"));
-        const y = Number(label.getAttribute("y"));
-        const anchor = label.getAttribute("text-anchor");
-        const left = x - (anchor === "start" ? 0 : 20);
-        const right = x + (anchor === "end" ? 0 : 20);
+      for (const label of svg.querySelectorAll(".wheel-axis-label")) {
+        const box = estimateTextBox(label);
 
-        for (const annotation of annotations) {
-          const bodyX = Number(annotation.getAttribute("x"));
-          const bodyY = Number(annotation.getAttribute("y"));
-          const halfWidth = annotation.classList.contains(
-            "wheel-body-retrograde",
-          )
-            ? 6
-            : 12;
-
-          // Conservative text bounds at the wheel's 11px font size.
-          const isClear =
-            right + 2 <= bodyX - halfWidth ||
-            left - 2 >= bodyX + halfWidth ||
-            Math.abs(y - bodyY) >= 16;
-          expect(isClear).toBe(true);
+        for (const neighbour of neighbours) {
+          expect(overlaps(box, neighbour)).toBe(false);
         }
       }
+    },
+  );
+
+  it.each([0, 45, 90, 135, 180, 225, 270, 315])(
+    "keeps angle labels off their own axis at %s degrees",
+    (longitude) => {
+      drawWheel(svg, {
+        ...CHART,
+        houses: { ...CHART.houses!, midheaven: longitude },
+      });
+
+      const axes = svg.querySelectorAll(".wheel-axis");
+      const labels = svg.querySelectorAll(".wheel-axis-label");
+
+      labels.forEach((label, index) => {
+        expect(crosses(axes[index], estimateTextBox(label))).toBe(false);
+      });
     },
   );
 
