@@ -77,6 +77,49 @@ describe("PlacePicker", () => {
     expect(screen.getAllByRole("option")).toHaveLength(1);
   });
 
+  it("reopens the suggestions when the field is focused again", async () => {
+    render(PlacePicker);
+    const input = screen.getByRole("combobox");
+
+    await type(input, "london");
+    await fireEvent.blur(input);
+    expect(input.getAttribute("aria-expanded")).toBe("false");
+
+    await fireEvent.focus(input);
+
+    expect(input.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getAllByRole("option")).toHaveLength(2);
+  });
+
+  it("reopens the suggestions with Arrow Down", async () => {
+    render(PlacePicker);
+    const input = screen.getByRole("combobox");
+
+    await type(input, "london");
+    await fireEvent.keyDown(input, { key: "Escape" });
+    expect(input.getAttribute("aria-expanded")).toBe("false");
+
+    await fireEvent.keyDown(input, { key: "ArrowDown" });
+
+    expect(input.getAttribute("aria-expanded")).toBe("true");
+    expect(input.getAttribute("aria-activedescendant")).toBe(
+      "birth-place-option-0",
+    );
+  });
+
+  it("keeps a chosen place's suggestions closed", async () => {
+    render(PlacePicker);
+    const input = screen.getByRole("combobox");
+
+    await type(input, "toronto");
+    await fireEvent.keyDown(input, { key: "Enter" });
+    await fireEvent.blur(input);
+    await fireEvent.focus(input);
+    await fireEvent.keyDown(input, { key: "ArrowDown" });
+
+    expect(input.getAttribute("aria-expanded")).toBe("false");
+  });
+
   it("reports a failed index load", async () => {
     vi.mocked(loadPlaceIndex).mockRejectedValue(new Error("Offline"));
     render(PlacePicker);
