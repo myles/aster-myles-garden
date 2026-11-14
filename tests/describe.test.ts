@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { AspectType } from "@/lib/aspects";
 import { describeBiWheel, describeWheel } from "@/lib/describe";
 import { compareCharts } from "@/lib/synastry";
 
@@ -52,6 +53,41 @@ describe("describeWheel", () => {
   it("says when no aspect lines are drawn", () => {
     expect(describeWheel({ ...CHART, aspects: [] }).at(-1)).toBe(
       "No aspect lines cross the centre.",
+    );
+  });
+
+  it("says how many lines are minor aspects, drawn dashed", () => {
+    const [opposition] = CHART.aspects;
+    const aspects = [
+      opposition,
+      { ...opposition, type: AspectType.Quincunx },
+      { ...opposition, type: AspectType.SemiSextile },
+    ];
+
+    expect(describeWheel({ ...CHART, aspects }).at(-1)).toBe(
+      "3 aspect lines cross the centre: 1 harmonious and 2 challenging, " +
+        "2 of them minor and dashed.",
+    );
+  });
+
+  it("says when the only line is a minor aspect", () => {
+    const [opposition] = CHART.aspects;
+    const aspects = [{ ...opposition, type: AspectType.Quincunx }];
+
+    expect(describeWheel({ ...CHART, aspects }).at(-1)).toBe(
+      "1 aspect line crosses the centre: 1 challenging, minor and dashed.",
+    );
+  });
+
+  it("says when every line is a minor aspect", () => {
+    const [opposition] = CHART.aspects;
+    const aspects = [
+      { ...opposition, type: AspectType.Quincunx },
+      { ...opposition, type: AspectType.SemiSquare },
+    ];
+
+    expect(describeWheel({ ...CHART, aspects }).at(-1)).toBe(
+      "2 aspect lines cross the centre: 2 challenging, all minor and dashed.",
     );
   });
 });

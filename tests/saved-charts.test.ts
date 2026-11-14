@@ -11,42 +11,7 @@ import {
 } from "@/lib/saved-charts";
 
 import { CHART } from "./fixtures/chart";
-
-/** An in-memory stand-in for localStorage. */
-class MemoryStorage implements Storage {
-  private _items = new Map<string, string>();
-
-  get length(): number {
-    return this._items.size;
-  }
-
-  clear(): void {
-    this._items.clear();
-  }
-
-  getItem(key: string): string | null {
-    return this._items.get(key) ?? null;
-  }
-
-  key(index: number): string | null {
-    return [...this._items.keys()][index] ?? null;
-  }
-
-  removeItem(key: string): void {
-    this._items.delete(key);
-  }
-
-  setItem(key: string, value: string): void {
-    this._items.set(key, value);
-  }
-}
-
-/** A storage that refuses every write, as a full or locked-down one does. */
-class FullStorage extends MemoryStorage {
-  override setItem(): void {
-    throw new DOMException("Quota exceeded", "QuotaExceededError");
-  }
-}
+import { FullStorage, MemoryStorage } from "./fixtures/storage";
 
 const ME = {
   name: "Me",

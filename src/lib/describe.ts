@@ -6,7 +6,12 @@
 import type { Chart, PlacedBody } from "@/lib/chart";
 import type { BiWheel, WheelChart } from "@/lib/wheel";
 
-import { ASPECT_INFO, AspectQuality, type Aspect } from "@/lib/aspects";
+import {
+  ASPECT_INFO,
+  AspectQuality,
+  AspectRank,
+  type Aspect,
+} from "@/lib/aspects";
 import { BODY_INFO, BodyKind } from "@/lib/bodies";
 import { formatLongitude, getSign, normalizeDegrees } from "@/lib/zodiac";
 
@@ -192,7 +197,25 @@ function describeLines(aspects: Aspect[], verb: LineVerb): string {
       ? `1 aspect line ${verb.one}`
       : `${lines.length} aspect lines ${verb.many}`;
 
-  return `${subject}: ${parts.join(" and ")}.`;
+  return `${subject}: ${parts.join(" and ")}${describeMinor(lines)}.`;
+}
+
+/**
+ * Minor aspects are dashed on the wheel, so say how many there are.
+ * Examples: ", 2 of them minor and dashed"; ", all minor and dashed".
+ */
+function describeMinor(lines: Aspect[]): string {
+  const count = lines.filter(
+    (aspect) => ASPECT_INFO[aspect.type].rank === AspectRank.Minor,
+  ).length;
+
+  if (count === 0) {
+    return "";
+  }
+  if (count < lines.length) {
+    return `, ${count} of them minor and dashed`;
+  }
+  return lines.length === 1 ? ", minor and dashed" : ", all minor and dashed";
 }
 
 /** Points such as the lunar node are left out of the balance. */

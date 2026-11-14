@@ -9,6 +9,11 @@ import { createChart, loadChartEngine } from "@/lib/chart";
 import { createComposite } from "@/lib/composite";
 import { HouseSystem } from "@/lib/houses";
 import { loadPlaceIndex } from "@/lib/places";
+import {
+  PREFERENCES_KEY,
+  readPreferences,
+  writePreferences,
+} from "@/lib/preferences";
 import { addSavedChart, readSavedCharts } from "@/lib/saved-charts";
 import { createSolarReturn, findCurrentReturnYear } from "@/lib/solar-return";
 import { toUtc } from "@/lib/time";
@@ -273,6 +278,93 @@ describe("App", () => {
 });
 
 const CHART_HEADING = "London, England, United Kingdom";
+
+function selectValue(label: string): string {
+  return screen.getByLabelText<HTMLSelectElement>(label).value;
+}
+
+describe("App remembering chart settings", () => {
+  const SAVED = {
+    houseSystem: HouseSystem.WholeSign,
+    aspectSettings: { aspectSet: AspectSet.All, orbSize: OrbSize.Tight },
+  };
+
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("remembers changes for the next visit", async () => {
+    const { unmount } = render(App);
+
+    await fireEvent.change(screen.getByLabelText("House system"), {
+      target: { value: HouseSystem.Koch },
+    });
+    await fireEvent.change(screen.getByLabelText("Aspects"), {
+      target: { value: AspectSet.All },
+    });
+    await fireEvent.change(screen.getByLabelText("Orbs"), {
+      target: { value: OrbSize.Wide },
+    });
+    unmount();
+    render(App);
+
+    expect(selectValue("House system")).toBe(HouseSystem.Koch);
+    expect(selectValue("Aspects")).toBe(AspectSet.All);
+    expect(selectValue("Orbs")).toBe(OrbSize.Wide);
+  });
+
+  it("draws with the remembered settings", async () => {
+    writePreferences(localStorage, SAVED);
+    render(App);
+
+    await fillDateTime();
+    await choosePlace();
+    await submit();
+
+    expect(createChart).toHaveBeenLastCalledWith(
+      expect.objectContaining(SAVED),
+    );
+  });
+
+  it("lets a share link's settings win, without forgetting yours", async () => {
+    writePreferences(localStorage, SAVED);
+    window.history.replaceState(
+      null,
+      "",
+      "/#date=2000-01-01&time=12:00&place=6058560&house=koch",
+    );
+    render(App);
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          houseSystem: HouseSystem.Koch,
+          aspectSettings: DEFAULT_ASPECT_SETTINGS,
+        }),
+      ),
+    );
+    expect(readPreferences(localStorage)).toEqual(SAVED);
+  });
+
+  it("falls back to the defaults when they're damaged, and says so", () => {
+    localStorage.setItem(PREFERENCES_KEY, "{");
+    render(App);
+
+    expect(selectValue("House system")).toBe(HouseSystem.Placidus);
+    expect(
+      screen.getByText(
+        "Couldn't read your saved settings, so the defaults are in use: " +
+          "Your saved chart settings are damaged.",
+      ),
+    ).toBeTruthy();
+  });
+});
 
 describe("App opened from a share link", () => {
   const SHARE_HASH = "#date=2000-01-01&time=12:00&place=6058560&house=koch";

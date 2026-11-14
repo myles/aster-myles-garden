@@ -36,6 +36,7 @@
     isHouseSystem,
   } from "@/lib/houses";
   import { findPlace, loadPlaceIndex, type Place } from "@/lib/places";
+  import { readPreferences, writePreferences } from "@/lib/preferences";
   import {
     addSavedChart,
     getBrowserStorage,
@@ -122,6 +123,8 @@
   let savedCharts: SavedChart[] = $state.raw([]);
   // Why saved charts can't be used, e.g. the browser blocks storage.
   let savedChartsError = $state("");
+  // Why chart settings can't be remembered, or the saved ones read.
+  let settingsNote = $state("");
   let error = $state("");
   let compareError = $state("");
   let isDrawing = $state(false);
@@ -203,6 +206,7 @@
 
     transitTimeZone = getLocalTimeZone();
     loadSavedCharts();
+    loadPreferences();
     void openSharedLink();
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
@@ -276,6 +280,46 @@
       throw new Error(`No place has the ID ${shared.placeId}.`);
     }
     return place;
+  }
+
+  // Before any share link opens, so the link's settings win.
+  function loadPreferences(): void {
+    try {
+      const saved = readPreferences(getBrowserStorage());
+      if (!saved) {
+        return;
+      }
+
+      houseSystem = saved.houseSystem;
+      ({ aspectSet, orbSize } = saved.aspectSettings);
+    } catch (cause) {
+      settingsNote =
+        "Couldn't read your saved settings, so the defaults are in use: " +
+        describeError(cause);
+    }
+  }
+
+  // Only what's chosen here is saved: a share link's settings are shown
+  // without replacing yours.
+  function savePreferences(): void {
+    if (!isHouseSystem(houseSystem)) {
+      return;
+    }
+
+    try {
+      writePreferences(getBrowserStorage(), {
+        houseSystem,
+        aspectSettings: { aspectSet, orbSize },
+      });
+      settingsNote = "";
+    } catch (cause) {
+      settingsNote = `Couldn't remember your settings: ${describeError(cause)}`;
+    }
+  }
+
+  function onSettingChange(): void {
+    savePreferences();
+    redrawIfDrawn();
   }
 
   function loadSavedCharts(): void {
@@ -688,7 +732,7 @@
             class="border-rule bg-paper rounded border px-3 py-2 disabled:opacity-50"
             bind:value={houseSystem}
             disabled={isHouseSystemUnused}
-            onchange={redrawIfDrawn}
+            onchange={onSettingChange}
           >
             {#each houseSystems as system (system)}
               <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
@@ -707,7 +751,7 @@
               name="aspectSet"
               class="border-rule bg-paper rounded border px-3 py-2"
               bind:value={aspectSet}
-              onchange={redrawIfDrawn}
+              onchange={onSettingChange}
             >
               {#each aspectSets as set (set)}
                 <option value={set}>{ASPECT_SET_NAMES[set]}</option>
@@ -722,7 +766,7 @@
               name="orbSize"
               class="border-rule bg-paper rounded border px-3 py-2"
               bind:value={orbSize}
-              onchange={redrawIfDrawn}
+              onchange={onSettingChange}
             >
               {#each orbSizes as size (size)}
                 <option value={size}>{ORB_SIZE_NAMES[size]}</option>
@@ -730,6 +774,9 @@
             </select>
           </div>
         </div>
+        {#if settingsNote}
+          <p class="text-ink-muted -mt-3 text-xs">{settingsNote}</p>
+        {/if}
 
         <button
           type="submit"
