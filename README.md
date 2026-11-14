@@ -17,6 +17,7 @@ Most birth chart tools send your details off to a server you don't control, then
 - **Static site, small API.** The site ships as static files. A separate [JSON API](#api) runs on a server, for tools that can't run the page.
 - **Readable chart wheel.** Rendered as SVG, so it stays crisp at any size and is easy to style or export. A written description of what it shows is read out by screen readers and shown under the wheel.
 - **Multiple house systems.** Placidus by default, with others available.
+- **Works offline.** Once the site has been opened, a service worker keeps the page and the calculation engine cached, so charts draw without a connection. It can be installed as an app from the browser's menu. The API is never cached.
 
 ## How it works
 

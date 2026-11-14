@@ -14,6 +14,9 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
+    // A worker answers requests before page.route sees them, so it's
+    // blocked except in the tests for working offline.
+    serviceWorkers: "block",
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },

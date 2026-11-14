@@ -17,16 +17,13 @@
 - [x] Coordinates for unlisted places, with the time zone suggested from the nearest listed place
 - [x] Lilith and the South Node
 - [x] Minor aspects and tight, standard or wide orbs, carried by share links and the API
+- [x] Works offline as an installed app, using a service worker
 
 ## Charts
 
 - [ ] Composite and solar return charts
 - [ ] Sidereal zodiac, with a choice of ayanamsa
 - [ ] Optional high-precision ephemeris files, and Chiron with them: the built-in Moshier ephemeris has no asteroids
-
-## App
-
-- [ ] Work offline as an installed app, using a service worker.
 
 ## API
 

@@ -2,7 +2,7 @@
 
 > Aster is a free natal (birth) chart generator that runs entirely in the browser. Give it a birth date, local time and place, and it draws a chart wheel with planet positions, houses and aspects. Calculations use the Swiss Ephemeris compiled to WebAssembly; nothing entered is sent to a server unless the visitor chooses to send it.
 
-Aster is a single page at https://aster.myles.garden/. The page has no server-side rendering: the chart is calculated and drawn by JavaScript in the visitor's browser. A tool that fetches the page without running JavaScript will see only the empty form, not a chart. Use the JSON API below instead.
+Aster is a single page at https://aster.myles.garden/. The page has no server-side rendering: the chart is calculated and drawn by JavaScript in the visitor's browser. A tool that fetches the page without running JavaScript will see only the empty form, not a chart. Use the JSON API below instead. Once opened in a browser, the page also works offline: a service worker caches it and the calculation engine.
 
 ## JSON API
 

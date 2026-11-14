@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
 import { SITE_URL } from "./src/consts";
+import { serviceWorker } from "./src/integrations/service-worker";
 
 /**
  * Emscripten's UMD footer in @swisseph/browser checks `typeof module`.
@@ -47,6 +48,6 @@ export default defineConfig({
     },
   },
 
-  integrations: [svelte()],
+  integrations: [svelte(), serviceWorker()],
   adapter: vercel({ includeFiles: [SWISSEPH_NODE_VERCEL_PREBUILD] }),
 });

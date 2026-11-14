@@ -38,3 +38,15 @@ import Layout from "@/layouts/Layout.astro";
     </footer>
   </div>
 </Layout>
+
+<script>
+  import { registerServiceWorker } from "@/lib/service-worker";
+
+  // Built pages only: in development the worker would cache files Vite is
+  // still changing. Registering after load keeps it off the first paint.
+  if (import.meta.env.PROD) {
+    window.addEventListener("load", () => {
+      void registerServiceWorker(navigator.serviceWorker);
+    });
+  }
+</script>
