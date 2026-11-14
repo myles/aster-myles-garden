@@ -13,11 +13,17 @@ import {
   buildChartCsv,
   buildComparisonCsv,
   buildCompositeCsv,
+  buildProgressionsCsv,
   buildTransitsCsv,
   buildSolarReturnCsv,
 } from "@/lib/downloads/csv";
 
-import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "../../fixtures/chart";
+import {
+  CHART,
+  CHART_WITHOUT_TIME,
+  PROGRESSIONS,
+  SOLAR_RETURN,
+} from "../../fixtures/chart";
 
 const UTF8_BOM = "\uFEFF";
 
@@ -208,6 +214,27 @@ describe("buildTransitsCsv", () => {
     const lines = parseLines(buildTransitsCsv({ ...transits, aspects: [] }));
 
     expect(lines[2]).toMatch(/,,No transits within orb\.,,,$/);
+  });
+});
+
+describe("buildProgressionsCsv", () => {
+  const QUINCUNX = `${ASPECT_INFO[AspectType.Quincunx].glyph} Quincunx`;
+
+  it("lists the progressed planets and their aspects to your chart", () => {
+    expect(parseLines(buildProgressionsCsv(PROGRESSIONS))).toEqual([
+      "Progressed positions,,,,Progressions to your chart,,,",
+      "Body,Position,Your house,,Progressed,Aspect,Natal,Orb",
+      `${SUN},10° 30′ Aquarius,11,,${SUN},${QUINCUNX},${MARS},0° 30′`,
+      "",
+    ]);
+  });
+
+  it("says so when nothing progressed is in orb", () => {
+    const lines = parseLines(
+      buildProgressionsCsv({ ...PROGRESSIONS, aspects: [] }),
+    );
+
+    expect(lines[2]).toMatch(/,,No progressions within orb\.,,,$/);
   });
 });
 

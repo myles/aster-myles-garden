@@ -6,5 +6,6 @@ export enum Panel {
   None = "none",
   Comparison = "comparison",
   Transits = "transits",
+  Progressions = "progressions",
   SolarReturn = "solarReturn",
 }

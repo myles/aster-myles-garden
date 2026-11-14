@@ -4,7 +4,7 @@ A birth chart generator that runs entirely in the browser. Give it a date, a tim
 
 Lives at [aster.myles.garden](https://aster.myles.garden). Named for the star-shaped flower — _aster_ is Greek for "star".
 
-> **Status:** working. Natal charts, comparisons, composites, transits and solar returns are all in place; [ROADMAP.md](./ROADMAP.md) lists what's next.
+> **Status:** working. Natal charts, comparisons, composites, transits, progressions and solar returns are all in place; [ROADMAP.md](./ROADMAP.md) lists what's next.
 
 ## Why
 
@@ -17,7 +17,7 @@ Most birth chart tools send your details off to a server you don't control, then
 - **Static site, small API.** The site ships as static files. A separate [JSON API](#api) runs on a server, for tools that can't run the page.
 - **Readable chart wheel.** Rendered as SVG, so it stays crisp at any size and is easy to style or export. A written description of what it shows is read out by screen readers and shown under the wheel.
 - **Multiple house systems.** Placidus by default, with others available.
-- **More than one chart.** Compare two people as a bi-wheel or a composite, set transits against a natal chart, or cast a year's solar return.
+- **More than one chart.** Compare two people as a bi-wheel or a composite, set transits or secondary progressions against a natal chart, or cast a year's solar return.
 - **Works offline.** Once the site has been opened, a service worker keeps the page and the calculation engine cached, so charts draw without a connection. It can be installed as an app from the browser's menu. The API is never cached.
 
 ## How it works
@@ -80,8 +80,9 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 5. Press **Copy link** to share the chart. The link carries the date, time, GeoNames place ID, house system and any aspect settings in its `#` fragment, which browsers never send to the server, and opening it fills in the form and draws the same chart.
 6. Press **Compare with someone else** under the form to add a second person. The chart becomes a bi-wheel, with their planets outside the zodiac, plus the aspects between you and where each person's planets fall in the other's houses. Choose **Composite** to see one chart for the pair instead, made from the midpoints of your positions.
 7. Press **See transits** to set the sky at a moment, now by default, against your chart. Transits count within 2° of exact, and the time is read in your own time zone.
-8. Press **See solar return** for the chart of the moment the Sun gets back to where it was when you were born. It opens on the return in effect now, cast at your birthplace; change the year, or the place to where you'll be on that birthday. Choose **Against natal chart** to see your natal planets inside a bi-wheel and the return outside, with aspects between them and each return planet's natal house. **Return alone** restores the standalone chart. Share links and downloads follow the selected view. It needs your birth time.
-9. Type a name under **Save as** to keep a chart's details in this browser. Saved charts appear at the top of each form, where **Use** fills it in and draws it, and **Forget** removes it. They're stored only in your browser's local storage and never sent anywhere.
+8. Press **See progressions** to see your chart moved on a day for each year of life, to today by default or any date after your birth, set against your natal chart as transits are. Progressions count within 1° of exact. Without a birth time there are no houses, and the progressed Moon could be up to 7° out.
+9. Press **See solar return** for the chart of the moment the Sun gets back to where it was when you were born. It opens on the return in effect now, cast at your birthplace; change the year, or the place to where you'll be on that birthday. Choose **Against natal chart** to see your natal planets inside a bi-wheel and the return outside, with aspects between them and each return planet's natal house. **Return alone** restores the standalone chart. Share links and downloads follow the selected view. It needs your birth time.
+10. Type a name under **Save as** to keep a chart's details in this browser. Saved charts appear at the top of each form, where **Use** fills it in and draws it, and **Forget** removes it. They're stored only in your browser's local storage and never sent anywhere.
 
 ## API
 
@@ -157,7 +158,7 @@ Use `npm run test:e2e:ui` for interactive debugging. Vitest remains separate und
 
 ### Wheel screenshots
 
-The natal wheel and the solar return bi-wheel are compared against approved screenshots in `e2e/__screenshots__/`, so a label or glyph that moves fails the build. The wheel's glyphs come from system fonts, so screenshots are only compared on Linux, in the Playwright Docker image CI uses; on other systems `npm run test:e2e` skips them.
+The natal wheel, the progressed bi-wheel and the solar return bi-wheel are compared against approved screenshots in `e2e/__screenshots__/`, so a label or glyph that moves fails the build. The wheel's glyphs come from system fonts, so screenshots are only compared on Linux, in the Playwright Docker image CI uses; on other systems `npm run test:e2e` skips them.
 
 1. Start Docker.
 2. Run `npm run test:e2e:linux` to run the suite in the image and compare screenshots.
@@ -166,6 +167,6 @@ The natal wheel and the solar return bi-wheel are compared against approved scre
 
 When upgrading `@playwright/test`, change the image tag in `.github/workflows/ci.yml` to match, then approve new screenshots.
 
-Coverage includes JavaScript-disabled and delayed-hydration privacy guards; drawing a natal chart, a composite and a solar return with the real WebAssembly engine; creating and closing a comparison; and drawing a chart offline through the service worker. Place search uses a small local fixture, so tests need no GeoNames download or third-party service. This does not verify the generated production place dataset.
+Coverage includes JavaScript-disabled and delayed-hydration privacy guards; drawing a natal chart, a composite, progressions and a solar return with the real WebAssembly engine; creating and closing a comparison; and drawing a chart offline through the service worker. Place search uses a small local fixture, so tests need no GeoNames download or third-party service. This does not verify the generated production place dataset.
 
 A regression test checks that incomplete comparison details preserve both charts, and that repairing them allows a consistent retry. CI runs the suite on pushes and pull requests to `main` and retains reports for 14 days.

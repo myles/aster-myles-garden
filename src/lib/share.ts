@@ -38,6 +38,7 @@ import {
   parseLocalDateTime,
   parseLocalTime,
   toUtc,
+  type LocalDate,
 } from "@/lib/time";
 
 const DATE_PARAM = "date";
@@ -57,6 +58,7 @@ const TRANSITS_PARAM = "transits";
 const COMPARISON_PARAM = "comparison";
 const RETURN_PARAM = "return";
 const RETURN_STYLE_PARAM = "returnStyle";
+const PROGRESSIONS_PARAM = "progressed";
 
 /** A solar return's year: 1 CE onwards. */
 const YEAR_PATTERN = /^[1-9]\d{0,3}$/;
@@ -94,6 +96,8 @@ export type SharedDetails = SharedPerson & {
   comparisonStyle?: ComparisonStyle;
   /** The moment to show transits for, when the link is for transits. */
   transitsAt?: Date;
+  /** The date progressed to, when the link is for progressions. */
+  progressionsForDate?: LocalDate;
   /** When the link is for a solar return. No place means the birthplace. */
   solarReturn?: {
     year: number;
@@ -103,14 +107,15 @@ export type SharedDetails = SharedPerson & {
 };
 
 /**
- * What a link can add to a chart: one of a comparison, transits or a
- * solar return.
+ * What a link can add to a chart: one of a comparison, transits,
+ * progressions or a solar return.
  */
 export type ShareAddition = {
   comparedWith?: BirthDetails;
   /** How the comparison is shown. Undefined means the bi-wheel. */
   comparisonStyle?: ComparisonStyle;
   transitsAt?: Date;
+  progressionsForDate?: LocalDate;
   solarReturn?: { year: number; place: Place; style?: SolarReturnStyle };
 };
 
@@ -153,6 +158,7 @@ export function buildShareUrl(
     comparedWith,
     comparisonStyle,
     transitsAt,
+    progressionsForDate,
     solarReturn,
   }: ShareAddition = {},
 ): string {
@@ -180,6 +186,9 @@ export function buildShareUrl(
   if (transitsAt) {
     const minute = transitsAt.toISOString().slice(0, MINUTE_ISO_LENGTH);
     params.set(TRANSITS_PARAM, `${minute}Z`);
+  }
+  if (progressionsForDate) {
+    params.set(PROGRESSIONS_PARAM, formatDateValue(progressionsForDate));
   }
 
   // ":" and "/" are safe in a hash; leaving them bare keeps "12:00" and
@@ -212,12 +221,19 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
   const comparedWith = readPerson(params, SECOND_PERSON);
   const comparisonStyle = readComparisonStyle(params, comparedWith);
   const transitsAt = readTransitsAt(params);
+  const progressionsForDate = readProgressionsForDate(params);
   const solarReturn = readSolarReturn(params);
 
-  const additions = [comparedWith, transitsAt, solarReturn].filter(Boolean);
+  const additions = [
+    comparedWith,
+    transitsAt,
+    progressionsForDate,
+    solarReturn,
+  ].filter(Boolean);
   if (additions.length > 1) {
     throw new Error(
-      "The link can show only one of a comparison, transits or a solar return.",
+      "The link can show only one of a comparison, transits, progressions " +
+        "or a solar return.",
     );
   }
 
@@ -228,6 +244,7 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
     comparedWith,
     comparisonStyle,
     transitsAt,
+    progressionsForDate,
     solarReturn,
   };
 }
@@ -344,6 +361,24 @@ function readTransitsAt(params: URLSearchParams): Date | undefined {
     return toUtc(parseLocalDateTime(match[1], match[2]), TRANSITS_TIME_ZONE);
   } catch (cause) {
     throw new Error(invalidMessage, { cause });
+  }
+}
+
+/** Undefined when the link isn't for progressions. */
+function readProgressionsForDate(
+  params: URLSearchParams,
+): LocalDate | undefined {
+  const value = params.get(PROGRESSIONS_PARAM);
+  if (value === null) {
+    return undefined;
+  }
+
+  try {
+    return parseLocalDate(value);
+  } catch (cause) {
+    throw new Error(`The link's progressed date isn't valid: "${value}".`, {
+      cause,
+    });
   }
 }
 

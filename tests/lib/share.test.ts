@@ -282,6 +282,37 @@ describe("share links for transits", () => {
   });
 });
 
+describe("share links for progressions", () => {
+  const FOR_DATE = { year: 2026, month: 11, day: 14 };
+
+  it("adds the date progressed to", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, {
+      progressionsForDate: FOR_DATE,
+    });
+
+    expect(url).toBe(
+      "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
+        "&place=2643743&house=equal&progressed=2026-11-14",
+    );
+    expect(parseShareHash(new URL(url).hash)?.progressionsForDate).toEqual(
+      FOR_DATE,
+    );
+  });
+
+  it.each([
+    ["a malformed date", "&progressed=soon", "progressed date"],
+    ["an impossible date", "&progressed=2026-02-31", "progressed date"],
+    [
+      "progressions and transits",
+      "&progressed=2026-11-14&transits=2026-11-13T20:05Z",
+      "only one of",
+    ],
+  ])("rejects %s", (_, extra, message) => {
+    const hash = "#date=2000-01-01&time=12:00&place=1" + extra;
+    expect(() => parseShareHash(hash)).toThrow(message);
+  });
+});
+
 describe("share links for a place entered by coordinates", () => {
   const SMALLVILLE = {
     name: "Smallville",

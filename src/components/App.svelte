@@ -1,6 +1,7 @@
 <!-- Birth form and chart view. Talks to the chart service, place search
      and wheel renderer — never to the ephemeris. Once your chart is drawn,
-     a second form compares it with someone else's or shows its transits. -->
+     a second form compares it with someone else's or shows its transits,
+     progressions or solar return. -->
 <script lang="ts">
   import BirthFields from "@/components/birth-form/BirthFields.svelte";
   import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
@@ -10,6 +11,7 @@
   import ChartView from "@/components/views/ChartView.svelte";
   import ComparisonView from "@/components/views/ComparisonView.svelte";
   import CompositeView from "@/components/views/CompositeView.svelte";
+  import ProgressionView from "@/components/views/ProgressionView.svelte";
   import SolarReturnView from "@/components/views/SolarReturnView.svelte";
   import TransitView from "@/components/views/TransitView.svelte";
   import {
@@ -69,7 +71,9 @@
     parseLocalTime,
     toLocal,
     toUtc,
+    type LocalDate,
   } from "@/lib/time";
+  import { createProgressions } from "@/lib/charts/progressions";
   import { createTransits } from "@/lib/charts/transits";
   import { onMount, tick } from "svelte";
 
@@ -83,6 +87,7 @@
 
   const COMPARE_DATE_ID = "compare-date";
   const TRANSIT_DATE_ID = "transit-date";
+  const PROGRESSIONS_DATE_ID = "progressions-date";
   const RETURN_YEAR_ID = "return-year";
 
   const RETURN_NEEDS_TIME =
@@ -118,6 +123,10 @@
   let transitTime = $state("");
   let transitsAt: Date | undefined = $state.raw();
   let transitError = $state("");
+  // The form's date, and the date shown, set when the form is submitted.
+  let progressionsDate = $state("");
+  let progressionsForDate: LocalDate | undefined = $state.raw();
+  let progressionsError = $state("");
   let returnStyle = $state(SolarReturnStyle.Standalone);
   // A number input binds a number, or null while it's empty.
   let returnYear: number | null = $state(null);
@@ -197,6 +206,25 @@
   const transits = $derived(transitResult?.transits);
   const transitAlert = $derived(transitError || transitResult?.failure || "");
 
+  // A date before the birth throws, and is reported in the form.
+  const progressionsResult = $derived.by(() => {
+    if (panel !== Panel.Progressions || !chart || !progressionsForDate) {
+      return undefined;
+    }
+
+    try {
+      return { progressions: createProgressions(chart, progressionsForDate) };
+    } catch (cause) {
+      return {
+        failure: `Couldn't show progressions: ${describeError(cause)}`,
+      };
+    }
+  });
+  const progressions = $derived(progressionsResult?.progressions);
+  const progressionsAlert = $derived(
+    progressionsError || progressionsResult?.failure || "",
+  );
+
   // Houses are only hidden when no chart on screen could have them.
   const isHouseSystemUnused = $derived(
     yours.isTimeUnknown && (panel !== Panel.Comparison || theirs.isTimeUnknown),
@@ -254,6 +282,10 @@
       if (shared.transitsAt) {
         setTransitMoment(shared.transitsAt);
         panel = Panel.Transits;
+      }
+      if (shared.progressionsForDate) {
+        setProgressionsDate(shared.progressionsForDate);
+        panel = Panel.Progressions;
       }
     } catch (cause) {
       error = `Couldn't open the shared link: ${describeError(cause)}`;
@@ -542,6 +574,12 @@
     return openPanel(Panel.Transits, TRANSIT_DATE_ID);
   }
 
+  /** Opens progressions for today, on the visitor's clock. */
+  function startProgressions(): Promise<void> {
+    setProgressionsDate(toLocal(new Date(), transitTimeZone));
+    return openPanel(Panel.Progressions, PROGRESSIONS_DATE_ID);
+  }
+
   /**
    * Opens the solar return in effect now, cast at the birthplace. Without
    * a birth time, it opens on why there isn't one.
@@ -591,7 +629,7 @@
     showSolarReturn();
   }
 
-  /** Back to your chart alone, forgetting any comparison or transits. */
+  /** Back to your chart alone, forgetting whatever was added to it. */
   function closePanel(): void {
     panel = Panel.None;
     comparedChart = undefined;
@@ -599,6 +637,8 @@
     compareError = "";
     transitsAt = undefined;
     transitError = "";
+    progressionsForDate = undefined;
+    progressionsError = "";
     shownReturn = undefined;
     returnError = "";
   }
@@ -644,6 +684,33 @@
   function onTransitSubmit(event: SubmitEvent): void {
     event.preventDefault();
     showTransits();
+  }
+
+  /** Shows progressions for a date and puts it in the form. */
+  function setProgressionsDate({ year, month, day }: LocalDate): void {
+    const forDate = { year, month, day };
+    progressionsDate = formatDateValue(forDate);
+    progressionsForDate = forDate;
+    progressionsError = "";
+  }
+
+  function showProgressions(): void {
+    if (!progressionsDate) {
+      progressionsError = "Enter a date.";
+      return;
+    }
+
+    try {
+      progressionsForDate = parseLocalDate(progressionsDate);
+      progressionsError = "";
+    } catch (cause) {
+      progressionsError = `Couldn't show progressions: ${describeError(cause)}`;
+    }
+  }
+
+  function onProgressionsSubmit(event: SubmitEvent): void {
+    event.preventDefault();
+    showProgressions();
   }
 
   /**
@@ -828,6 +895,13 @@
         <button
           type="button"
           class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
+          onclick={startProgressions}
+        >
+          See progressions
+        </button>
+        <button
+          type="button"
+          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
           onclick={startSolarReturn}
         >
           See solar return
@@ -905,6 +979,70 @@
           hidden={transitAlert.length === 0}
         >
           {transitAlert}
+        </p>
+      </form>
+    {/if}
+
+    {#if panel === Panel.Progressions}
+      <form
+        aria-label="Progressed date"
+        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
+        novalidate
+        onsubmit={onProgressionsSubmit}
+      >
+        <div>
+          <h2 class="font-serif text-lg">Progressed date</h2>
+          <p class="text-ink-muted text-xs">
+            Your chart moved on a day for each year of life, to this date.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label for={PROGRESSIONS_DATE_ID} class="text-sm font-medium">
+            Date
+          </label>
+          <input
+            id={PROGRESSIONS_DATE_ID}
+            name="progressionsDate"
+            type="date"
+            required
+            min={chart ? formatDateValue(chart.details.date) : undefined}
+            max={LAST_CALCULABLE_DATE_VALUE}
+            class="border-rule bg-paper rounded border px-3 py-2"
+            bind:value={progressionsDate}
+          />
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="submit"
+            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
+          >
+            Show progressions
+          </button>
+          <button
+            type="button"
+            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+            onclick={() =>
+              setProgressionsDate(toLocal(new Date(), transitTimeZone))}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+            onclick={closePanel}
+          >
+            Back to your chart
+          </button>
+        </div>
+
+        <p
+          role="alert"
+          class="text-sm text-[var(--challenging)]"
+          hidden={progressionsAlert.length === 0}
+        >
+          {progressionsAlert}
         </p>
       </form>
     {/if}
@@ -1057,6 +1195,8 @@
       <ComparisonView {synastry} />
     {:else if transits}
       <TransitView {transits} timeZone={transitTimeZone} />
+    {:else if progressions}
+      <ProgressionView {progressions} />
     {:else if solarReturn}
       <SolarReturnView {solarReturn} bind:style={returnStyle} />
     {:else if chart}

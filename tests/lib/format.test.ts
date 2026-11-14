@@ -8,6 +8,7 @@ import {
   formatCoordinates,
   formatDegrees,
   formatInstant,
+  formatLocalDate,
   formatNoAspects,
   formatPlacement,
 } from "@/lib/format";
@@ -78,6 +79,14 @@ describe("formatInstant", () => {
     expect(
       formatInstant(new Date("2026-11-13T20:05:00Z"), "America/Toronto"),
     ).toBe("13 November 2026 at 15:05 EST");
+  });
+});
+
+describe("formatLocalDate", () => {
+  it("writes the date out in full, whatever the visitor's time zone", () => {
+    expect(formatLocalDate({ year: 2026, month: 11, day: 14 })).toBe(
+      "14 November 2026",
+    );
   });
 });
 

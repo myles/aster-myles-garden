@@ -4,6 +4,7 @@
 
 import type { Chart } from "@/lib/charts/chart";
 import type { Composite } from "@/lib/charts/composite";
+import type { Progressions } from "@/lib/charts/progressions";
 import type { Synastry } from "@/lib/charts/synastry";
 import type { Transits } from "@/lib/charts/transits";
 
@@ -12,10 +13,12 @@ import {
   buildChartCsv,
   buildComparisonCsv,
   buildCompositeCsv,
+  buildProgressionsCsv,
   buildTransitsCsv,
   buildSolarReturnCsv,
 } from "@/lib/downloads/csv";
 import { formatCoordinates } from "@/lib/format";
+import { formatDateValue } from "@/lib/time";
 
 export enum ExportFormat {
   Svg = "svg",
@@ -27,6 +30,7 @@ export enum SubjectKind {
   Comparison = "comparison",
   Composite = "composite",
   Transits = "transits",
+  Progressions = "progressions",
   SolarReturn = "solarReturn",
 }
 
@@ -36,6 +40,7 @@ export type ExportSubject =
   | { kind: SubjectKind.Comparison; synastry: Synastry }
   | { kind: SubjectKind.Composite; composite: Composite }
   | { kind: SubjectKind.Transits; transits: Transits }
+  | { kind: SubjectKind.Progressions; progressions: Progressions }
   | {
       kind: SubjectKind.SolarReturn;
       solarReturn: SolarReturn;
@@ -101,6 +106,8 @@ function buildCsv(subject: ExportSubject): string {
       return buildCompositeCsv(subject.composite);
     case SubjectKind.Transits:
       return buildTransitsCsv(subject.transits);
+    case SubjectKind.Progressions:
+      return buildProgressionsCsv(subject.progressions);
     case SubjectKind.SolarReturn:
       return buildSolarReturnCsv(
         subject.solarReturn,
@@ -245,6 +252,7 @@ function downloadBlob(blob: Blob, filename: string): void {
  * - compared → "aster-london-2000-01-01-1200-and-toronto-1990-05-15"
  * - composite → the comparison's name, then "-composite"
  * - transits → "aster-london-2000-01-01-1200-transits-2026-11-13-2000-utc"
+ * - progressions → "aster-london-2000-01-01-1200-progressed-2026-11-14"
  * - solar return → "aster-london-2000-01-01-1200-solar-return-2026"
  */
 function buildFilename(subject: ExportSubject, extension: string): string {
@@ -263,6 +271,11 @@ function describeSubject(subject: ExportSubject): string {
       return (
         `${describeChart(subject.transits.natal)}-transits-` +
         describeInstant(subject.transits.at)
+      );
+    case SubjectKind.Progressions:
+      return (
+        `${describeChart(subject.progressions.natal)}-progressed-` +
+        formatDateValue(subject.progressions.forDate)
       );
     case SubjectKind.SolarReturn:
       return (

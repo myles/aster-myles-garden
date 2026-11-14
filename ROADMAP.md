@@ -25,12 +25,12 @@
 - [x] Keep angle labels clear of bodies' degrees and retrograde marks
 - [x] A solar return set against the natal chart as a bi-wheel, as well as on its own
 - [x] Compare the browser tests' wheel screenshots against approved ones, so a label or glyph that moves fails the build
+- [x] Secondary progressions: the chart moved on a day for each year of life, set against the natal chart as transits are
 
 ## Charts
 
 - [ ] Sidereal zodiac, with a choice of ayanamsa
 - [ ] Optional high-precision ephemeris files, and Chiron with them: the built-in Moshier ephemeris has no asteroids
-- [ ] Secondary progressions: the chart moved on a day for each year of life, set against the natal chart as transits are
 - [ ] Lunar returns: the month's chart for the moment the Moon returns to its natal position, found the way solar returns are, on its own or against the natal chart
 - [ ] Exact transit dates: when each transit is exact, and when it comes into and leaves orb, found the way solar returns are
 

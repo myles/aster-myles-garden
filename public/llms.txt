@@ -86,10 +86,18 @@ Add `comparison=composite` to show a composite chart instead of the bi-wheel: on
 
 ### Transits
 
-Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact (or less, for a tighter orb), and which natal house each is in. A link can carry only one of `transits`, a second chart or `return`.
+Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact (or less, for a tighter orb), and which natal house each is in. A link can carry only one of `transits`, `progressed`, a second chart or `return`.
 
 ```
 https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&transits=2026-11-13T20:05Z
+```
+
+### Progressions
+
+Add `progressed` with a date, as `YYYY-MM-DD`, to show secondary progressions to that date: the chart moved on a day for each year of life. The page shows a bi-wheel with the natal chart inside and the progressed planets outside, the aspects they make to the natal planets within 1° of exact, and which natal house each is in. The date can't be before the birth.
+
+```
+https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&progressed=2026-11-14
 ```
 
 ### Solar returns
@@ -136,6 +144,7 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&lat=43.6833&lon=-79.7667&
 - In a composite: one wheel, with the composite's positions and aspects.
 - In a solar return: the return's wheel, positions and aspects, and the moment the Sun returns, on the clock where it's cast.
 - With transits: the bi-wheel, a Transits to your chart table, and the transiting planets' positions with the natal house each is in.
+- With progressions: the bi-wheel, a Progressions to your chart table, and the progressed planets' positions with the natal house each is in.
 
 ## More
 

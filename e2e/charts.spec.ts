@@ -153,6 +153,21 @@ test("finds a solar return and casts it elsewhere", async ({ page }) => {
   await expect(form.getByRole("alert")).toHaveCount(0);
 });
 
+test("shows progressions for a date", async ({ page }) => {
+  await drawChart(page);
+  await page.getByRole("button", { name: "See progressions" }).click();
+
+  const form = page.getByRole("form", { name: "Progressed date" });
+  await form.getByLabel("Date").fill("2030-01-01");
+  await form.getByRole("button", { name: "Show progressions" }).click();
+
+  await expect(page.getByText(/Progressed to 1 January 2030/)).toBeVisible();
+  await expect(form.getByRole("alert")).toHaveCount(0);
+  const wheel = page.getByRole("img", { name: "Progressed wheel" });
+  await expect(wheel.locator(".wheel-body--outer")).toHaveCount(13);
+  await expect(wheel).toHaveScreenshot("progressed-bi-wheel.png");
+});
+
 test("preserves both charts when comparison details are incomplete", async ({
   page,
 }) => {

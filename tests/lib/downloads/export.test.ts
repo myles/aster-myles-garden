@@ -12,7 +12,12 @@ import {
 } from "@/lib/downloads/export";
 import { drawBiWheel, drawWheel } from "@/lib/wheel/wheel";
 
-import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "../../fixtures/chart";
+import {
+  CHART,
+  CHART_WITHOUT_TIME,
+  PROGRESSIONS,
+  SOLAR_RETURN,
+} from "../../fixtures/chart";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SVG_MIME = "image/svg+xml";
@@ -345,5 +350,19 @@ describe("exportWheel", () => {
       "aster-london-2000-01-01-1200-transits-2026-11-13-2005-utc.csv",
     );
     expect(await downloads[0].blob.text()).toContain("Transits to your chart");
+  });
+
+  it("names progressions after the chart and the date", async () => {
+    exportTables({
+      kind: SubjectKind.Progressions,
+      progressions: PROGRESSIONS,
+    });
+
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-progressed-2026-11-14.csv",
+    );
+    expect(await downloads[0].blob.text()).toContain(
+      "Progressions to your chart",
+    );
   });
 });

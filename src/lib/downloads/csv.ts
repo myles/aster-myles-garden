@@ -4,6 +4,7 @@
 import type { HouseOverlay } from "@/lib/astrology/houses";
 import type { Chart } from "@/lib/charts/chart";
 import type { Composite } from "@/lib/charts/composite";
+import type { Progressions } from "@/lib/charts/progressions";
 import type { Transits } from "@/lib/charts/transits";
 
 import {
@@ -36,8 +37,15 @@ const HOUSE_HEADING = "House";
 const ASPECT_HEADINGS: Row = ["Pair", "Aspect", "Orb"];
 const CROSS_ASPECT_HEADINGS: Row = ["Yours", "Aspect", "Theirs", "Orb"];
 const TRANSIT_ASPECT_HEADINGS: Row = ["Transiting", "Aspect", "Natal", "Orb"];
+const PROGRESSED_ASPECT_HEADINGS: Row = [
+  "Progressed",
+  "Aspect",
+  "Natal",
+  "Orb",
+];
 
 const NO_TRANSITS_TEXT = "No transits within orb.";
+const NO_PROGRESSIONS_TEXT = "No progressions within orb.";
 
 /** Fields holding a comma, quote or line break must be quoted. */
 const NEEDS_QUOTES_PATTERN = /[",\r\n]/;
@@ -106,6 +114,22 @@ export function buildTransitsCsv(transits: Transits): string {
       title: "Transits to your chart",
       headings: TRANSIT_ASPECT_HEADINGS,
       rows: buildTransitRows(transits.aspects),
+    },
+  ]);
+}
+
+/** Progressions: laid out as transits are, for the progressed planets. */
+export function buildProgressionsCsv(progressions: Progressions): string {
+  return layOutSideBySide([
+    buildPositionsTable(
+      "Progressed positions",
+      { bodies: progressions.bodies, houses: undefined },
+      { heading: "Your house", houses: progressions.inNatalHouses },
+    ),
+    {
+      title: "Progressions to your chart",
+      headings: PROGRESSED_ASPECT_HEADINGS,
+      rows: buildTransitRows(progressions.aspects, NO_PROGRESSIONS_TEXT),
     },
   ]);
 }
@@ -253,10 +277,16 @@ function buildCrossAspectRows({ aspects, first }: Synastry): Row[] {
   });
 }
 
-/** Read transit first: "Transiting Saturn squares natal Sun". */
-function buildTransitRows(aspects: Aspect[]): Row[] {
+/**
+ * Read transit first: "Transiting Saturn squares natal Sun". Progressions
+ * read the same way, with their own text for an empty table.
+ */
+function buildTransitRows(
+  aspects: Aspect[],
+  noneText = NO_TRANSITS_TEXT,
+): Row[] {
   if (aspects.length === 0) {
-    return [[NO_TRANSITS_TEXT, "", "", ""]];
+    return [[noneText, "", "", ""]];
   }
 
   return aspects.map((aspect) => {

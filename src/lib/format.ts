@@ -1,4 +1,5 @@
 import type { Chart, PlacedBody } from "@/lib/charts/chart";
+import type { LocalDate } from "@/lib/time";
 
 import {
   AspectSet,
@@ -67,6 +68,20 @@ export function formatBirthDate(chart: Chart): string {
     timeZone: chart.details.place.timeZone,
     dateStyle: "long",
   }).format(chart.bornAt);
+}
+
+/**
+ * Example: "14 November 2026". A calendar date belongs to no time zone,
+ * so it's written as UTC, where it can't slip to a neighbouring day.
+ */
+export function formatLocalDate({ year, month, day }: LocalDate): string {
+  const at = new Date(0);
+  at.setUTCFullYear(year, month - 1, day);
+
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    dateStyle: "long",
+  }).format(at);
 }
 
 /** Example: "1 January 2000 at 12:00 GMT (12:00 UT)". */

@@ -12,6 +12,7 @@ import {
 import { HouseSystem } from "@/lib/astrology/houses";
 import { createChart, loadChartEngine } from "@/lib/charts/chart";
 import { createComposite } from "@/lib/charts/composite";
+import { createProgressions } from "@/lib/charts/progressions";
 import {
   createSolarReturn,
   findCurrentReturnYear,
@@ -24,12 +25,13 @@ import {
   writePreferences,
 } from "@/lib/storage/preferences";
 import { addSavedChart, readSavedCharts } from "@/lib/storage/saved-charts";
-import { toUtc } from "@/lib/time";
+import { toLocal, toUtc } from "@/lib/time";
 
 import {
   CHART,
   CHART_WITHOUT_TIME,
   COMPOSITE,
+  PROGRESSIONS,
   SOLAR_RETURN,
   TRANSITS,
 } from "../fixtures/chart";
@@ -53,6 +55,11 @@ vi.mock("@/lib/time", async (importOriginal) => ({
 vi.mock("@/lib/charts/transits", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/charts/transits")>()),
   createTransits: vi.fn(),
+}));
+
+vi.mock("@/lib/charts/progressions", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/charts/progressions")>()),
+  createProgressions: vi.fn(),
 }));
 
 vi.mock("@/lib/charts/composite", async (importOriginal) => ({
@@ -1059,6 +1066,116 @@ describe("App showing transits", () => {
   });
 });
 
+describe("App showing progressions", () => {
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(createProgressions).mockReset().mockReturnValue(PROGRESSIONS);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("opens on today, on the visitor's clock", async () => {
+    const today = toLocal(new Date(), VISITOR_TIME_ZONE);
+
+    await openProgressions();
+
+    expect(
+      await screen.findByRole("heading", { name: "Progressions", level: 2 }),
+    ).toBeTruthy();
+    const [natal, forDate] = vi.mocked(createProgressions).mock.lastCall!;
+    expect(natal).toBe(CHART);
+    expect(forDate).toEqual({
+      year: today.year,
+      month: today.month,
+      day: today.day,
+    });
+    expect(document.activeElement?.id).toBe("progressions-date");
+  });
+
+  it("shows progressions for the date chosen", async () => {
+    await openProgressions();
+    const form = within(progressionsForm());
+
+    await fireEvent.input(form.getByLabelText("Date"), {
+      target: { value: "2030-06-01" },
+    });
+    await fireEvent.click(
+      form.getByRole("button", { name: "Show progressions" }),
+    );
+
+    await vi.waitFor(() =>
+      expect(vi.mocked(createProgressions).mock.lastCall?.[1]).toEqual({
+        year: 2030,
+        month: 6,
+        day: 1,
+      }),
+    );
+  });
+
+  it("asks for a date", async () => {
+    await openProgressions();
+    const form = within(progressionsForm());
+
+    await fireEvent.input(form.getByLabelText("Date"), {
+      target: { value: "" },
+    });
+    await fireEvent.click(
+      form.getByRole("button", { name: "Show progressions" }),
+    );
+
+    expect(form.getByRole("alert").textContent).toContain("Enter a date.");
+  });
+
+  it("reports a date the progressions can't be shown for", async () => {
+    vi.mocked(createProgressions).mockImplementation(() => {
+      throw new Error("Choose a date from the birth onwards.");
+    });
+
+    await openProgressions();
+
+    expect(within(progressionsForm()).getByRole("alert").textContent).toContain(
+      "Couldn't show progressions: Choose a date from the birth onwards.",
+    );
+  });
+
+  it("goes back to your chart", async () => {
+    await openProgressions();
+
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Back to your chart" }),
+    );
+
+    expect(screen.queryByRole("form", { name: "Progressed date" })).toBeNull();
+    expect(screen.getByRole("heading", { name: CHART_HEADING })).toBeTruthy();
+  });
+
+  it("opens progressions from a share link", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/#date=2000-01-01&time=12:00&place=2643743&progressed=2026-11-14",
+    );
+    render(App);
+
+    expect(
+      await screen.findByRole("heading", { name: "Progressions", level: 2 }),
+    ).toBeTruthy();
+    expect(vi.mocked(createProgressions).mock.lastCall?.[1]).toEqual({
+      year: 2026,
+      month: 11,
+      day: 14,
+    });
+    expect(
+      within(progressionsForm()).getByLabelText<HTMLInputElement>("Date").value,
+    ).toBe("2026-11-14");
+  });
+});
+
 describe("App with saved charts", () => {
   const TORONTO = PLACE_INDEX.entries[1].place;
 
@@ -1567,6 +1684,21 @@ async function openTransits(): Promise<void> {
   await submit();
   await screen.findByRole("heading", { name: CHART_HEADING });
   await fireEvent.click(screen.getByRole("button", { name: "See transits" }));
+}
+
+function progressionsForm(): HTMLElement {
+  return screen.getByRole("form", { name: "Progressed date" });
+}
+
+async function openProgressions(): Promise<void> {
+  render(App);
+  await fillDateTime();
+  await choosePlace();
+  await submit();
+  await screen.findByRole("heading", { name: CHART_HEADING });
+  await fireEvent.click(
+    screen.getByRole("button", { name: "See progressions" }),
+  );
 }
 
 function yourForm() {

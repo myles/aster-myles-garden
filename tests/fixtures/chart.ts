@@ -2,6 +2,7 @@
 
 import type { Chart } from "@/lib/charts/chart";
 import type { Composite } from "@/lib/charts/composite";
+import type { Progressions } from "@/lib/charts/progressions";
 import type { SolarReturn } from "@/lib/charts/solar-return";
 import type { Transits } from "@/lib/charts/transits";
 
@@ -111,6 +112,26 @@ export const TRANSITS: Transits = {
     },
   ],
   inNatalHouses: { [Body.Sun]: 7 },
+};
+
+/**
+ * CHART progressed to 14 November 2026: a progressed Sun at 310.5°, half
+ * a degree from a quincunx to natal Mars at 100°.
+ */
+export const PROGRESSIONS: Progressions = {
+  natal: CHART,
+  forDate: { year: 2026, month: 11, day: 14 },
+  skyAt: new Date("2000-01-28T08:00:00Z"),
+  bodies: [{ ...CHART.bodies[0], longitude: 310.5, house: undefined }],
+  aspects: [
+    {
+      first: Body.Mars,
+      second: Body.Sun,
+      type: AspectType.Quincunx,
+      orbDegrees: 0.5,
+    },
+  ],
+  inNatalHouses: { [Body.Sun]: 11 },
 };
 
 /** Your chart with itself: every midpoint is the body's own position. */
