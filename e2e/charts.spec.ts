@@ -86,7 +86,7 @@ for (const format of ["SVG", "PNG"]) {
       return overlaps;
     });
     expect(collisions).toEqual([]);
-    await wheel.screenshot({ path: testInfo.outputPath("wheel.png") });
+    await expect(wheel).toHaveScreenshot("natal-wheel.png");
 
     const pendingDownload = page.waitForEvent("download");
     await page
@@ -201,7 +201,7 @@ for (const format of ["SVG", "PNG"]) {
         exact: true,
       }),
     ).toBeVisible();
-    await wheel.screenshot({ path: testInfo.outputPath("solar-return.png") });
+    await expect(wheel).toHaveScreenshot("solar-return-bi-wheel.png");
 
     const pendingImage = page.waitForEvent("download");
     await page

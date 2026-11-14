@@ -2,6 +2,10 @@ import { defineConfig, devices } from "@playwright/test";
 
 const BASE_URL = "http://127.0.0.1:4399";
 const isCI = Boolean(process.env.CI);
+// Wheel glyphs come from the system's symbol fonts, so screenshots only
+// match where they were approved: Linux, in Playwright's Docker image.
+// Elsewhere they're skipped; run scripts/e2e-linux-run.sh to compare.
+const isSnapshotPlatform = process.platform === "linux";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -10,6 +14,10 @@ export default defineConfig({
   retries: isCI ? 1 : 0,
   workers: isCI ? 2 : undefined,
   reporter: [["list"], ["html", { open: "never" }]],
+  ignoreSnapshots: !isSnapshotPlatform,
+  // One baseline per project, without the platform, since only Linux's
+  // are kept.
+  snapshotPathTemplate: "{testDir}/__screenshots__/{arg}-{projectName}{ext}",
   use: {
     baseURL: BASE_URL,
     trace: "retain-on-failure",

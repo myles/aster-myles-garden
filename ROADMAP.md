@@ -24,6 +24,7 @@
 - [x] Clear the lint warnings, then have CI fail on new ones
 - [x] Keep angle labels clear of bodies' degrees and retrograde marks
 - [x] A solar return set against the natal chart as a bi-wheel, as well as on its own
+- [x] Compare the browser tests' wheel screenshots against approved ones, so a label or glyph that moves fails the build
 
 ## Charts
 
@@ -37,7 +38,6 @@
 
 - [ ] Listen to the page with a real screen reader, such as VoiceOver or NVDA, for reading order and anything read twice
 - [ ] Measure angle labels' drawn size in the browser instead of estimating it, so they stay clear if the font or its size changes
-- [ ] Compare the browser tests' wheel screenshots against approved ones, so a label or glyph that moves fails the build
 - [ ] A smaller place index: at 2.6 MB, it's fetched and parsed whole on the first search, which may be slow on a phone. Measure first, then split or trim it if it is
 - [ ] Choose a light or dark wheel when downloading, rather than always taking the page's current theme
 

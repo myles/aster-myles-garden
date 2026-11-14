@@ -155,6 +155,17 @@ The E2E suite uses [Playwright](https://playwright.dev/docs/test-webserver) agai
 
 Use `npm run test:e2e:ui` for interactive debugging. Vitest remains separate under `npm test`.
 
+### Wheel screenshots
+
+The natal wheel and the solar return bi-wheel are compared against approved screenshots in `e2e/__screenshots__/`, so a label or glyph that moves fails the build. The wheel's glyphs come from system fonts, so screenshots are only compared on Linux, in the Playwright Docker image CI uses; on other systems `npm run test:e2e` skips them.
+
+1. Start Docker.
+2. Run `npm run test:e2e:linux` to run the suite in the image and compare screenshots.
+3. After a deliberate change to the wheel, run `npm run test:e2e:linux -- --update-snapshots` to approve new screenshots.
+4. Check the new images in `e2e/__screenshots__/` before committing them.
+
+When upgrading `@playwright/test`, change the image tag in `.github/workflows/ci.yml` to match, then approve new screenshots.
+
 Coverage includes JavaScript-disabled and delayed-hydration privacy guards; drawing a natal chart, a composite and a solar return with the real WebAssembly engine; creating and closing a comparison; and drawing a chart offline through the service worker. Place search uses a small local fixture, so tests need no GeoNames download or third-party service. This does not verify the generated production place dataset.
 
 A regression test checks that incomplete comparison details preserve both charts, and that repairing them allows a consistent retry. CI runs the suite on pushes and pull requests to `main` and retains reports for 14 days.
