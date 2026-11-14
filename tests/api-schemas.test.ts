@@ -95,16 +95,17 @@ describe("formatValidationError", () => {
   });
 });
 
-describe("chartRequestSchemaV1 and the site's parsers", () => {
-  const isParsed = (parse: () => unknown): boolean => {
-    try {
-      parse();
-      return true;
-    } catch {
-      return false;
-    }
-  };
+function isParsed(parse: () => unknown): boolean {
+  try {
+    parse();
+    return true;
+  } catch {
+    // Throwing is the parser's answer here: the value isn't valid.
+    return false;
+  }
+}
 
+describe("chartRequestSchemaV1 and the site's parsers", () => {
   // The API and the site validate separately; these keep them agreeing.
   it.each([
     "2024-02-29",

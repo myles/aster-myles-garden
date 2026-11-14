@@ -10,6 +10,10 @@ const UTC_TIME_ZONE = "UTC";
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_PATTERN = /^(\d{2}):(\d{2})$/;
 
+const MONTHS_PER_YEAR = 12;
+const HOURS_PER_DAY = 24;
+const MINUTES_PER_HOUR = 60;
+
 /** A calendar date with no time zone attached. */
 export type LocalDate = {
   year: number;
@@ -27,7 +31,8 @@ export type LocalTime = {
 export type LocalDateTime = LocalDate & LocalTime;
 
 /**
- * Parses the value of `<input type="date">`.
+ * Parses the value of `<input type="date">`, rejecting dates that don't
+ * exist, such as 31 February, rather than rolling them into the next month.
  * Example: "1990-05-15" → { year: 1990, month: 5, day: 15 }.
  */
 export function parseLocalDate(date: string): LocalDate {
@@ -36,11 +41,17 @@ export function parseLocalDate(date: string): LocalDate {
     throw new Error(`Invalid date: "${date}"`);
   }
 
-  return {
+  const parsed = {
     year: Number(match[1]),
     month: Number(match[2]),
     day: Number(match[3]),
   };
+  const isRealMonth = parsed.month >= 1 && parsed.month <= MONTHS_PER_YEAR;
+  if (!isRealMonth || parsed.day < 1 || parsed.day > countDays(parsed)) {
+    throw new Error(`Invalid date: "${date}"`);
+  }
+
+  return parsed;
 }
 
 /**
@@ -53,7 +64,12 @@ export function parseLocalTime(time: string): LocalTime {
     throw new Error(`Invalid time: "${time}"`);
   }
 
-  return { hour: Number(match[1]), minute: Number(match[2]) };
+  const parsed = { hour: Number(match[1]), minute: Number(match[2]) };
+  if (parsed.hour >= HOURS_PER_DAY || parsed.minute >= MINUTES_PER_HOUR) {
+    throw new Error(`Invalid time: "${time}"`);
+  }
+
+  return parsed;
 }
 
 /**
@@ -218,6 +234,16 @@ export function isTimeZone(timeZone: string): boolean {
     // answer, not a failure.
     return false;
   }
+}
+
+/**
+ * Days in a date's month, by the proleptic Gregorian calendar the date
+ * input uses: day 0 of the next month is this month's last day.
+ */
+function countDays({ year, month }: Pick<LocalDate, "year" | "month">): number {
+  const lastDay = new Date(0);
+  lastDay.setUTCFullYear(year, month, 0);
+  return lastDay.getUTCDate();
 }
 
 function padTwo(value: number): string {
