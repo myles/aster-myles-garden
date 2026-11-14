@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ChartShare from "@/components/chart/ChartShare.svelte";
 import { HouseSystem } from "@/lib/astrology/houses";
 
-import { CHART } from "./fixtures/chart";
+import { CHART } from "../../fixtures/chart";
 
 const SHARE_URL =
   "https://aster.myles.garden/#date=2000-01-01&time=12:00" +

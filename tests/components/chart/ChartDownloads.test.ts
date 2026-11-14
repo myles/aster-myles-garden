@@ -12,7 +12,7 @@ import {
   SubjectKind,
 } from "@/lib/downloads/export";
 
-import { CHART } from "./fixtures/chart";
+import { CHART } from "../../fixtures/chart";
 
 vi.mock("@/lib/downloads/export", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/downloads/export")>()),

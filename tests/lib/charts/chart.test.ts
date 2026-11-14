@@ -19,7 +19,7 @@ import {
 } from "@/lib/charts/chart";
 import { loadEphemeris } from "@/lib/engine/ephemeris";
 
-import { CHART, CHART_WITHOUT_TIME, POLAR_CHART } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME, POLAR_CHART } from "../../fixtures/chart";
 
 const WASM_PATH = "node_modules/@swisseph/browser/dist/swisseph.wasm";
 const WASM_DATA_URL =

@@ -12,7 +12,7 @@ import {
 } from "@/lib/downloads/export";
 import { drawBiWheel, drawWheel } from "@/lib/wheel/wheel";
 
-import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "../../fixtures/chart";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SVG_MIME = "image/svg+xml";

@@ -10,7 +10,7 @@ import {
 import { Body } from "@/lib/astrology/bodies";
 import { compareCharts } from "@/lib/charts/synastry";
 
-import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "../../fixtures/chart";
 
 // Their Sun sits in your 1st house and their Mars in your 7th.
 const THEIRS: Chart = {

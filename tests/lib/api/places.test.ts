@@ -4,7 +4,7 @@ import { CACHE_PUBLIC_DAY } from "@/lib/api/http";
 import { formatPlaceForApi, handlePlacesRequest } from "@/lib/api/places";
 import { findPlace } from "@/lib/places";
 
-import { PLACE_INDEX } from "./fixtures/places";
+import { PLACE_INDEX } from "../../fixtures/places";
 
 const LONDON_ONTARIO_ID = 6058560;
 

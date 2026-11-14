@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CompositeView from "@/components/views/CompositeView.svelte";
 import { HouseSystem } from "@/lib/astrology/houses";
 
-import { CHART, COMPOSITE } from "./fixtures/chart";
+import { CHART, COMPOSITE } from "../../fixtures/chart";
 
 describe("CompositeView", () => {
   beforeEach(() => {

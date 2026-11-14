@@ -10,7 +10,7 @@ import { SolarReturnStyle } from "@/lib/charts/solar-return";
 import { ComparisonStyle } from "@/lib/charts/synastry";
 import { buildShareUrl, parseShareHash } from "@/lib/share";
 
-import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "../fixtures/chart";
 
 const SITE_URL = "https://aster.myles.garden";
 

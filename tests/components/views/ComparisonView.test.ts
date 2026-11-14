@@ -7,7 +7,7 @@ import ComparisonView from "@/components/views/ComparisonView.svelte";
 import { HouseSystem } from "@/lib/astrology/houses";
 import { compareCharts } from "@/lib/charts/synastry";
 
-import { CHART, CHART_WITHOUT_TIME, POLAR_CHART } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME, POLAR_CHART } from "../../fixtures/chart";
 
 // Their Sun at 190° squares your Sun and Mars.
 const THEIRS = {

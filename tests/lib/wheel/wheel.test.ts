@@ -8,7 +8,7 @@ import { compareCharts } from "@/lib/charts/synastry";
 import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
 import { drawBiWheel, drawWheel, spreadLongitudes } from "@/lib/wheel/wheel";
 
-import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "../../fixtures/chart";
 
 describe("spreadLongitudes", () => {
   it("leaves well-separated bodies alone", () => {

@@ -10,8 +10,8 @@ import {
   SAVED_CHARTS_KEY,
 } from "@/lib/storage/saved-charts";
 
-import { CHART } from "./fixtures/chart";
-import { FullStorage, MemoryStorage } from "./fixtures/storage";
+import { CHART } from "../../fixtures/chart";
+import { FullStorage, MemoryStorage } from "../../fixtures/storage";
 
 const ME = {
   name: "Me",

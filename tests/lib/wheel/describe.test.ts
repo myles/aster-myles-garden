@@ -4,7 +4,7 @@ import { AspectType } from "@/lib/astrology/aspects";
 import { compareCharts } from "@/lib/charts/synastry";
 import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
 
-import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "../../fixtures/chart";
 
 // CHART: ascendant 0° Aries, Sun 280° (Capricorn, house 10), Mars 100°
 // (Cancer, house 4, retrograde), Sun–Mars opposition.

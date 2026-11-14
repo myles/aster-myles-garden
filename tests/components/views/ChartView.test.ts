@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import ChartView from "@/components/views/ChartView.svelte";
 
-import { CHART, POLAR_CHART } from "./fixtures/chart";
+import { CHART, POLAR_CHART } from "../../fixtures/chart";
 
 const FALLBACK_NOTE =
   /Placidus houses can't be cast this close to the pole, so these are Porphyry houses/;

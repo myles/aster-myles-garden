@@ -32,8 +32,8 @@ import {
   COMPOSITE,
   SOLAR_RETURN,
   TRANSITS,
-} from "./fixtures/chart";
-import { PLACE_INDEX } from "./fixtures/places";
+} from "../fixtures/chart";
+import { PLACE_INDEX } from "../fixtures/places";
 
 vi.mock("@/lib/charts/chart", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/charts/chart")>()),

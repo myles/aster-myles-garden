@@ -7,7 +7,7 @@ import SolarReturnView from "@/components/views/SolarReturnView.svelte";
 import { HouseSystem } from "@/lib/astrology/houses";
 import { SolarReturnStyle } from "@/lib/charts/solar-return";
 
-import { CHART, POLAR_CHART, SOLAR_RETURN } from "./fixtures/chart";
+import { CHART, POLAR_CHART, SOLAR_RETURN } from "../../fixtures/chart";
 
 describe("SolarReturnView", () => {
   beforeEach(() => {

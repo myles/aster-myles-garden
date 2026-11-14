@@ -17,7 +17,7 @@ import {
   buildSolarReturnCsv,
 } from "@/lib/downloads/csv";
 
-import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "../../fixtures/chart";
 
 const UTF8_BOM = "\uFEFF";
 

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import TransitView from "@/components/views/TransitView.svelte";
 
-import { CHART_WITHOUT_TIME, TRANSITS } from "./fixtures/chart";
+import { CHART_WITHOUT_TIME, TRANSITS } from "../../fixtures/chart";
 
 const TIME_ZONE = "America/Toronto";
 

@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import ChartWheel from "@/components/chart/ChartWheel.svelte";
 import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
 
-import { CHART } from "./fixtures/chart";
+import { CHART } from "../../fixtures/chart";
 
 function readDescription(): string[] {
   const panel = screen.getByText("Describe the wheel").closest("details")!;

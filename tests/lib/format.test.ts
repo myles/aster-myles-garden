@@ -12,7 +12,7 @@ import {
   formatPlacement,
 } from "@/lib/format";
 
-import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME } from "../fixtures/chart";
 
 describe("formatDegrees", () => {
   it("formats degrees and minutes", () => {

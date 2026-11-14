@@ -8,7 +8,7 @@ import {
   writePreferences,
 } from "@/lib/storage/preferences";
 
-import { FullStorage, MemoryStorage } from "./fixtures/storage";
+import { FullStorage, MemoryStorage } from "../../fixtures/storage";
 
 const PREFERENCES = {
   houseSystem: HouseSystem.WholeSign,

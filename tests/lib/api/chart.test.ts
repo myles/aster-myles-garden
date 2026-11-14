@@ -14,7 +14,7 @@ import { HouseSystem } from "@/lib/astrology/houses";
 import * as chartService from "@/lib/charts/chart";
 import { parseShareHash } from "@/lib/share";
 
-import { CHART } from "./fixtures/chart";
+import { CHART } from "../../fixtures/chart";
 
 const CHART_URL = "https://aster.myles.garden/api/v1/chart";
 
