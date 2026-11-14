@@ -63,6 +63,8 @@ async function choosePlace(): Promise<void> {
   await fireEvent.keyDown(input, { key: "Enter" });
 }
 
+const OUT_OF_RANGE_TEXT = /about 3000 BCE to 3000 CE/;
+
 function submit(): Promise<boolean> {
   return fireEvent.click(screen.getByRole("button", { name: "Draw chart" }));
 }
@@ -655,6 +657,49 @@ describe("App showing transits", () => {
     expect(screen.getByRole("heading", { name: CHART_HEADING })).toBeTruthy();
   });
 
+  it("explains a transit date outside the engine's range", async () => {
+    await openTransits();
+    vi.mocked(createTransits).mockClear();
+    const form = within(transitForm());
+
+    await fireEvent.input(form.getByLabelText("Date"), {
+      target: { value: "9999-06-01" },
+    });
+    await fireEvent.click(form.getByRole("button", { name: "Show transits" }));
+
+    expect(form.getByRole("alert").textContent).toMatch(OUT_OF_RANGE_TEXT);
+    expect(createTransits).not.toHaveBeenCalled();
+  });
+
+  it("reports a transit calculation that fails", async () => {
+    vi.mocked(createTransits).mockImplementation(() => {
+      throw new Error("The engine gave up.");
+    });
+
+    await openTransits();
+
+    expect(within(transitForm()).getByRole("alert").textContent).toContain(
+      "Couldn't show transits: The engine gave up.",
+    );
+  });
+
+  it("explains a share link's transits outside the engine's range", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/#date=2000-01-01&time=12:00&place=2643743&transits=9999-01-01T00:00Z",
+    );
+    render(App);
+
+    const form = await screen.findByRole("form", { name: "Transit moment" });
+    await vi.waitFor(() =>
+      expect(within(form).getByRole("alert").textContent).toMatch(
+        OUT_OF_RANGE_TEXT,
+      ),
+    );
+    expect(createTransits).not.toHaveBeenCalled();
+  });
+
   it("opens transits from a share link", async () => {
     window.history.replaceState(
       null,
@@ -1053,5 +1098,39 @@ describe("App with a place entered by coordinates", () => {
     expect(
       yourForm().getByLabelText<HTMLSelectElement>("Time zone").value,
     ).toBe("America/Toronto");
+  });
+});
+
+describe("App with dates outside the engine's range", () => {
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  it("explains a birth date it can't calculate", async () => {
+    render(App);
+    await fillDateTime();
+    await fireEvent.input(screen.getByLabelText("Date"), {
+      target: { value: "9999-01-01" },
+    });
+    await choosePlace();
+    await submit();
+
+    await vi.waitFor(() =>
+      expect(screen.getAllByRole("alert")[0].textContent).toMatch(
+        OUT_OF_RANGE_TEXT,
+      ),
+    );
+    expect(createChart).not.toHaveBeenCalled();
+  });
+
+  it("limits the date field to the engine's range", () => {
+    render(App);
+
+    expect(screen.getByLabelText<HTMLInputElement>("Date").max).toBe(
+      "3002-12-31",
+    );
   });
 });

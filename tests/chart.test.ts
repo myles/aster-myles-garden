@@ -2,7 +2,13 @@ import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { Body } from "@/lib/bodies";
-import { createChart, usesFallbackHouses, type Chart } from "@/lib/chart";
+import {
+  canCalculateDate,
+  canCalculateMoment,
+  createChart,
+  usesFallbackHouses,
+  type Chart,
+} from "@/lib/chart";
 import { loadEphemeris } from "@/lib/ephemeris";
 import { HOUSE_COUNT, HouseSystem } from "@/lib/houses";
 
@@ -135,5 +141,39 @@ describe("usesFallbackHouses", () => {
 
   it("is false without houses", () => {
     expect(usesFallbackHouses(CHART_WITHOUT_TIME)).toBe(false);
+  });
+});
+
+describe("canCalculateMoment", () => {
+  it("accepts moments the engine covers", () => {
+    expect(canCalculateMoment(new Date("2000-01-01T12:00:00Z"))).toBe(true);
+    expect(canCalculateMoment(new Date("3003-04-28T23:59:00Z"))).toBe(true);
+  });
+
+  it("rejects moments past its end", () => {
+    expect(canCalculateMoment(new Date("3003-04-29T00:01:00Z"))).toBe(false);
+    expect(canCalculateMoment(new Date("9999-01-01T00:00:00Z"))).toBe(false);
+  });
+});
+
+describe("canCalculateDate", () => {
+  it("accepts dates the engine covers", () => {
+    const date = { year: 1, month: 1, day: 1 };
+
+    expect(canCalculateDate(date, "UTC")).toBe(true);
+  });
+
+  it("checks the whole local day", () => {
+    // 28 April 3003 ends after the engine does, west of UTC.
+    const date = { year: 3003, month: 4, day: 28 };
+
+    expect(canCalculateDate(date, "UTC")).toBe(true);
+    expect(canCalculateDate(date, "America/Toronto")).toBe(false);
+  });
+
+  it("rejects dates past its end", () => {
+    expect(canCalculateDate({ year: 9999, month: 1, day: 1 }, "UTC")).toBe(
+      false,
+    );
   });
 });
