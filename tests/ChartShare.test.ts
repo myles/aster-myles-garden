@@ -24,10 +24,6 @@ describe("ChartShare", () => {
     vi.unstubAllGlobals();
   });
 
-  function press(): Promise<boolean> {
-    return fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
-  }
-
   it("makes no link until the button is pressed", () => {
     render(ChartShare, { details: CHART.details });
 
@@ -76,3 +72,7 @@ describe("ChartShare", () => {
     expect(screen.queryByLabelText("Share link")).toBeNull();
   });
 });
+
+function press(): Promise<boolean> {
+  return fireEvent.click(screen.getByRole("button", { name: "Copy link" }));
+}

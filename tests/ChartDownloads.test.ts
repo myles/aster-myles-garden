@@ -65,7 +65,7 @@ describe("ChartDownloads", () => {
   });
 
   it("disables the buttons while an export runs", async () => {
-    let finish = () => {};
+    let finish!: () => void;
     vi.mocked(exportWheel).mockReturnValue(
       new Promise((resolve) => (finish = resolve)),
     );

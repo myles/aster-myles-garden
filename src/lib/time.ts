@@ -225,7 +225,7 @@ export function listTimeZones(): string[] {
   const zones = new Set(Intl.supportedValuesOf("timeZone"));
   zones.add(UTC_TIME_ZONE);
 
-  return [...zones].sort();
+  return [...zones].toSorted();
 }
 
 /** Whether this browser can read the clock in `timeZone`. */
@@ -235,8 +235,8 @@ export function isTimeZone(timeZone: string): boolean {
   }
 
   try {
-    new Intl.DateTimeFormat("en", { timeZone });
-    return true;
+    const formatter = new Intl.DateTimeFormat("en", { timeZone });
+    return Boolean(formatter.resolvedOptions().timeZone);
   } catch {
     // Intl throws a RangeError for a zone it doesn't know; that is the
     // answer, not a failure.

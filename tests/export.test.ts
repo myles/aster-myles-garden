@@ -152,10 +152,9 @@ describe("exportWheel", () => {
     const drawImage = vi.fn();
     vi.stubGlobal(
       "Image",
-      class {
-        onload: (() => void) | null = null;
+      class extends EventTarget {
         set src(_url: string) {
-          queueMicrotask(() => this.onload?.());
+          queueMicrotask(() => this.dispatchEvent(new Event("load")));
         }
       },
     );
@@ -182,10 +181,9 @@ describe("exportWheel", () => {
   it("fails loudly when the image can't be loaded", async () => {
     vi.stubGlobal(
       "Image",
-      class {
-        onerror: (() => void) | null = null;
+      class extends EventTarget {
         set src(_url: string) {
-          queueMicrotask(() => this.onerror?.());
+          queueMicrotask(() => this.dispatchEvent(new Event("error")));
         }
       },
     );

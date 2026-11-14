@@ -38,7 +38,7 @@
   const timeZones = $derived(
     baseTimeZones.includes(timeZone)
       ? baseTimeZones
-      : [...baseTimeZones, timeZone].sort(),
+      : [...baseTimeZones, timeZone].toSorted(),
   );
 
   // A place set from outside, e.g. a saved chart, fills in the fields.

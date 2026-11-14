@@ -90,9 +90,6 @@ describe("parseLocalTime", () => {
 });
 
 describe("toUtc", () => {
-  const at = (date: string, time: string, zone: string) =>
-    toUtc(parseLocalDateTime(date, time), zone).toISOString();
-
   it("applies daylight saving time", () => {
     expect(at("1990-05-15", "14:30", "America/Toronto")).toBe(
       "1990-05-15T18:30:00.000Z",
@@ -232,7 +229,7 @@ describe("listTimeZones", () => {
 
     expect(zones).toContain("America/Toronto");
     expect(zones).toContain("UTC");
-    expect(zones).toEqual([...zones].sort());
+    expect(zones).toEqual([...zones].toSorted());
   });
 });
 
@@ -260,3 +257,6 @@ describe("isTimeZone", () => {
     expect(isTimeZone("")).toBe(false);
   });
 });
+
+const at = (date: string, time: string, zone: string) =>
+  toUtc(parseLocalDateTime(date, time), zone).toISOString();

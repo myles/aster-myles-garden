@@ -229,7 +229,7 @@ export function findAspects(
     }
   }
 
-  return aspects.sort((a, b) => a.orbDegrees - b.orbDegrees);
+  return aspects.toSorted((a, b) => a.orbDegrees - b.orbDegrees);
 }
 
 /**
@@ -262,7 +262,7 @@ export function findAspectsBetween(
     }
   }
 
-  return aspects.sort((a, b) => a.orbDegrees - b.orbDegrees);
+  return aspects.toSorted((a, b) => a.orbDegrees - b.orbDegrees);
 }
 
 /** Points such as the lunar node are left out to keep the wheel readable. */

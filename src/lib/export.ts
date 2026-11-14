@@ -196,8 +196,12 @@ async function renderPng(markup: string, sizePx: number): Promise<Blob> {
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error("The wheel couldn't be drawn."));
+    image.addEventListener("load", () => resolve(image), { once: true });
+    image.addEventListener(
+      "error",
+      () => reject(new Error("The wheel couldn't be drawn.")),
+      { once: true },
+    );
     image.src = url;
   });
 }
@@ -261,7 +265,6 @@ function describeSubject(subject: ExportSubject): string {
 
 /** In UTC, so the name doesn't depend on where it was saved. */
 function describeInstant(at: Date): string {
-  const pad = (value: number) => String(value).padStart(2, "0");
   const date =
     `${at.getUTCFullYear()}-${pad(at.getUTCMonth() + 1)}-` +
     pad(at.getUTCDate());
@@ -279,7 +282,7 @@ function describePair(pair: { first: Chart; second: Chart }): string {
 
 function describeChart(chart: Chart): string {
   const { date, time, place } = chart.details;
-  const pad = (value: number) => String(value).padStart(2, "0");
+
   const parts = [
     slugify(place.name),
     `${date.year}-${pad(date.month)}-${pad(date.day)}`,
@@ -301,3 +304,5 @@ function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 }
+
+const pad = (value: number) => String(value).padStart(2, "0");

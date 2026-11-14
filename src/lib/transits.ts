@@ -28,10 +28,9 @@ export type Transits = {
 
 /** Requires loadChartEngine() to have resolved. */
 export function createTransits(natal: Chart, at: Date): Transits {
-  const bodies = calculateBodies(toJulianDay(at)).map((position) => ({
-    ...position,
-    isRetrograde: position.speed < 0,
-  }));
+  const bodies = calculateBodies(toJulianDay(at)).map((position) =>
+    Object.assign({}, position, { isRetrograde: position.speed < 0 }),
+  );
 
   return {
     natal,

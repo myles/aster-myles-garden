@@ -267,7 +267,6 @@ function measureDistanceKm(
   toLatitude: number,
   toLongitude: number,
 ): number {
-  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
   const latitudeChange = toRadians(toLatitude - fromLatitude);
   const longitudeChange = toRadians(toLongitude - fromLongitude);
   const a =
@@ -278,3 +277,5 @@ function measureDistanceKm(
 
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(a));
 }
+
+const toRadians = (degrees: number) => (degrees * Math.PI) / 180;

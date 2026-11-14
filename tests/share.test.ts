@@ -268,7 +268,7 @@ describe("share links for transits", () => {
     ["a malformed moment", "&transits=tomorrow", "transit moment"],
     [
       "both transits and a second chart",
-      "&transits=2026-11-13T20:05Z" + "&date2=1990-05-15&time2=12:00&place2=1",
+      "&transits=2026-11-13T20:05Z&date2=1990-05-15&time2=12:00&place2=1",
       "only one of",
     ],
   ])("rejects %s", (_, extra, message) => {

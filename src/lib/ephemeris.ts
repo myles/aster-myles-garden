@@ -66,6 +66,7 @@ export function loadEphemeris(wasmUrl = DEFAULT_WASM_URL): Promise<void> {
   _loading ??= _swe.init(wasmUrl).then(
     () => {
       _isLoaded = true;
+      return undefined;
     },
     (error: unknown) => {
       // Allow a retry after a failed fetch instead of caching the failure.

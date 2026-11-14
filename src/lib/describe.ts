@@ -99,7 +99,7 @@ function describeOrientation(chart: Pick<Chart, "houses">): string {
  * Example: "Cancer: Mars (house 4); Capricorn: Sun (house 10), Moon".
  */
 function describeRing(bodies: PlacedBody[], ascendant: number): string {
-  const ordered = [...bodies].sort(
+  const ordered = bodies.toSorted(
     (a, b) =>
       normalizeDegrees(a.longitude - ascendant) -
       normalizeDegrees(b.longitude - ascendant),

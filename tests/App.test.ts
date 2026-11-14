@@ -379,11 +379,6 @@ describe("App opened from a share link", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  function openLink(hash: string): void {
-    window.history.replaceState(null, "", `/${hash}`);
-    render(App);
-  }
-
   it("fills in the form and draws the chart", async () => {
     openLink(SHARE_HASH);
 
@@ -494,42 +489,8 @@ describe("App comparing two charts", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  function theirForm(): HTMLElement {
-    return screen.getByRole("form", { name: "Their birth details" });
-  }
-
-  async function drawYourChart(): Promise<void> {
-    await fillDateTime();
-    await choosePlace();
-    await submit();
-    await screen.findByRole("heading", { name: CHART_HEADING });
-  }
-
-  async function fillTheirForm(): Promise<void> {
-    const form = within(theirForm());
-    await fireEvent.input(form.getByLabelText("Date"), {
-      target: { value: "1990-05-15" },
-    });
-    await fireEvent.input(form.getByLabelText("Time"), {
-      target: { value: "14:30" },
-    });
-
-    const place = form.getByLabelText("Place");
-    await fireEvent.focus(place);
-    await fireEvent.input(place, { target: { value: "toronto" } });
-    await fireEvent.keyDown(place, { key: "Enter" });
-  }
-
-  function pressCompare(): Promise<boolean> {
-    return fireEvent.click(
-      within(theirForm()).getByRole("button", { name: "Compare charts" }),
-    );
-  }
-
   it("offers a comparison only once your chart is drawn", async () => {
     render(App);
-    const compare = () =>
-      screen.queryByRole("button", { name: "Compare with someone else" });
 
     expect(compare()).toBeNull();
 
@@ -737,16 +698,6 @@ describe("App comparing two charts", () => {
     expect(within(theirForm()).queryByRole("alert")).toBeNull();
   });
 
-  async function compareWithThem(): Promise<void> {
-    await drawYourChart();
-    await fireEvent.click(
-      screen.getByRole("button", { name: "Compare with someone else" }),
-    );
-    await fillTheirForm();
-    await pressCompare();
-    await screen.findByRole("heading", { name: "Chart comparison" });
-  }
-
   it("shows the bi-wheel until the composite is chosen", async () => {
     render(App);
     await compareWithThem();
@@ -849,21 +800,6 @@ describe("App showing a solar return", () => {
   afterEach(() => {
     window.history.replaceState(null, "", "/");
   });
-
-  function returnForm() {
-    return within(screen.getByRole("form", { name: "Solar return" }));
-  }
-
-  async function openSolarReturn(): Promise<void> {
-    render(App);
-    await fillDateTime();
-    await choosePlace();
-    await submit();
-    await screen.findByRole("heading", { name: CHART_HEADING });
-    await fireEvent.click(
-      screen.getByRole("button", { name: "See solar return" }),
-    );
-  }
 
   it("opens on the return in effect, at the birthplace", async () => {
     await openSolarReturn();
@@ -994,19 +930,6 @@ describe("App showing transits", () => {
   afterEach(() => {
     window.history.replaceState(null, "", "/");
   });
-
-  function transitForm(): HTMLElement {
-    return screen.getByRole("form", { name: "Transit moment" });
-  }
-
-  async function openTransits(): Promise<void> {
-    render(App);
-    await fillDateTime();
-    await choosePlace();
-    await submit();
-    await screen.findByRole("heading", { name: CHART_HEADING });
-    await fireEvent.click(screen.getByRole("button", { name: "See transits" }));
-  }
 
   it("opens on the transits for right now", async () => {
     const before = Date.now();
@@ -1142,16 +1065,6 @@ describe("App with saved charts", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
-
-  function yourForm() {
-    return within(screen.getByRole("form", { name: "Your birth details" }));
-  }
-
-  function saveAs(name: string): Promise<boolean> {
-    return fireEvent.input(yourForm().getByLabelText("Save as"), {
-      target: { value: name },
-    });
-  }
 
   it("saves your details under a name, in this browser", async () => {
     render(App);
@@ -1305,19 +1218,6 @@ describe("App with a place entered by coordinates", () => {
     window.history.replaceState(null, "", "/");
     vi.restoreAllMocks();
   });
-
-  function yourForm() {
-    return within(screen.getByRole("form", { name: "Your birth details" }));
-  }
-
-  async function enterCoordinates(text: string): Promise<void> {
-    await fireEvent.click(
-      yourForm().getByRole("button", { name: "Not listed? Enter coordinates" }),
-    );
-    await fireEvent.input(yourForm().getByLabelText("Coordinates"), {
-      target: { value: text },
-    });
-  }
 
   it("switches to coordinates in a browser that lists UTC", async () => {
     // Some browsers include UTC in this list; Node doesn't.
@@ -1593,3 +1493,100 @@ describe("App revealing the result", () => {
     expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
   });
 });
+
+function openLink(hash: string): void {
+  window.history.replaceState(null, "", `/${hash}`);
+  render(App);
+}
+
+function theirForm(): HTMLElement {
+  return screen.getByRole("form", { name: "Their birth details" });
+}
+
+async function drawYourChart(): Promise<void> {
+  await fillDateTime();
+  await choosePlace();
+  await submit();
+  await screen.findByRole("heading", { name: CHART_HEADING });
+}
+
+async function fillTheirForm(): Promise<void> {
+  const form = within(theirForm());
+  await fireEvent.input(form.getByLabelText("Date"), {
+    target: { value: "1990-05-15" },
+  });
+  await fireEvent.input(form.getByLabelText("Time"), {
+    target: { value: "14:30" },
+  });
+
+  const place = form.getByLabelText("Place");
+  await fireEvent.focus(place);
+  await fireEvent.input(place, { target: { value: "toronto" } });
+  await fireEvent.keyDown(place, { key: "Enter" });
+}
+
+function pressCompare(): Promise<boolean> {
+  return fireEvent.click(
+    within(theirForm()).getByRole("button", { name: "Compare charts" }),
+  );
+}
+
+const compare = () =>
+  screen.queryByRole("button", { name: "Compare with someone else" });
+
+function returnForm() {
+  return within(screen.getByRole("form", { name: "Solar return" }));
+}
+
+async function openSolarReturn(): Promise<void> {
+  render(App);
+  await fillDateTime();
+  await choosePlace();
+  await submit();
+  await screen.findByRole("heading", { name: CHART_HEADING });
+  await fireEvent.click(
+    screen.getByRole("button", { name: "See solar return" }),
+  );
+}
+
+function transitForm(): HTMLElement {
+  return screen.getByRole("form", { name: "Transit moment" });
+}
+
+async function openTransits(): Promise<void> {
+  render(App);
+  await fillDateTime();
+  await choosePlace();
+  await submit();
+  await screen.findByRole("heading", { name: CHART_HEADING });
+  await fireEvent.click(screen.getByRole("button", { name: "See transits" }));
+}
+
+function yourForm() {
+  return within(screen.getByRole("form", { name: "Your birth details" }));
+}
+
+function saveAs(name: string): Promise<boolean> {
+  return fireEvent.input(yourForm().getByLabelText("Save as"), {
+    target: { value: name },
+  });
+}
+
+async function enterCoordinates(text: string): Promise<void> {
+  await fireEvent.click(
+    yourForm().getByRole("button", { name: "Not listed? Enter coordinates" }),
+  );
+  await fireEvent.input(yourForm().getByLabelText("Coordinates"), {
+    target: { value: text },
+  });
+}
+
+async function compareWithThem(): Promise<void> {
+  await drawYourChart();
+  await fireEvent.click(
+    screen.getByRole("button", { name: "Compare with someone else" }),
+  );
+  await fillTheirForm();
+  await pressCompare();
+  await screen.findByRole("heading", { name: "Chart comparison" });
+}

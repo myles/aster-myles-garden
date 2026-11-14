@@ -108,11 +108,6 @@ describe("createChart", () => {
 });
 
 describe("createChart without a birth time", () => {
-  const signNames = (chart: Chart, body: Body) =>
-    chart.bodies
-      .find((placed) => placed.body === body)
-      ?.possibleSigns?.map((sign) => sign.name);
-
   let quiet: Chart;
   let cusp: Chart;
 
@@ -217,3 +212,8 @@ describe("canCalculateDate", () => {
     );
   });
 });
+
+const signNames = (chart: Chart, body: Body) =>
+  chart.bodies
+    .find((placed) => placed.body === body)
+    ?.possibleSigns?.map((sign) => sign.name);

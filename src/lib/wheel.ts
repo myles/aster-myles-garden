@@ -345,7 +345,7 @@ function drawAxes(parent: Parent, houses: HousePositions | undefined): void {
 export function spreadLongitudes(longitudes: number[]): number[] {
   const order = longitudes
     .map((longitude, index) => ({ longitude, index }))
-    .sort((a, b) => a.longitude - b.longitude);
+    .toSorted((a, b) => a.longitude - b.longitude);
   const display = order.map((item) => item.longitude);
   const count = display.length;
 
@@ -381,7 +381,7 @@ export function spreadLongitudes(longitudes: number[]): number[] {
     }
   }
 
-  const result = new Array<number>(count);
+  const result = Array.from<number>({ length: count });
   order.forEach((item, sortedIndex) => {
     result[item.index] = normalizeDegrees(display[sortedIndex]);
   });
@@ -480,8 +480,6 @@ function measureAspects(
   secondBodies: PlacedBody[],
   ascendant: number,
 ): Segment[] {
-  const toLongitudes = (bodies: PlacedBody[]) =>
-    new Map(bodies.map((body) => [body.body, body.longitude]));
   const firstLongitudes = toLongitudes(firstBodies);
   const secondLongitudes = toLongitudes(secondBodies);
 
@@ -621,3 +619,6 @@ function render(
     titlePrefix: biWheel ? `${biWheel.outerLabel} ` : "",
   });
 }
+
+const toLongitudes = (bodies: PlacedBody[]) =>
+  new Map(bodies.map((body) => [body.body, body.longitude]));
