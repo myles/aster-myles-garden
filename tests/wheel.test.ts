@@ -2,6 +2,7 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { AspectType } from "@/lib/aspects";
 import { describeBiWheel, describeWheel } from "@/lib/describe";
 import { compareCharts } from "@/lib/synastry";
 import { drawBiWheel, drawWheel, spreadLongitudes } from "@/lib/wheel";
@@ -74,6 +75,18 @@ describe("drawWheel", () => {
 
   it("draws aspect lines by quality", () => {
     expect(count(".wheel-aspect--challenging")).toBe(1);
+  });
+
+  it("marks minor aspect lines, so they can be drawn dashed", () => {
+    expect(count(".wheel-aspect--minor")).toBe(0);
+
+    const [aspect] = CHART.aspects;
+    drawWheel(svg, {
+      ...CHART,
+      aspects: [{ ...aspect, type: AspectType.Quincunx }],
+    });
+
+    expect(count(".wheel-aspect--minor")).toBe(1);
   });
 
   it("puts the ascendant at nine o'clock", () => {

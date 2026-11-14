@@ -9,7 +9,14 @@
 
 import { z } from "astro/zod";
 
-import { AspectQuality, AspectType } from "@/lib/aspects";
+import {
+  AspectQuality,
+  AspectRank,
+  AspectSet,
+  AspectType,
+  DEFAULT_ASPECT_SETTINGS,
+  OrbSize,
+} from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
 import { DEFAULT_HOUSE_SYSTEM, HOUSE_COUNT, HouseSystem } from "@/lib/houses";
 import { isTimeZone } from "@/lib/time";
@@ -37,6 +44,20 @@ const bodySchema = z
 const houseSystemSchema = z.enum(HouseSystem).meta({
   id: "HouseSystem",
   description: "How the sky is divided into the 12 houses.",
+});
+
+const aspectSetSchema = z.enum(AspectSet).meta({
+  id: "AspectSet",
+  description:
+    "Which aspects to find: the major ones only, or the minor ones too " +
+    "(semi-sextile, semi-square, sesquiquadrate and quincunx).",
+});
+
+const orbSizeSchema = z.enum(OrbSize).meta({
+  id: "OrbSize",
+  description:
+    "How wide every orb is: tight is three quarters of standard, wide " +
+    "is a quarter more.",
 });
 
 const houseNumberSchema = z.int().min(1).max(HOUSE_COUNT);
@@ -89,6 +110,8 @@ export const chartRequestSchemaV1 = z
         examples: ["America/Toronto"],
       }),
     houseSystem: houseSystemSchema.default(DEFAULT_HOUSE_SYSTEM),
+    aspectSet: aspectSetSchema.default(DEFAULT_ASPECT_SETTINGS.aspectSet),
+    orbSize: orbSizeSchema.default(DEFAULT_ASPECT_SETTINGS.orbSize),
     placeName: z
       .string()
       .trim()
@@ -168,6 +191,7 @@ const aspectSchemaV1 = z
     second: bodySchema,
     type: z.enum(AspectType).meta({ id: "AspectType" }),
     quality: z.enum(AspectQuality).meta({ id: "AspectQuality" }),
+    rank: z.enum(AspectRank).meta({ id: "AspectRank" }),
     orbDegrees: z.number().meta({
       description: "How far the separation is from exact, in degrees.",
     }),
@@ -191,12 +215,16 @@ export const chartSchemaV1 = z
         "the polar circles, where Placidus and Koch can't be cast; " +
         "otherwise the one asked for. Absent without a birth time.",
     }),
+    aspectSet: aspectSetSchema,
+    orbSize: orbSizeSchema,
     bodies: z.array(placedBodySchemaV1),
     houses: housesSchemaV1.optional().meta({
       description: "Absent without a birth time.",
     }),
     aspects: z.array(aspectSchemaV1).meta({
-      description: "Major aspects between the planets, tightest first.",
+      description:
+        "Aspects between the planets, tightest first: the major ones, " +
+        "and the minor ones too when aspectSet is all.",
     }),
     shareUrl: z.url().meta({
       description:

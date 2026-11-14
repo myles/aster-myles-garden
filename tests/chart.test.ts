@@ -1,6 +1,12 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
+import {
+  ASPECT_INFO,
+  AspectRank,
+  AspectSet,
+  DEFAULT_ASPECT_SETTINGS,
+} from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
 import {
   canCalculateDate,
@@ -39,6 +45,24 @@ describe("createChart", () => {
       place: TORONTO,
       houseSystem: HouseSystem.Placidus,
     });
+  });
+
+  it("finds only major aspects by default", () => {
+    const ranks = chart.aspects.map((aspect) => ASPECT_INFO[aspect.type].rank);
+    expect(new Set(ranks)).toEqual(new Set([AspectRank.Major]));
+  });
+
+  it("adds minor aspects when the settings ask", () => {
+    const withMinor = createChart({
+      ...chart.details,
+      aspectSettings: { ...DEFAULT_ASPECT_SETTINGS, aspectSet: AspectSet.All },
+    });
+    const minor = withMinor.aspects.filter(
+      (aspect) => ASPECT_INFO[aspect.type].rank === AspectRank.Minor,
+    );
+
+    expect(minor.length).toBeGreaterThan(0);
+    expect(withMinor.aspects).toEqual(expect.arrayContaining(chart.aspects));
   });
 
   it("converts local birth time to UT", () => {

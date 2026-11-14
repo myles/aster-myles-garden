@@ -4,7 +4,7 @@
 // body, are never written to a log, and the response is never cached.
 
 import { SITE_URL } from "@/consts";
-import { ASPECT_INFO } from "@/lib/aspects";
+import { ASPECT_INFO, DEFAULT_ASPECT_SETTINGS } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
 import {
   canCalculateDate,
@@ -58,6 +58,10 @@ export function toBirthDetails(request: ChartRequestV1): BirthDetails {
       timeZone: request.timeZone,
     }),
     houseSystem: request.houseSystem,
+    aspectSettings: {
+      aspectSet: request.aspectSet,
+      orbSize: request.orbSize,
+    },
   };
 }
 
@@ -76,6 +80,7 @@ function formatAngle(longitude: number) {
 
 export function formatChartForApi(chart: Chart): ChartV1 {
   const { details, houses } = chart;
+  const aspectSettings = details.aspectSettings ?? DEFAULT_ASPECT_SETTINGS;
 
   return chartSchemaV1.parse({
     bornAt: chart.bornAt.toISOString(),
@@ -83,6 +88,8 @@ export function formatChartForApi(chart: Chart): ChartV1 {
     isTimeKnown: details.time !== undefined,
     houseSystem: details.houseSystem,
     effectiveHouseSystem: houses?.houseSystem,
+    aspectSet: aspectSettings.aspectSet,
+    orbSize: aspectSettings.orbSize,
     bodies: chart.bodies.map((placed) => ({
       body: placed.body,
       name: BODY_INFO[placed.body].name,
@@ -108,6 +115,7 @@ export function formatChartForApi(chart: Chart): ChartV1 {
       second: aspect.second,
       type: aspect.type,
       quality: ASPECT_INFO[aspect.type].quality,
+      rank: ASPECT_INFO[aspect.type].rank,
       orbDegrees: aspect.orbDegrees,
     })),
     shareUrl: buildShareUrl(details, SITE_URL),

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Chart } from "@/lib/chart";
 
-import { AspectType } from "@/lib/aspects";
+import { AspectSet, AspectType, DEFAULT_ASPECT_SETTINGS } from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
 import { compareCharts } from "@/lib/synastry";
 
@@ -23,6 +23,33 @@ describe("compareCharts", () => {
 
     expect(synastry.first).toBe(CHART);
     expect(synastry.second).toBe(THEIRS);
+  });
+
+  it("uses your chart's aspect settings", () => {
+    // Their Sun at 70° is a quincunx to your Sun at 280°.
+    const theirs = {
+      ...CHART,
+      bodies: [{ ...CHART.bodies[0], longitude: 70 }],
+    };
+    const yours = {
+      ...CHART,
+      details: {
+        ...CHART.details,
+        aspectSettings: {
+          ...DEFAULT_ASPECT_SETTINGS,
+          aspectSet: AspectSet.All,
+        },
+      },
+    };
+    const quincunx = {
+      first: Body.Sun,
+      second: Body.Sun,
+      type: AspectType.Quincunx,
+      orbDegrees: 0,
+    };
+
+    expect(compareCharts(CHART, theirs).aspects).not.toContainEqual(quincunx);
+    expect(compareCharts(yours, theirs).aspects).toContainEqual(quincunx);
   });
 
   it("finds aspects from your planets to theirs", () => {

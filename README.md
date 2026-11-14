@@ -73,8 +73,8 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 1. Enter a birth date, time, and place. If you don't know the time, tick **I don't know the time** for a noon chart without houses. If the place isn't listed, choose **Not listed? Enter coordinates** and paste its latitude and longitude from any map; the time zone is suggested from the nearest listed place.
 2. The place resolves, offline, to coordinates and an IANA time zone; the browser's time zone database supplies the historical offset, Local Mean Time included.
 3. The chart is calculated and drawn as an SVG wheel.
-4. Adjust the house system if you'd like a different one.
-5. Press **Copy link** to share the chart. The link carries the date, time, GeoNames place ID and house system in its `#` fragment, which browsers never send to the server, and opening it fills in the form and draws the same chart.
+4. Adjust the house system if you'd like a different one, and the aspects: major only or minor too, with tight, standard or wide orbs. Minor aspects are drawn as dashed lines.
+5. Press **Copy link** to share the chart. The link carries the date, time, GeoNames place ID, house system and any aspect settings in its `#` fragment, which browsers never send to the server, and opening it fills in the form and draws the same chart.
 6. Press **Compare with someone else** under the form to add a second person. The chart becomes a bi-wheel, with their planets outside the zodiac, plus the aspects between you and where each person's planets fall in the other's houses.
 7. Press **See transits** to set the sky at a moment, now by default, against your chart. Transits count within 2° of exact, and the time is read in your own time zone.
 8. Type a name under **Save as** to keep a chart's details in this browser. Saved charts appear at the top of each form, where **Use** fills it in and draws it, and **Forget** removes it. They're stored only in your browser's local storage and never sent anywhere.
@@ -85,10 +85,10 @@ A small JSON API calculates the same charts on a server, so tools such as the ga
 
 The OpenAPI document is at [`/api/v1/openapi.json`](https://aster.myles.garden/api/v1/openapi.json).
 
-| Endpoint                | Does                                                                                                                            |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/v1/chart`    | Takes a date, local time, latitude, longitude, time zone and house system; returns positions, houses, aspects and a share link. |
-| `GET /api/v1/places?q=` | Searches the GeoNames index for a birthplace's latitude, longitude and time zone.                                               |
+| Endpoint                | Does                                                                                                                                             |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `POST /api/v1/chart`    | Takes a date, local time, latitude, longitude, time zone, house system and aspect settings; returns positions, houses, aspects and a share link. |
+| `GET /api/v1/places?q=` | Searches the GeoNames index for a birthplace's latitude, longitude and time zone.                                                                |
 
 ```bash
 curl -s https://aster.myles.garden/api/v1/places?q=toronto

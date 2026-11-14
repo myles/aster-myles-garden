@@ -16,11 +16,11 @@
 - [x] A written description of the wheel, read by screen readers and shown under the wheel
 - [x] Coordinates for unlisted places, with the time zone suggested from the nearest listed place
 - [x] Lilith and the South Node
+- [x] Minor aspects and tight, standard or wide orbs, carried by share links and the API
 
 ## Charts
 
 - [ ] Composite and solar return charts
-- [ ] Minor aspects and adjustable orbs
 - [ ] Sidereal zodiac, with a choice of ayanamsa
 - [ ] Optional high-precision ephemeris files, and Chiron with them: the built-in Moshier ephemeris has no asteroids
 

@@ -8,6 +8,12 @@
 
 import type { BirthDetails } from "@/lib/chart";
 
+import {
+  DEFAULT_ASPECT_SETTINGS,
+  isAspectSet,
+  isOrbSize,
+  type AspectSettings,
+} from "@/lib/aspects";
 import { formatCoordinates } from "@/lib/format";
 import { DEFAULT_HOUSE_SYSTEM, HouseSystem, isHouseSystem } from "@/lib/houses";
 import {
@@ -34,6 +40,9 @@ const LONGITUDE_PARAM = "lon";
 const TIME_ZONE_PARAM = "tz";
 const PLACE_NAME_PARAM = "name";
 const HOUSE_PARAM = "house";
+// Aspect settings, written only when they aren't the default.
+const ASPECTS_PARAM = "aspects";
+const ORBS_PARAM = "orbs";
 const TRANSITS_PARAM = "transits";
 
 /** A transit moment in UTC, to the minute. Example: "2026-11-13T20:05Z". */
@@ -61,6 +70,7 @@ export type SharedPerson = {
 /** Form values carried by a share link. */
 export type SharedDetails = SharedPerson & {
   houseSystem: HouseSystem;
+  aspectSettings: AspectSettings;
   /** The second person, when the link is for a comparison. */
   comparedWith?: SharedPerson;
   /** The moment to show transits for, when the link is for transits. */
@@ -95,7 +105,8 @@ const SECOND_PERSON: PersonParams = {
 
 /**
  * Builds a link that reopens a chart, along with a comparison or transits
- * when the addition names one. A comparison shares the house system.
+ * when the addition names one. A comparison shares the house system and
+ * aspect settings.
  */
 export function buildShareUrl(
   details: BirthDetails,
@@ -107,6 +118,7 @@ export function buildShareUrl(
 
   writePerson(params, details, FIRST_PERSON);
   params.set(HOUSE_PARAM, details.houseSystem);
+  writeAspectSettings(params, details.aspectSettings);
   if (comparedWith) {
     writePerson(params, comparedWith, SECOND_PERSON);
   }
@@ -125,7 +137,8 @@ export function buildShareUrl(
 /**
  * Reads share-link details from a URL hash. Returns undefined when
  * the page wasn't opened from a share link, and throws when it was but
- * the link is damaged. A missing house system falls back to the default.
+ * the link is damaged. A missing house system or aspect setting falls
+ * back to the default.
  */
 export function parseShareHash(hash: string): SharedDetails | undefined {
   const params = new URLSearchParams(hash.replace(/^#/, ""));
@@ -140,6 +153,7 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
     throw new Error(`The link's house system isn't known: "${house}".`);
   }
 
+  const aspectSettings = readAspectSettings(params);
   const comparedWith = readPerson(params, SECOND_PERSON);
   const transitsAt = readTransitsAt(params);
 
@@ -147,7 +161,43 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
     throw new Error("The link can't show both a comparison and transits.");
   }
 
-  return { ...person, houseSystem: house, comparedWith, transitsAt };
+  return {
+    ...person,
+    houseSystem: house,
+    aspectSettings,
+    comparedWith,
+    transitsAt,
+  };
+}
+
+/** Old links, and links with the default settings, have neither param. */
+function writeAspectSettings(
+  params: URLSearchParams,
+  settings = DEFAULT_ASPECT_SETTINGS,
+): void {
+  if (settings.aspectSet !== DEFAULT_ASPECT_SETTINGS.aspectSet) {
+    params.set(ASPECTS_PARAM, settings.aspectSet);
+  }
+  if (settings.orbSize !== DEFAULT_ASPECT_SETTINGS.orbSize) {
+    params.set(ORBS_PARAM, settings.orbSize);
+  }
+}
+
+function readAspectSettings(params: URLSearchParams): AspectSettings {
+  const aspectSet =
+    params.get(ASPECTS_PARAM) ?? DEFAULT_ASPECT_SETTINGS.aspectSet;
+  if (!isAspectSet(aspectSet)) {
+    throw new Error(
+      `The link's choice of aspects isn't known: "${aspectSet}".`,
+    );
+  }
+
+  const orbSize = params.get(ORBS_PARAM) ?? DEFAULT_ASPECT_SETTINGS.orbSize;
+  if (!isOrbSize(orbSize)) {
+    throw new Error(`The link's orbs aren't known: "${orbSize}".`);
+  }
+
+  return { aspectSet, orbSize };
 }
 
 /** Undefined when the link isn't for transits. */

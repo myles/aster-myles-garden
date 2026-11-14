@@ -10,6 +10,13 @@
   import SaveChartRow from "@/components/SaveChartRow.svelte";
   import SavedChartList from "@/components/SavedChartList.svelte";
   import {
+    ASPECT_SET_NAMES,
+    AspectSet,
+    DEFAULT_ASPECT_SETTINGS,
+    ORB_SIZE_NAMES,
+    OrbSize,
+  } from "@/lib/aspects";
+  import {
     canCalculateDate,
     canCalculateMoment,
     createChart,
@@ -68,10 +75,14 @@
   const TRANSITS_OUT_OF_RANGE = `Transits can only be shown from ${CALCULABLE_SPAN}.`;
 
   const houseSystems = Object.values(HouseSystem);
+  const aspectSets = Object.values(AspectSet);
+  const orbSizes = Object.values(OrbSize);
 
   let yours: BirthForm = $state(createBlankForm());
   let theirs: BirthForm = $state(createBlankForm());
   let houseSystem: string = $state(DEFAULT_HOUSE_SYSTEM);
+  let aspectSet = $state(DEFAULT_ASPECT_SETTINGS.aspectSet);
+  let orbSize = $state(DEFAULT_ASPECT_SETTINGS.orbSize);
   let chart: Chart | undefined = $state.raw();
   let comparedChart: Chart | undefined = $state.raw();
   // Cast so TypeScript doesn't narrow panel to its first value, None.
@@ -149,6 +160,7 @@
 
       requestEngine();
       houseSystem = shared.houseSystem;
+      ({ aspectSet, orbSize } = shared.aspectSettings);
       yours = await fillForm(shared);
 
       closePanel();
@@ -292,6 +304,7 @@
       time: form.isTimeUnknown ? undefined : parseLocalTime(form.time),
       place: form.place!,
       houseSystem: system,
+      aspectSettings: { aspectSet, orbSize },
     };
   }
 
@@ -489,8 +502,8 @@
     }
   }
 
-  // Changing the house system or whether a time is known redraws what's
-  // already on screen.
+  // Changing the house system, the aspect settings or whether a time is
+  // known redraws what's already on screen.
   function redrawIfDrawn(): void {
     if (chart) {
       void draw();
@@ -560,6 +573,38 @@
           {#if isHouseSystemUnused}
             <p class="text-ink-muted text-xs">Houses need a birth time.</p>
           {/if}
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1.5">
+            <label for="aspect-set" class="text-sm font-medium">Aspects</label>
+            <select
+              id="aspect-set"
+              name="aspectSet"
+              class="border-rule bg-paper rounded border px-3 py-2"
+              bind:value={aspectSet}
+              onchange={redrawIfDrawn}
+            >
+              {#each aspectSets as set (set)}
+                <option value={set}>{ASPECT_SET_NAMES[set]}</option>
+              {/each}
+            </select>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label for="orb-size" class="text-sm font-medium">Orbs</label>
+            <select
+              id="orb-size"
+              name="orbSize"
+              class="border-rule bg-paper rounded border px-3 py-2"
+              bind:value={orbSize}
+              onchange={redrawIfDrawn}
+            >
+              {#each orbSizes as size (size)}
+                <option value={size}>{ORB_SIZE_NAMES[size]}</option>
+              {/each}
+            </select>
+          </div>
         </div>
 
         <button

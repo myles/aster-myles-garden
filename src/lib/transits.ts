@@ -37,7 +37,12 @@ export function createTransits(natal: Chart, at: Date): Transits {
     natal,
     at,
     bodies,
-    aspects: findAspectsBetween(natal.bodies, bodies, TRANSIT_MAX_ORB_DEGREES),
+    aspects: findAspectsBetween(
+      natal.bodies,
+      bodies,
+      natal.details.aspectSettings,
+      TRANSIT_MAX_ORB_DEGREES,
+    ),
     inNatalHouses: placeInHouses(bodies, natal.houses),
   };
 }

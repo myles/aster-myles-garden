@@ -1,9 +1,26 @@
 import type { Chart, PlacedBody } from "@/lib/chart";
 
+import {
+  AspectSet,
+  DEFAULT_ASPECT_SETTINGS,
+  type AspectSettings,
+} from "@/lib/aspects";
 import { formatLongitude, getSign } from "@/lib/zodiac";
 
 const MINUTES_PER_DEGREE = 60;
 const COORDINATE_DECIMALS = 2;
+
+/**
+ * The start of an empty aspect table's message: "No major aspects", or
+ * "No aspects" once minor ones are looked for too.
+ */
+export function formatNoAspects(
+  settings: AspectSettings = DEFAULT_ASPECT_SETTINGS,
+): string {
+  return settings.aspectSet === AspectSet.All
+    ? "No aspects"
+    : "No major aspects";
+}
 
 /**
  * Formats an angular amount as degrees and minutes.

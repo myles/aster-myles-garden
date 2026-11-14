@@ -12,6 +12,7 @@
     formatBirthMoment,
     formatCoordinates,
     formatDegrees,
+    formatNoAspects,
   } from "@/lib/format";
   import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
@@ -104,7 +105,9 @@
             </tr>
           {:else}
             <tr class="border-rule/60 border-b">
-              <td class="py-1.5">No major aspects within orb.</td>
+              <td class="py-1.5">
+                {formatNoAspects(chart.details.aspectSettings)} within orb.
+              </td>
               <td class="py-1.5"></td>
             </tr>
           {/each}

@@ -8,7 +8,7 @@ import type { Transits } from "@/lib/transits";
 
 import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
-import { formatDegrees, formatPlacement } from "@/lib/format";
+import { formatDegrees, formatNoAspects, formatPlacement } from "@/lib/format";
 import { formatLongitude } from "@/lib/zodiac";
 
 type Row = string[];
@@ -28,8 +28,6 @@ const ASPECT_HEADINGS: Row = ["Pair", "Aspect", "Orb"];
 const CROSS_ASPECT_HEADINGS: Row = ["Yours", "Aspect", "Theirs", "Orb"];
 const TRANSIT_ASPECT_HEADINGS: Row = ["Transiting", "Aspect", "Natal", "Orb"];
 
-const NO_ASPECTS_TEXT = "No major aspects within orb.";
-const NO_CROSS_ASPECTS_TEXT = "No major aspects between you.";
 const NO_TRANSITS_TEXT = "No transits within orb.";
 
 /** Fields holding a comma, quote or line break must be quoted. */
@@ -42,7 +40,7 @@ export function buildChartCsv(chart: Chart): string {
     {
       title: "Aspects",
       headings: ASPECT_HEADINGS,
-      rows: buildAspectRows(chart.aspects),
+      rows: buildAspectRows(chart),
     },
   ]);
 }
@@ -64,7 +62,7 @@ export function buildComparisonCsv(synastry: Synastry): string {
     {
       title: "Aspects between you",
       headings: CROSS_ASPECT_HEADINGS,
-      rows: buildCrossAspectRows(synastry.aspects),
+      rows: buildCrossAspectRows(synastry),
     },
   ]);
 }
@@ -156,9 +154,9 @@ function buildPositionsTable(
   return { title, headings, rows };
 }
 
-function buildAspectRows(aspects: Aspect[]): Row[] {
+function buildAspectRows({ aspects, details }: Chart): Row[] {
   if (aspects.length === 0) {
-    return [[NO_ASPECTS_TEXT, "", ""]];
+    return [[`${formatNoAspects(details.aspectSettings)} within orb.`, "", ""]];
   }
 
   return aspects.map((aspect) => {
@@ -174,9 +172,10 @@ function buildAspectRows(aspects: Aspect[]): Row[] {
   });
 }
 
-function buildCrossAspectRows(aspects: Aspect[]): Row[] {
+function buildCrossAspectRows({ aspects, first }: Synastry): Row[] {
   if (aspects.length === 0) {
-    return [[NO_CROSS_ASPECTS_TEXT, "", "", ""]];
+    const text = `${formatNoAspects(first.details.aspectSettings)} between you.`;
+    return [[text, "", "", ""]];
   }
 
   return aspects.map((aspect) => {

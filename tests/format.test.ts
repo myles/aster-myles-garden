@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { AspectSet, DEFAULT_ASPECT_SETTINGS } from "@/lib/aspects";
 import {
   describeError,
   formatBirthDate,
@@ -7,6 +8,7 @@ import {
   formatCoordinates,
   formatDegrees,
   formatInstant,
+  formatNoAspects,
   formatPlacement,
 } from "@/lib/format";
 
@@ -87,5 +89,17 @@ describe("describeError", () => {
   it("stringifies anything else", () => {
     expect(describeError("timed out")).toBe("timed out");
     expect(describeError(404)).toBe("404");
+  });
+});
+
+describe("formatNoAspects", () => {
+  it("says major aspects when only those are looked for", () => {
+    expect(formatNoAspects(undefined)).toBe("No major aspects");
+    expect(formatNoAspects(DEFAULT_ASPECT_SETTINGS)).toBe("No major aspects");
+  });
+
+  it("says aspects once minor ones are looked for too", () => {
+    const settings = { ...DEFAULT_ASPECT_SETTINGS, aspectSet: AspectSet.All };
+    expect(formatNoAspects(settings)).toBe("No aspects");
   });
 });

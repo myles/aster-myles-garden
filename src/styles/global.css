@@ -223,3 +223,7 @@ body {
 .wheel-aspect--neutral {
   stroke: var(--ink-muted);
 }
+/* Dashed, so minor aspects read as secondary at a glance. */
+.wheel-aspect--minor {
+  stroke-dasharray: 3 3;
+}

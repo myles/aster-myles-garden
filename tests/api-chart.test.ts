@@ -8,6 +8,7 @@ import {
 } from "@/lib/api/chart";
 import { CACHE_NO_STORE } from "@/lib/api/http";
 import { chartRequestSchemaV1, type ChartV1 } from "@/lib/api/schemas";
+import { AspectRank, AspectSet, OrbSize } from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
 import * as chartService from "@/lib/chart";
 import { HouseSystem } from "@/lib/houses";
@@ -131,6 +132,27 @@ describe("handleChartRequest", () => {
       houseSystem: HouseSystem.Placidus,
       place: { latitude: 43.7064, longitude: -79.3986, name: "Toronto" },
     });
+  });
+
+  it("finds major aspects only by default", async () => {
+    const chart = (await (await postChart(BIRTH)).json()) as ChartV1;
+
+    expect(chart.aspectSet).toBe(AspectSet.Major);
+    expect(chart.orbSize).toBe(OrbSize.Standard);
+    expect(chart.aspects.every((a) => a.rank === AspectRank.Major)).toBe(true);
+  });
+
+  it("adds minor aspects and carries the settings in the share link", async () => {
+    const settings = { aspectSet: AspectSet.All, orbSize: OrbSize.Wide };
+    const response = await postChart({ ...BIRTH, ...settings });
+    const chart = (await response.json()) as ChartV1;
+
+    expect(response.status).toBe(200);
+    expect(chart).toMatchObject(settings);
+    expect(chart.aspects.some((a) => a.rank === AspectRank.Minor)).toBe(true);
+    expect(
+      parseShareHash(new URL(chart.shareUrl).hash)?.aspectSettings,
+    ).toEqual(settings);
   });
 
   it("names the house system it used", async () => {

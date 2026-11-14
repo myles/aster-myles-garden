@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ASPECT_INFO, AspectType } from "@/lib/aspects";
+import { ASPECT_INFO, AspectSet, AspectType, OrbSize } from "@/lib/aspects";
 import { Body, BODY_INFO } from "@/lib/bodies";
 import { buildChartCsv, buildComparisonCsv, buildTransitsCsv } from "@/lib/csv";
 import { compareCharts } from "@/lib/synastry";
@@ -45,6 +45,21 @@ describe("buildChartCsv", () => {
     const lines = parseLines(buildChartCsv({ ...CHART, aspects: [] }));
 
     expect(lines[2]).toMatch(/,,No major aspects within orb\.,,$/);
+  });
+
+  it("doesn't say major when minor aspects were looked for too", () => {
+    const chart = {
+      ...CHART,
+      details: {
+        ...CHART.details,
+        aspectSettings: { aspectSet: AspectSet.All, orbSize: OrbSize.Standard },
+      },
+      aspects: [],
+    };
+
+    expect(parseLines(buildChartCsv(chart))[2]).toMatch(
+      /,,No aspects within orb\.,,$/,
+    );
   });
 
   it("starts with a byte-order mark for spreadsheet apps", () => {

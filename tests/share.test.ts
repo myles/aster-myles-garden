@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { AspectSet, DEFAULT_ASPECT_SETTINGS, OrbSize } from "@/lib/aspects";
 import { HouseSystem } from "@/lib/houses";
 import { buildShareUrl, parseShareHash } from "@/lib/share";
 
@@ -50,6 +51,7 @@ describe("parseShareHash", () => {
       time: "12:00",
       placeId: 2643743,
       houseSystem: HouseSystem.Equal,
+      aspectSettings: DEFAULT_ASPECT_SETTINGS,
     });
   });
 
@@ -103,8 +105,53 @@ describe("parseShareHash", () => {
       "#date=2000-01-01&time=12:00&place=1&house=tarot",
       "house system",
     ],
+    [
+      "an unknown aspect set",
+      "#date=2000-01-01&time=12:00&place=1&aspects=some",
+      "aspects",
+    ],
+    [
+      "an unknown orb size",
+      "#date=2000-01-01&time=12:00&place=1&orbs=huge",
+      "orbs",
+    ],
   ])("rejects %s", (_, search, message) => {
     expect(() => parseShareHash(search)).toThrow(message);
+  });
+});
+
+describe("share links with aspect settings", () => {
+  const SETTINGS = { aspectSet: AspectSet.All, orbSize: OrbSize.Wide };
+
+  it("leaves the default settings out", () => {
+    expect(buildShareUrl(CHART.details, SITE_URL)).not.toMatch(/aspects|orbs/);
+  });
+
+  it("adds settings other than the default", () => {
+    const details = { ...CHART.details, aspectSettings: SETTINGS };
+
+    expect(buildShareUrl(details, SITE_URL)).toBe(
+      "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
+        "&place=2643743&house=equal&aspects=all&orbs=wide",
+    );
+  });
+
+  it("reads them back", () => {
+    const details = { ...CHART.details, aspectSettings: SETTINGS };
+    const { hash } = new URL(buildShareUrl(details, SITE_URL));
+
+    expect(parseShareHash(hash)?.aspectSettings).toEqual(SETTINGS);
+  });
+
+  it("falls back to the default for either one left out", () => {
+    const shared = parseShareHash(
+      "#date=2000-01-01&time=12:00&place=1&orbs=tight",
+    );
+
+    expect(shared?.aspectSettings).toEqual({
+      aspectSet: AspectSet.Major,
+      orbSize: OrbSize.Tight,
+    });
   });
 });
 
@@ -136,6 +183,7 @@ describe("share links for a comparison", () => {
       time: "12:00",
       placeId: 2643743,
       houseSystem: HouseSystem.Equal,
+      aspectSettings: DEFAULT_ASPECT_SETTINGS,
       comparedWith: { date: "1990-05-15", time: undefined, placeId: 2643743 },
     });
   });

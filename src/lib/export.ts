@@ -43,6 +43,7 @@ const STYLED_PROPERTIES = [
   "stroke",
   "stroke-width",
   "stroke-opacity",
+  "stroke-dasharray",
   "font-family",
   "font-size",
   "font-weight",

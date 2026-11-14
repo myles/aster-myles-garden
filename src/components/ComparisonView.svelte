@@ -14,6 +14,7 @@
     formatBirthDate,
     formatBirthMoment,
     formatDegrees,
+    formatNoAspects,
   } from "@/lib/format";
   import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
@@ -126,7 +127,9 @@
           </tr>
         {:else}
           <tr class="border-rule/60 border-b">
-            <td class="py-1.5" colspan="4">No major aspects between you.</td>
+            <td class="py-1.5" colspan="4">
+              {formatNoAspects(synastry.first.details.aspectSettings)} between you.
+            </td>
           </tr>
         {/each}
       </tbody>

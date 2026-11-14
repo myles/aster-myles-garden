@@ -23,7 +23,11 @@ export function compareCharts(first: Chart, second: Chart): Synastry {
   return {
     first,
     second,
-    aspects: findAspectsBetween(first.bodies, second.bodies),
+    aspects: findAspectsBetween(
+      first.bodies,
+      second.bodies,
+      first.details.aspectSettings,
+    ),
     secondInFirstHouses: placeInHouses(second.bodies, first.houses),
     firstInSecondHouses: placeInHouses(first.bodies, second.houses),
   };

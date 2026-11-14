@@ -33,9 +33,11 @@ GET  /api/v1/places?q=
 | `latitude`, `longitude` | Yes | Decimal degrees, south and west negative. |
 | `timeZone` | Yes | IANA time zone of the birthplace. Aster applies its historical offset, daylight saving included. |
 | `houseSystem` | No | One of `placidus`, `koch`, `wholeSign`, `equal`, `porphyry`, `regiomontanus` or `campanus`. Defaults to `placidus`. |
+| `aspectSet` | No | `major` for conjunctions, sextiles, squares, trines and oppositions, or `all` to add semi-sextiles, semi-squares, sesquiquadrates and quincunxes. Defaults to `major`. |
+| `orbSize` | No | `tight` (three quarters of standard), `standard` or `wide` (a quarter more). Defaults to `standard`. |
 | `placeName` | No | A name for the place, shown when the share link is opened. |
 
-It returns the birth moment in UTC, each body's longitude, sign, degree within the sign, retrograde status and house, the 12 house cusps with the ascendant and midheaven, the aspects between planets, and a `shareUrl` that draws the same chart on the site. Without a `time`, houses and angles are left out and each body lists the signs it may be in. Inside the polar circles, Placidus and Koch houses can't be calculated, so the houses are cast as Porphyry: `effectiveHouseSystem` names the system actually used, and `houseSystem` the one asked for. Invalid input is answered with HTTP 400 and `{ "error": "..." }`.
+It returns the birth moment in UTC, each body's longitude, sign, degree within the sign, retrograde status and house, the 12 house cusps with the ascendant and midheaven, the aspects between planets, each with its `rank` (`major` or `minor`), and a `shareUrl` that draws the same chart on the site. Without a `time`, houses and angles are left out and each body lists the signs it may be in. Inside the polar circles, Placidus and Koch houses can't be calculated, so the houses are cast as Porphyry: `effectiveHouseSystem` names the system actually used, and `houseSystem` the one asked for. Invalid input is answered with HTTP 400 and `{ "error": "..." }`.
 
 `GET /api/v1/places?q=` searches the same GeoNames cities as the page, most populous first, to find a birthplace's `latitude`, `longitude` and `timeZone`. Text after a comma narrows by region or country, e.g. `q=london, canada`. An optional `limit` of 1 to 25 defaults to 8. It returns `{ next, previous, count, result }`; it isn't paginated, so `next` and `previous` are always null.
 
@@ -57,6 +59,8 @@ That link draws a chart for 15 May 1990 at 2:30 pm in Toronto, Ontario, Canada, 
 | `time` | Yes | `HH:MM`, 24-hour, or `unknown` | Local clock time at the birthplace, e.g. `14:30`. Aster works out the historical time zone and daylight saving offset itself; do not convert to UTC. Use `unknown` when the birth time isn't known. |
 | `place` | Yes | GeoNames ID | A number identifying the birthplace, e.g. `6167865` for Toronto. See below. |
 | `house` | No | House system | One of `placidus`, `koch`, `wholeSign`, `equal`, `porphyry`, `regiomontanus` or `campanus`. Defaults to `placidus`. |
+| `aspects` | No | `major` or `all` | `all` adds the minor aspects: semi-sextile, semi-square, sesquiquadrate and quincunx. Defaults to `major`. |
+| `orbs` | No | `tight`, `standard` or `wide` | Scales every aspect's orb: tight is three quarters of standard, wide a quarter more. Defaults to `standard`. |
 
 If a parameter is missing or malformed, or the place isn't in Aster's index, the page shows an error instead of a chart.
 
@@ -70,7 +74,7 @@ https://aster.myles.garden/#date=1990-05-15&time=unknown&place=6167865
 
 ### Comparing two charts
 
-Add a second person with `date2`, `time2` and `place2`, in the same formats as `date`, `time` and `place`. The page then draws a comparison: a bi-wheel with the first chart inside and the second outside, the aspects between the two charts, and where each person's planets fall in the other's houses. Both charts use `house`.
+Add a second person with `date2`, `time2` and `place2`, in the same formats as `date`, `time` and `place`. The page then draws a comparison: a bi-wheel with the first chart inside and the second outside, the aspects between the two charts, and where each person's planets fall in the other's houses. Both charts use `house`, `aspects` and `orbs`.
 
 ```
 https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&date2=1988-11-02&time2=unknown&place2=2643743
@@ -80,7 +84,7 @@ That link compares someone born in Toronto at 2:30 pm on 15 May 1990 with someon
 
 ### Transits
 
-Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact, and which natal house each is in. A link can carry `transits` or a second chart, not both.
+Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact (or less, for a tighter orb), and which natal house each is in. A link can carry `transits` or a second chart, not both.
 
 ```
 https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&transits=2026-11-13T20:05Z
@@ -114,7 +118,7 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&lat=43.6833&lon=-79.7667&
 
 - A chart wheel with the ascendant (or 0° Aries, without a birth time) at nine o'clock, zodiac signs coloured by element, house cusps, the four angles (AC, DC, MC, IC) and aspect lines.
 - A Positions table: each body's sign, degree, retrograde status and house, plus the Ascendant and Midheaven. Without a birth time, houses and angles are left out.
-- An Aspects table: each major aspect between two bodies, with its orb.
+- An Aspects table: each aspect between two bodies, with its orb. Major aspects by default; minor ones too when chosen, drawn as dashed lines on the wheel.
 - Downloads of the wheel as SVG or PNG and of both tables as CSV, and a Copy link button that produces a link in the format above.
 - In a comparison: the bi-wheel, an Aspects between you table, and each person's positions with a column for the house it falls in on the other person's chart.
 - With transits: the bi-wheel, a Transits to your chart table, and the transiting planets' positions with the natal house each is in.

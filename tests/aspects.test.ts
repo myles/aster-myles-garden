@@ -2,7 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import type { BodyPosition } from "@/lib/ephemeris";
 
-import { AspectType, findAspects, findAspectsBetween } from "@/lib/aspects";
+import {
+  AspectSet,
+  AspectType,
+  DEFAULT_ASPECT_SETTINGS,
+  findAspects,
+  findAspectsBetween,
+  isAspectSet,
+  isOrbSize,
+  OrbSize,
+} from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
 
 const at = (body: Body, longitude: number): BodyPosition => ({
@@ -48,6 +57,50 @@ describe("findAspects", () => {
 
   it("leaves out points such as the node", () => {
     expect(findAspects([at(Body.Sun, 0), at(Body.NorthNode, 0)])).toEqual([]);
+  });
+
+  it("leaves out minor aspects by default", () => {
+    expect(findAspects([at(Body.Sun, 0), at(Body.Moon, 150)])).toEqual([]);
+  });
+
+  it.each([
+    [31, AspectType.SemiSextile],
+    [44, AspectType.SemiSquare],
+    [135.5, AspectType.Sesquiquadrate],
+    [151, AspectType.Quincunx],
+  ])("finds %s° apart as a %s when minor aspects are on", (moon, type) => {
+    const settings = { ...DEFAULT_ASPECT_SETTINGS, aspectSet: AspectSet.All };
+    const [aspect] = findAspects(
+      [at(Body.Sun, 0), at(Body.Moon, moon)],
+      settings,
+    );
+
+    expect(aspect.type).toBe(type);
+  });
+
+  it("scales every orb by the orb size", () => {
+    // 7.5° past a square: outside its 7° orb, inside a wide one (8.75°).
+    const positions = [at(Body.Sun, 0), at(Body.Moon, 97.5)];
+    const sized = (orbSize: OrbSize) =>
+      findAspects(positions, { ...DEFAULT_ASPECT_SETTINGS, orbSize });
+
+    expect(sized(OrbSize.Standard)).toEqual([]);
+    expect(sized(OrbSize.Wide)).toHaveLength(1);
+    expect(
+      findAspects([at(Body.Sun, 0), at(Body.Moon, 95.5)], {
+        ...DEFAULT_ASPECT_SETTINGS,
+        orbSize: OrbSize.Tight,
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe("isAspectSet and isOrbSize", () => {
+  it("accept only known values", () => {
+    expect(isAspectSet("all")).toBe(true);
+    expect(isAspectSet("minor")).toBe(false);
+    expect(isOrbSize("wide")).toBe(true);
+    expect(isOrbSize("huge")).toBe(false);
   });
 });
 
@@ -98,7 +151,9 @@ describe("findAspectsBetween", () => {
 
     // Without a cap both count: squares allow 7° and oppositions 8°.
     expect(findAspectsBetween(yours, theirs)).toHaveLength(2);
-    expect(findAspectsBetween(yours, theirs, 2)).toEqual([
+    expect(
+      findAspectsBetween(yours, theirs, DEFAULT_ASPECT_SETTINGS, 2),
+    ).toEqual([
       {
         first: Body.Sun,
         second: Body.Venus,

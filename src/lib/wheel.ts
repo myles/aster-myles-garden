@@ -478,19 +478,27 @@ function measureAspects(
 
   return aspects
     .filter((aspect) => ASPECT_INFO[aspect.type].angleDegrees > 0)
-    .map((aspect) => ({
-      from: project(
-        firstLongitudes.get(aspect.first)!,
-        ascendant,
-        ASPECT_RADIUS_PX,
-      ),
-      to: project(
-        secondLongitudes.get(aspect.second)!,
-        ascendant,
-        ASPECT_RADIUS_PX,
-      ),
-      className: `wheel-aspect wheel-aspect--${ASPECT_INFO[aspect.type].quality}`,
-    }));
+    .map((aspect) => {
+      const { quality, rank } = ASPECT_INFO[aspect.type];
+
+      return {
+        from: project(
+          firstLongitudes.get(aspect.first)!,
+          ascendant,
+          ASPECT_RADIUS_PX,
+        ),
+        to: project(
+          secondLongitudes.get(aspect.second)!,
+          ascendant,
+          ASPECT_RADIUS_PX,
+        ),
+        className: [
+          "wheel-aspect",
+          `wheel-aspect--${quality}`,
+          `wheel-aspect--${rank}`,
+        ].join(" "),
+      };
+    });
 }
 
 function selectLayer(svg: Parent, layer: Layer): Parent {

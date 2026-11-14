@@ -4,7 +4,7 @@
 import type { Body } from "@/lib/bodies";
 import type { Place } from "@/lib/places";
 
-import { findAspects, type Aspect } from "@/lib/aspects";
+import { findAspects, type Aspect, type AspectSettings } from "@/lib/aspects";
 import {
   browserEphemeris,
   loadEphemeris,
@@ -23,6 +23,8 @@ export type BirthDetails = {
   time?: LocalTime;
   place: Place;
   houseSystem: HouseSystem;
+  /** Which aspects to find, and how wide. Undefined means the default. */
+  aspectSettings?: AspectSettings;
 };
 
 export type PlacedBody = BodyPosition & {
@@ -127,7 +129,7 @@ export function createChart(
     julianDay,
     bodies,
     houses,
-    aspects: findAspects(positions),
+    aspects: findAspects(positions, details.aspectSettings),
   };
 }
 

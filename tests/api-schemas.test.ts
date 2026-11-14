@@ -5,6 +5,7 @@ import {
   formatValidationError,
   placesQuerySchemaV1,
 } from "@/lib/api/schemas";
+import { AspectSet, OrbSize } from "@/lib/aspects";
 import { HouseSystem } from "@/lib/houses";
 import { parseLocalDate, parseLocalTime } from "@/lib/time";
 
@@ -17,12 +18,14 @@ const VALID_REQUEST = {
 };
 
 describe("chartRequestSchemaV1", () => {
-  it("accepts birth details and defaults the house system", () => {
+  it("accepts birth details and defaults the chart settings", () => {
     const parsed = chartRequestSchemaV1.parse(VALID_REQUEST);
 
     expect(parsed).toEqual({
       ...VALID_REQUEST,
       houseSystem: HouseSystem.Placidus,
+      aspectSet: AspectSet.Major,
+      orbSize: OrbSize.Standard,
     });
   });
 
@@ -41,6 +44,8 @@ describe("chartRequestSchemaV1", () => {
     ["a coordinate as text", { latitude: "43.7" }],
     ["an unknown time zone", { timeZone: "Mars/Olympus_Mons" }],
     ["an unknown house system", { houseSystem: "topocentric" }],
+    ["an unknown aspect set", { aspectSet: "minor" }],
+    ["an unknown orb size", { orbSize: "huge" }],
     ["an undeclared field", { place: 6167865 }],
   ])("rejects %s", (_label, change) => {
     const result = chartRequestSchemaV1.safeParse({

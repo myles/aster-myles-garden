@@ -4,6 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "@/components/App.svelte";
+import { AspectSet, DEFAULT_ASPECT_SETTINGS, OrbSize } from "@/lib/aspects";
 import { createChart, loadChartEngine } from "@/lib/chart";
 import { HouseSystem } from "@/lib/houses";
 import { loadPlaceIndex } from "@/lib/places";
@@ -142,6 +143,7 @@ describe("App", () => {
       time: { hour: 12, minute: 0 },
       place: expect.objectContaining({ name: "London", region: "England" }),
       houseSystem: HouseSystem.Placidus,
+      aspectSettings: DEFAULT_ASPECT_SETTINGS,
     });
     expect(screen.getByRole("img", { name: "Natal chart wheel" })).toBeTruthy();
     expect(screen.getByText("Opposition", { exact: false })).toBeTruthy();
@@ -213,6 +215,30 @@ describe("App", () => {
     );
   });
 
+  it("redraws when the aspect settings change", async () => {
+    render(App);
+
+    await fillDateTime();
+    await choosePlace();
+    await submit();
+    await screen.findByRole("heading", { name: CHART_HEADING });
+
+    await fireEvent.change(screen.getByLabelText("Aspects"), {
+      target: { value: AspectSet.All },
+    });
+    await fireEvent.change(screen.getByLabelText("Orbs"), {
+      target: { value: OrbSize.Tight },
+    });
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          aspectSettings: { aspectSet: AspectSet.All, orbSize: OrbSize.Tight },
+        }),
+      ),
+    );
+  });
+
   it("reports a calculator that fails to load", async () => {
     vi.mocked(loadChartEngine).mockRejectedValue(new Error("No WASM"));
     render(App);
@@ -256,6 +282,7 @@ describe("App opened from a share link", () => {
         time: { hour: 12, minute: 0 },
         place: expect.objectContaining({ id: 6058560, region: "Ontario" }),
         houseSystem: HouseSystem.Koch,
+        aspectSettings: DEFAULT_ASPECT_SETTINGS,
       }),
     );
     expect(screen.getByLabelText<HTMLInputElement>("Date").value).toBe(
@@ -267,6 +294,24 @@ describe("App opened from a share link", () => {
     );
     expect(screen.getByLabelText<HTMLSelectElement>("House system").value).toBe(
       HouseSystem.Koch,
+    );
+  });
+
+  it("takes the link's aspect settings", async () => {
+    openLink(`${SHARE_HASH}&aspects=all&orbs=wide`);
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenCalledWith(
+        expect.objectContaining({
+          aspectSettings: { aspectSet: AspectSet.All, orbSize: OrbSize.Wide },
+        }),
+      ),
+    );
+    expect(screen.getByLabelText<HTMLSelectElement>("Aspects").value).toBe(
+      AspectSet.All,
+    );
+    expect(screen.getByLabelText<HTMLSelectElement>("Orbs").value).toBe(
+      OrbSize.Wide,
     );
   });
 
@@ -431,6 +476,7 @@ describe("App comparing two charts", () => {
       time: { hour: 14, minute: 30 },
       place: expect.objectContaining({ name: "Toronto" }),
       houseSystem: HouseSystem.Placidus,
+      aspectSettings: DEFAULT_ASPECT_SETTINGS,
     });
     expect(
       screen.getByRole("img", { name: "Chart comparison wheel" }),
@@ -596,6 +642,7 @@ describe("App comparing two charts", () => {
       time: undefined,
       place: expect.objectContaining({ name: "Toronto" }),
       houseSystem: HouseSystem.Koch,
+      aspectSettings: DEFAULT_ASPECT_SETTINGS,
     });
     expect(
       within(theirForm()).getByLabelText<HTMLInputElement>(
@@ -840,6 +887,7 @@ describe("App with saved charts", () => {
         time: undefined,
         place: TORONTO,
         houseSystem: HouseSystem.Placidus,
+        aspectSettings: DEFAULT_ASPECT_SETTINGS,
       }),
     );
     expect(yourForm().getByLabelText<HTMLInputElement>("Date").value).toBe(

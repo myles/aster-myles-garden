@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { AspectType } from "@/lib/aspects";
+import {
+  ASPECT_INFO,
+  AspectRank,
+  AspectSet,
+  AspectType,
+  DEFAULT_ASPECT_SETTINGS,
+} from "@/lib/aspects";
 import { Body } from "@/lib/bodies";
 import { createChart, type Chart } from "@/lib/chart";
 import { loadEphemeris } from "@/lib/ephemeris";
@@ -21,6 +27,13 @@ const TORONTO = {
   longitude: -79.3986,
   timeZone: "America/Toronto",
 };
+
+/** Minor aspects in the transits for the moment of birth. */
+function countMinor(chart: Chart): number {
+  return createTransits(chart, chart.bornAt).aspects.filter(
+    (aspect) => ASPECT_INFO[aspect.type].rank === AspectRank.Minor,
+  ).length;
+}
 
 describe("createTransits", () => {
   let natal: Chart;
@@ -46,6 +59,15 @@ describe("createTransits", () => {
       expect(body.house).toBeUndefined();
       expect(body.isRetrograde).toBe(body.speed < 0);
     }
+  });
+
+  it("uses the natal chart's aspect settings", () => {
+    const withMinor = createChart({
+      ...natal.details,
+      aspectSettings: { ...DEFAULT_ASPECT_SETTINGS, aspectSet: AspectSet.All },
+    });
+    expect(countMinor(natal)).toBe(0);
+    expect(countMinor(withMinor)).toBeGreaterThan(0);
   });
 
   it("matches the natal chart at the moment of birth", () => {
