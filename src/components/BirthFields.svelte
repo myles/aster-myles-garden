@@ -4,6 +4,7 @@
 <script lang="ts">
   import CoordinateFields from "@/components/CoordinateFields.svelte";
   import PlacePicker from "@/components/PlacePicker.svelte";
+  import { LAST_CALCULABLE_DATE_VALUE } from "@/lib/chart";
   import type { Place } from "@/lib/places";
 
   let {
@@ -50,7 +51,7 @@
     type="date"
     required
     min="0001-01-01"
-    max="9999-12-31"
+    max={LAST_CALCULABLE_DATE_VALUE}
     class="border-rule bg-paper rounded border px-3 py-2"
     bind:value={date}
   />

@@ -46,7 +46,7 @@ Swiss Ephemeris falls back to Porphyry when it cannot calculate a requested syst
 
 **Resolution (site):** The chart view's subheading names the system the houses were actually cast with, read from `chart.houses.houseSystem`. When that differs from the one chosen, a note explains: "Placidus houses can't be cast this close to the pole, so these are Porphyry houses." A comparison labels its houses by your chart, since the overlays use your houses, and adds a note for each person whose chart fell back, as the two can be at different latitudes. `usesFallbackHouses` in `src/lib/chart.ts` makes the comparison, and `describeHouseFallback` in `src/lib/houses.ts` writes the note. Component tests for a Tromsø chart failed before the fix and pass afterwards. Shared charts open through the same views, so they behave the same way.
 
-### 4. Unsupported transit dates can throw outside error handling
+### 4. Unsupported transit dates can throw outside error handling — fixed
 
 **Location:** `src/components/App.svelte`, the `transits` derived value and `showTransits`.
 
@@ -56,7 +56,9 @@ The date field permits dates through year `9999`, but the bundled calculation en
 
 **Verification:** Confirmed that the installed engine rejects year `9999`; the uncaught calculation path was identified in code. The resulting browser behaviour remains unverified.
 
-**API:** Not affected: the API has no transits, and `POST /api/v1/chart` rejects birth dates outside the engine's range with a 400 before calculating. The range, Julian days 625,000.5 to 2,818,000.5 (about 3000 BCE to April 3003 CE), is in `SWE_MIN_JULIAN_DAY` and `SWE_MAX_JULIAN_DAY` in `src/lib/ephemeris-codes.ts`, and `isInEngineRange` in `src/lib/api/chart.ts` checks a birth date against it. The app's fix should reuse them, so the site and the API accept the same dates.
+**API:** Not affected: the API has no transits, and `POST /api/v1/chart` rejects birth dates outside the engine's range with a 400 before calculating.
+
+**Resolution:** `canCalculateMoment` and `canCalculateDate` in `src/lib/chart.ts` check against the engine's span, Julian days 625,000.5 to 2,818,000.5 (`SWE_MIN_JULIAN_DAY` and `SWE_MAX_JULIAN_DAY`). That runs from about 3000 BCE to 29 April 3003. A date is checked across its whole local day, since a chart without a birth time reads both ends. The site and the API's `isInEngineRange` share these checks. Birth dates, comparison dates, typed transit moments and transit moments from share links are all checked before calculating, and the form says the supported span instead of passing on the engine's error. Transits are calculated inside a try/catch, so any remaining failure is reported in the transit form instead of interrupting rendering. Every date field now stops at 31 December 3002. Unit tests cover the range boundaries, including a date whose local day runs past the end west of UTC. App tests cover a birth date, a transit date and a share link in the year 9999, plus a transit calculation that throws. All failed before the fix and pass afterwards.
 
 ### 5. Shared links accept impossible dates and times
 

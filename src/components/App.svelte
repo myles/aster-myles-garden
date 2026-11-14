@@ -10,7 +10,10 @@
   import SaveChartRow from "@/components/SaveChartRow.svelte";
   import SavedChartList from "@/components/SavedChartList.svelte";
   import {
+    canCalculateDate,
+    canCalculateMoment,
     createChart,
+    LAST_CALCULABLE_DATE_VALUE,
     loadChartEngine,
     type BirthDetails,
     type Chart,
@@ -56,6 +59,11 @@
   const COMPARE_DATE_ID = "compare-date";
   const TRANSIT_DATE_ID = "transit-date";
 
+  // The span the calculation engine covers, as people are told it.
+  const CALCULABLE_SPAN = "about 3000 BCE to 3000 CE";
+  const BIRTH_OUT_OF_RANGE = `Charts can only be drawn for dates from ${CALCULABLE_SPAN}.`;
+  const TRANSITS_OUT_OF_RANGE = `Transits can only be shown from ${CALCULABLE_SPAN}.`;
+
   const houseSystems = Object.values(HouseSystem);
 
   let yours: BirthForm = $state(createBlankForm());
@@ -86,12 +94,22 @@
       : undefined,
   );
 
-  // The engine is loaded whenever a chart exists, so this can't fail on it.
-  const transits = $derived(
-    panel === Panel.Transits && chart && transitsAt
-      ? createTransits(chart, transitsAt)
-      : undefined,
-  );
+  // The engine is loaded whenever a chart exists, and transitsAt is
+  // checked against its range, but a calculation can still throw. Caught
+  // here, it's reported in the transit form instead of breaking the page.
+  const transitResult = $derived.by(() => {
+    if (panel !== Panel.Transits || !chart || !transitsAt) {
+      return undefined;
+    }
+
+    try {
+      return { transits: createTransits(chart, transitsAt) };
+    } catch (cause) {
+      return { failure: `Couldn't show transits: ${describeError(cause)}` };
+    }
+  });
+  const transits = $derived(transitResult?.transits);
+  const transitAlert = $derived(transitError || transitResult?.failure || "");
 
   // Houses are only hidden when no chart on screen could have them.
   const isHouseSystemUnused = $derived(
@@ -259,6 +277,10 @@
     return undefined;
   }
 
+  function isCalculable(details: BirthDetails): boolean {
+    return canCalculateDate(details.date, details.place.timeZone);
+  }
+
   /** Call only once findProblem has passed the form. */
   function toDetails(form: BirthForm, system: HouseSystem): BirthDetails {
     return {
@@ -288,6 +310,15 @@
       const theirDetails = comparedChart
         ? toDetails(theirs, houseSystem)
         : undefined;
+      if (!isCalculable(yourDetails)) {
+        error = BIRTH_OUT_OF_RANGE;
+        return;
+      }
+      if (theirDetails && !isCalculable(theirDetails)) {
+        compareError = BIRTH_OUT_OF_RANGE;
+        return;
+      }
+
       await loadChartEngine();
       const nextChart = createChart(yourDetails);
       const nextComparedChart = theirDetails
@@ -326,6 +357,15 @@
     try {
       const yourDetails = toDetails(yours, houseSystem);
       const theirDetails = toDetails(theirs, houseSystem);
+      if (!isCalculable(yourDetails)) {
+        error = BIRTH_OUT_OF_RANGE;
+        return;
+      }
+      if (!isCalculable(theirDetails)) {
+        compareError = BIRTH_OUT_OF_RANGE;
+        return;
+      }
+
       await loadChartEngine();
       const nextChart = createChart(yourDetails);
       const nextComparedChart = createChart(theirDetails);
@@ -370,6 +410,14 @@
     const local = toLocal(at, transitTimeZone);
     transitDate = formatDateValue(local);
     transitTime = formatTimeValue(local);
+
+    // A share link can carry any moment, so it's checked like typed ones.
+    if (!canCalculateMoment(at)) {
+      transitsAt = undefined;
+      transitError = TRANSITS_OUT_OF_RANGE;
+      return;
+    }
+
     transitsAt = at;
     transitError = "";
   }
@@ -382,7 +430,13 @@
 
     try {
       const local = parseLocalDateTime(transitDate, transitTime);
-      transitsAt = toUtc(local, transitTimeZone);
+      const at = toUtc(local, transitTimeZone);
+      if (!canCalculateMoment(at)) {
+        transitError = TRANSITS_OUT_OF_RANGE;
+        return;
+      }
+
+      transitsAt = at;
       transitError = "";
     } catch (cause) {
       transitError = `Couldn't show transits: ${describeError(cause)}`;
@@ -543,7 +597,7 @@
             type="date"
             required
             min="0001-01-01"
-            max="9999-12-31"
+            max={LAST_CALCULABLE_DATE_VALUE}
             class="border-rule bg-paper rounded border px-3 py-2"
             bind:value={transitDate}
           />
@@ -587,9 +641,9 @@
         <p
           role="alert"
           class="text-sm text-[var(--challenging)]"
-          hidden={transitError.length === 0}
+          hidden={transitAlert.length === 0}
         >
-          {transitError}
+          {transitAlert}
         </p>
       </form>
     {/if}

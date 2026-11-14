@@ -12,6 +12,7 @@ import {
   type Ephemeris,
   type HousePositions,
 } from "@/lib/ephemeris";
+import { SWE_MAX_JULIAN_DAY, SWE_MIN_JULIAN_DAY } from "@/lib/ephemeris-codes";
 import { findHouse, type HouseSystem } from "@/lib/houses";
 import { toJulianDay, toUtc, type LocalDate, type LocalTime } from "@/lib/time";
 import { getSign, type Sign } from "@/lib/zodiac";
@@ -60,6 +61,28 @@ export function usesFallbackHouses(chart: Chart): boolean {
 const UNKNOWN_TIME_STANDIN: LocalTime = { hour: 12, minute: 0 };
 const DAY_START: LocalTime = { hour: 0, minute: 0 };
 const DAY_END: LocalTime = { hour: 23, minute: 59 };
+
+/**
+ * The last date a date field offers. The engine runs out on 29 April 3003
+ * (UT), so the year 3003 is left out rather than cut short.
+ */
+export const LAST_CALCULABLE_DATE_VALUE = "3002-12-31";
+
+/** Whether the engine covers a moment: about 3000 BCE to 3000 CE. */
+export function canCalculateMoment(at: Date): boolean {
+  const julianDay = toJulianDay(at);
+  return julianDay >= SWE_MIN_JULIAN_DAY && julianDay <= SWE_MAX_JULIAN_DAY;
+}
+
+/**
+ * Whether the engine covers the whole of a local date. The whole day is
+ * checked, since a chart without a birth time reads both of its ends.
+ */
+export function canCalculateDate(date: LocalDate, timeZone: string): boolean {
+  return [DAY_START, DAY_END].every((time) =>
+    canCalculateMoment(toUtc({ ...date, ...time }, timeZone)),
+  );
+}
 
 /** Fetches the calculation engine. Resolve before calling createChart. */
 export function loadChartEngine(): Promise<void> {
