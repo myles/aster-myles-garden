@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import BirthFields from "@/components/BirthFields.svelte";
+  import BirthFields from "@/components/birth-form/BirthFields.svelte";
   import { describeError } from "@/lib/format";
   import {
     DEFAULT_HOUSE_SYSTEM,
     HOUSE_SYSTEM_NAMES,
     HouseSystem,
-  } from "@/lib/houses";
+  } from "@/lib/astrology/houses";
   import type { Place } from "@/lib/places";
   import { buildShareUrl } from "@/lib/share";
   import {

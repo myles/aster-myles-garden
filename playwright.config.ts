@@ -39,8 +39,8 @@ export default defineConfig({
     // in the foreground so Playwright can stop it after tests.
     command:
       "npm run build && " +
-      "vite preview --outDir dist/client --host 127.0.0.1 --port 4399 " +
-      "--strictPort",
+      "vite preview --config e2e/vite.preview.config.ts " +
+      "--outDir dist/client --host 127.0.0.1 --port 4399 --strictPort",
     url: BASE_URL,
     reuseExistingServer: false,
     env: { ASTER_ATPROTO_TRIAL: "false" },
