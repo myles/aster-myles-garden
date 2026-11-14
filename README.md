@@ -4,7 +4,7 @@ A birth chart generator that runs entirely in the browser. Give it a date, a tim
 
 Lives at [aster.myles.garden](https://aster.myles.garden). Named for the star-shaped flower — _aster_ is Greek for "star".
 
-> **Status:** early. This README describes where the project is headed before most of it exists. Treat it as intent, not a changelog.
+> **Status:** working. Natal charts, comparisons, composites, transits and solar returns are all in place; [ROADMAP.md](./ROADMAP.md) lists what's next.
 
 ## Why
 
@@ -13,10 +13,11 @@ Most birth chart tools send your details off to a server you don't control, then
 ## Features
 
 - **Client-side.** On the site, positions, house cusps, and angles are computed in-browser via Swiss Ephemeris (WASM). Nothing you enter there is sent anywhere unless you want it to be.
-- **Accurate by default.** High-precision ephemeris data, with sensible handling of historical time zones and daylight saving.
+- **Accurate by default.** Swiss Ephemeris's built-in Moshier ephemeris, which needs no data files and is accurate to well under the arc-minute the chart shows, with sensible handling of historical time zones and daylight saving.
 - **Static site, small API.** The site ships as static files. A separate [JSON API](#api) runs on a server, for tools that can't run the page.
 - **Readable chart wheel.** Rendered as SVG, so it stays crisp at any size and is easy to style or export. A written description of what it shows is read out by screen readers and shown under the wheel.
 - **Multiple house systems.** Placidus by default, with others available.
+- **More than one chart.** Compare two people as a bi-wheel or a composite, set transits against a natal chart, or cast a year's solar return.
 - **Works offline.** Once the site has been opened, a service worker keeps the page and the calculation engine cached, so charts draw without a connection. It can be installed as an app from the browser's menu. The API is never cached.
 
 ## How it works
@@ -36,6 +37,7 @@ Every step above happens in the browser. The WASM module is loaded once on first
 | Layer     | Choice                      |
 | --------- | --------------------------- |
 | Framework | Astro                       |
+| UI        | Svelte                      |
 | Language  | TypeScript                  |
 | Ephemeris | Swiss Ephemeris (WASM)      |
 | Hosting   | Vercel (static + functions) |
@@ -45,8 +47,8 @@ Every step above happens in the browser. The WASM module is loaded once on first
 
 ```bash
 # 1. Clone
-git clone https://github.com/<you>/aster.git
-cd aster
+git clone https://github.com/myles/aster-myles-garden.git
+cd aster-myles-garden
 
 # 2. Install
 npm install
@@ -153,6 +155,6 @@ The E2E suite uses [Playwright](https://playwright.dev/docs/test-webserver) agai
 
 Use `npm run test:e2e:ui` for interactive debugging. Vitest remains separate under `npm test`.
 
-Coverage includes JavaScript-disabled and delayed-hydration privacy guards, drawing a natal chart with the real WebAssembly engine, and creating and closing a comparison. Place search uses a small local fixture, so tests need no GeoNames download or third-party service. This does not verify the generated production place dataset.
+Coverage includes JavaScript-disabled and delayed-hydration privacy guards; drawing a natal chart, a composite and a solar return with the real WebAssembly engine; creating and closing a comparison; and drawing a chart offline through the service worker. Place search uses a small local fixture, so tests need no GeoNames download or third-party service. This does not verify the generated production place dataset.
 
-The comparison-update regression for `ISSUES.md` issue 6 verifies that incomplete details preserve both charts and that repairing them allows a consistent retry. CI runs the suite on pushes and pull requests to `main` and retains reports for 14 days.
+A regression test checks that incomplete comparison details preserve both charts, and that repairing them allows a consistent retry. CI runs the suite on pushes and pull requests to `main` and retains reports for 14 days.
