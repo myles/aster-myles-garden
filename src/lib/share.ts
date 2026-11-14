@@ -21,6 +21,7 @@ import {
   parseCoordinates,
   type Place,
 } from "@/lib/places";
+import { SolarReturnStyle } from "@/lib/solar-return";
 import { ComparisonStyle, isComparisonStyle } from "@/lib/synastry";
 import {
   formatDateValue,
@@ -48,6 +49,7 @@ const TRANSITS_PARAM = "transits";
 // How a comparison is shown, written only when it isn't the bi-wheel.
 const COMPARISON_PARAM = "comparison";
 const RETURN_PARAM = "return";
+const RETURN_STYLE_PARAM = "returnStyle";
 
 /** A solar return's year: 1 CE onwards. */
 const YEAR_PATTERN = /^[1-9]\d{0,3}$/;
@@ -86,7 +88,11 @@ export type SharedDetails = SharedPerson & {
   /** The moment to show transits for, when the link is for transits. */
   transitsAt?: Date;
   /** When the link is for a solar return. No place means the birthplace. */
-  solarReturn?: { year: number; place?: SharedPlace };
+  solarReturn?: {
+    year: number;
+    place?: SharedPlace;
+    style?: SolarReturnStyle;
+  };
 };
 
 /**
@@ -98,7 +104,7 @@ export type ShareAddition = {
   /** How the comparison is shown. Undefined means the bi-wheel. */
   comparisonStyle?: ComparisonStyle;
   transitsAt?: Date;
-  solarReturn?: { year: number; place: Place };
+  solarReturn?: { year: number; place: Place; style?: SolarReturnStyle };
 };
 
 /** How a person's fields are named in a link and in its errors. */
@@ -157,6 +163,9 @@ export function buildShareUrl(
   }
   if (solarReturn) {
     params.set(RETURN_PARAM, String(solarReturn.year));
+    if (solarReturn.style === SolarReturnStyle.BiWheel) {
+      params.set(RETURN_STYLE_PARAM, solarReturn.style);
+    }
     if (!isSamePlace(solarReturn.place, details.place)) {
       writePlace(params, solarReturn.place, RETURN_PLACE);
     }
@@ -221,7 +230,11 @@ function readSolarReturn(
   params: URLSearchParams,
 ): SharedDetails["solarReturn"] {
   const year = params.get(RETURN_PARAM);
+  const style = params.get(RETURN_STYLE_PARAM);
   if (year === null) {
+    if (style !== null) {
+      throw new Error("A solar return style needs a solar return year.");
+    }
     return undefined;
   }
 
@@ -234,7 +247,15 @@ function readSolarReturn(
     throw new Error(`${RETURN_PLACE.subject} is missing its place.`);
   }
 
-  return { year: Number(year), place };
+  if (
+    style !== null &&
+    style !== SolarReturnStyle.Standalone &&
+    style !== SolarReturnStyle.BiWheel
+  ) {
+    throw new Error("Unknown solar return style.");
+  }
+
+  return { year: Number(year), place, style: style ?? undefined };
 }
 
 /** Listed places match by ID; places entered by coordinates, whole. */

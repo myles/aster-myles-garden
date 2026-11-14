@@ -20,6 +20,11 @@ const SUN_TOLERANCE_DEGREES = 1e-7;
 /** Converging takes two or three; more means something's wrong. */
 const MAX_SEARCH_STEPS = 12;
 
+export enum SolarReturnStyle {
+  Standalone = "standalone",
+  BiWheel = "biWheel",
+}
+
 export type SolarReturn = {
   natal: Chart;
   /** The year of the birthday the return falls on, give or take a day. */

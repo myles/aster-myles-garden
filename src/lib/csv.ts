@@ -4,12 +4,13 @@
 import type { Chart } from "@/lib/chart";
 import type { Composite } from "@/lib/composite";
 import type { HouseOverlay } from "@/lib/houses";
-import type { Synastry } from "@/lib/synastry";
 import type { Transits } from "@/lib/transits";
 
 import { ASPECT_INFO, type Aspect, type AspectSettings } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
 import { formatDegrees, formatNoAspects, formatPlacement } from "@/lib/format";
+import { SolarReturnStyle, type SolarReturn } from "@/lib/solar-return";
+import { compareCharts, type Synastry } from "@/lib/synastry";
 import { formatLongitude } from "@/lib/zodiac";
 
 type Row = string[];
@@ -98,6 +99,34 @@ export function buildTransitsCsv(transits: Transits): string {
       title: "Transits to your chart",
       headings: TRANSIT_ASPECT_HEADINGS,
       rows: buildTransitRows(transits.aspects),
+    },
+  ]);
+}
+
+/** A return alone, or its positions and aspects against the natal chart. */
+export function buildSolarReturnCsv(
+  solarReturn: SolarReturn,
+  style: SolarReturnStyle,
+): string {
+  if (style === SolarReturnStyle.Standalone) {
+    return buildChartCsv(solarReturn.chart);
+  }
+
+  const comparison = compareCharts(solarReturn.natal, solarReturn.chart);
+  const settings = solarReturn.natal.details.aspectSettings;
+
+  return layOutSideBySide([
+    buildPositionsTable("Positions", solarReturn.chart, {
+      heading: "Natal house",
+      houses: comparison.secondInFirstHouses,
+    }),
+    {
+      title: "Aspects to natal chart",
+      headings: ["Natal", "Aspect", "Return", "Orb"],
+      rows:
+        comparison.aspects.length > 0
+          ? buildCrossAspectRows(comparison)
+          : [[`${formatNoAspects(settings)} within orb.`, "", "", ""]],
     },
   ]);
 }

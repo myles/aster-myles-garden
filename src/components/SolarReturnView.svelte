@@ -12,14 +12,32 @@
   import { formatBirthMoment } from "@/lib/format";
   import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
-  import type { SolarReturn } from "@/lib/solar-return";
+  import { SolarReturnStyle, type SolarReturn } from "@/lib/solar-return";
+  import { compareCharts } from "@/lib/synastry";
   import { formatLongitude } from "@/lib/zodiac";
 
-  let { solarReturn }: { solarReturn: SolarReturn } = $props();
+  let {
+    solarReturn,
+    style = $bindable(SolarReturnStyle.Standalone),
+  }: { solarReturn: SolarReturn; style?: SolarReturnStyle } = $props();
 
   let wheel: SVGSVGElement | undefined = $state();
 
   const chart = $derived(solarReturn.chart);
+  const isBiWheel = $derived(style === SolarReturnStyle.BiWheel);
+  const comparison = $derived(compareCharts(solarReturn.natal, chart));
+  const biWheel = $derived(
+    isBiWheel
+      ? {
+          inner: solarReturn.natal,
+          outerBodies: chart.bodies,
+          aspects: comparison.aspects,
+          title: "Solar return comparison wheel",
+          innerLabel: "Natal",
+          outerLabel: "Solar return",
+        }
+      : undefined,
+  );
 
   const subheading = $derived(
     [
@@ -64,13 +82,60 @@
     </p>
   {/if}
 
-  <ChartWheel {chart} title="Solar return chart wheel" bind:svg={wheel} />
+  <fieldset class="mt-4 flex flex-wrap gap-4 text-sm">
+    <legend class="mb-2 font-medium">Show solar return</legend>
+    <label class="flex items-center gap-2">
+      <input
+        type="radio"
+        name="solarReturnStyle"
+        bind:group={style}
+        value={SolarReturnStyle.Standalone}
+      />
+      Return alone
+    </label>
+    <label class="flex items-center gap-2">
+      <input
+        type="radio"
+        name="solarReturnStyle"
+        bind:group={style}
+        value={SolarReturnStyle.BiWheel}
+      />
+      Against natal chart
+    </label>
+  </fieldset>
+
+  {#if isBiWheel}
+    <p class="text-ink-muted mt-2 text-sm">
+      Your natal chart and houses sit inside the zodiac. The return's planets,
+      in <span class="text-accent font-medium">this colour</span>, sit outside.
+      Lines show aspects between the natal and return planets.
+    </p>
+  {/if}
+
+  <ChartWheel
+    {chart}
+    {biWheel}
+    title="Solar return chart wheel"
+    bind:svg={wheel}
+  />
 
   <div class="grid gap-8 xl:grid-cols-2">
-    <PositionsTable {chart} title="Positions" />
+    <PositionsTable
+      {chart}
+      title="Positions"
+      overlay={isBiWheel
+        ? {
+            heading: "Natal house",
+            houses: comparison.secondInFirstHouses,
+          }
+        : undefined}
+    />
 
     <AspectTable
-      aspects={chart.aspects}
+      title={isBiWheel ? "Aspects to natal chart" : "Aspects"}
+      firstLabel={isBiWheel ? "Natal" : ""}
+      secondLabel={isBiWheel ? "Return" : ""}
+      aspects={isBiWheel ? comparison.aspects : chart.aspects}
       settings={chart.details.aspectSettings}
     />
   </div>
@@ -79,11 +144,15 @@
     <ChartShare
       details={solarReturn.natal.details}
       addition={{
-        solarReturn: { year: solarReturn.year, place: chart.details.place },
+        solarReturn: {
+          year: solarReturn.year,
+          place: chart.details.place,
+          style,
+        },
       }}
     />
     <ChartDownloads
-      subject={{ kind: SubjectKind.SolarReturn, solarReturn }}
+      subject={{ kind: SubjectKind.SolarReturn, solarReturn, style }}
       {wheel}
     />
   </div>

@@ -7,10 +7,12 @@ import {
   buildComparisonCsv,
   buildCompositeCsv,
   buildTransitsCsv,
+  buildSolarReturnCsv,
 } from "@/lib/csv";
+import { SolarReturnStyle } from "@/lib/solar-return";
 import { compareCharts } from "@/lib/synastry";
 
-import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "./fixtures/chart";
 
 const UTF8_BOM = "\uFEFF";
 
@@ -201,5 +203,31 @@ describe("buildTransitsCsv", () => {
     const lines = parseLines(buildTransitsCsv({ ...transits, aspects: [] }));
 
     expect(lines[2]).toMatch(/,,No transits within orb\.,,,$/);
+  });
+});
+
+describe("buildSolarReturnCsv", () => {
+  it("keeps the standalone return tables", () => {
+    expect(buildSolarReturnCsv(SOLAR_RETURN, SolarReturnStyle.Standalone)).toBe(
+      buildChartCsv(SOLAR_RETURN.chart),
+    );
+  });
+
+  it("exports return positions with natal houses and cross aspects", () => {
+    const csv = buildSolarReturnCsv(SOLAR_RETURN, SolarReturnStyle.BiWheel);
+    expect(csv).toContain("Natal house");
+    expect(csv).toContain("Aspects to natal chart");
+    expect(csv).toContain("Natal,Aspect,Return,Orb");
+    expect(csv).toContain("Conjunction");
+  });
+
+  it("explains when there are no cross aspects", () => {
+    const solarReturn = {
+      ...SOLAR_RETURN,
+      chart: { ...SOLAR_RETURN.chart, bodies: [] },
+    };
+    expect(
+      buildSolarReturnCsv(solarReturn, SolarReturnStyle.BiWheel),
+    ).toContain("No major aspects within orb.");
   });
 });

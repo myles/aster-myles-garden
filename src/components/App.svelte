@@ -49,7 +49,11 @@
     type SharedPerson,
     type SharedPlace,
   } from "@/lib/share";
-  import { createSolarReturn, findCurrentReturnYear } from "@/lib/solar-return";
+  import {
+    createSolarReturn,
+    findCurrentReturnYear,
+    SolarReturnStyle,
+  } from "@/lib/solar-return";
   import { createComposite } from "@/lib/composite";
   import {
     compareCharts,
@@ -114,6 +118,7 @@
   let transitTime = $state("");
   let transitsAt: Date | undefined = $state.raw();
   let transitError = $state("");
+  let returnStyle = $state(SolarReturnStyle.Standalone);
   // A number input binds a number, or null while it's empty.
   let returnYear: number | null = $state(null);
   let returnPlace: Place | undefined = $state.raw();
@@ -240,6 +245,7 @@
         const { year, place } = shared.solarReturn;
         // No place in the link means the birthplace.
         const resolved = place ? await resolvePlace(place) : yours.place!;
+        returnStyle = shared.solarReturn.style ?? SolarReturnStyle.Standalone;
         returnYear = year;
         returnPlace = resolved;
         shownReturn = { year, place: resolved };
@@ -541,6 +547,7 @@
    * a birth time, it opens on why there isn't one.
    */
   function startSolarReturn(): Promise<void> {
+    returnStyle = SolarReturnStyle.Standalone;
     returnPlace = chart?.details.place;
     shownReturn = undefined;
     returnError = "";
@@ -1051,7 +1058,7 @@
     {:else if transits}
       <TransitView {transits} timeZone={transitTimeZone} />
     {:else if solarReturn}
-      <SolarReturnView {solarReturn} />
+      <SolarReturnView {solarReturn} bind:style={returnStyle} />
     {:else if chart}
       <ChartView {chart} />
     {:else}

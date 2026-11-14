@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 import { placeOptions } from "./places";
@@ -172,3 +173,88 @@ test("preserves both charts when comparison details are incomplete", async ({
   await expect(form.getByRole("alert")).toBeHidden();
   await expect(page.getByText("Koch houses.", { exact: false })).toBeVisible();
 });
+
+for (const format of ["SVG", "PNG"]) {
+  test(`compares a solar return and exports ${format}`, async ({
+    page,
+  }, testInfo) => {
+    await drawChart(page);
+    await page.getByRole("button", { name: "See solar return" }).click();
+    await page.getByRole("radio", { name: "Against natal chart" }).check();
+    const form = page.getByRole("form", { name: "Solar return" });
+    await form.getByLabel("Year").fill("2030");
+    await form.getByRole("button", { name: "Show solar return" }).click();
+    await expect(
+      page.getByRole("radio", {
+        name: "Against natal chart",
+      }),
+    ).toBeChecked();
+
+    const wheel = page.getByRole("img", {
+      name: "Solar return comparison wheel",
+    });
+    await expect(wheel).toHaveAttribute("viewBox", "-90 -90 780 780");
+    await expect(wheel.locator(".wheel-body--outer")).toHaveCount(13);
+    await expect(
+      page.getByRole("columnheader", {
+        name: "Natal house",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await wheel.screenshot({ path: testInfo.outputPath("solar-return.png") });
+
+    const pendingImage = page.waitForEvent("download");
+    await page
+      .getByRole("button", {
+        name: `Download wheel as ${format}`,
+      })
+      .click();
+    const image = await pendingImage;
+    expect(image.suggestedFilename()).toContain("solar-return-2030-bi-wheel");
+    const imagePath = testInfo.outputPath(`return.${format.toLowerCase()}`);
+    await image.saveAs(imagePath);
+    const content = await readFile(imagePath);
+    if (format === "SVG") {
+      expect(content.toString()).toContain("Solar return comparison wheel");
+      expect(content.toString()).toContain("wheel-body--outer");
+    } else {
+      expect(content.readUInt32BE(16)).toBe(1560);
+      expect(content.readUInt32BE(20)).toBe(1560);
+    }
+
+    const pendingCsv = page.waitForEvent("download");
+    await page
+      .getByRole("button", {
+        name: "Download tables as CSV",
+      })
+      .click();
+    const csv = await pendingCsv;
+    const csvPath = testInfo.outputPath("return.csv");
+    await csv.saveAs(csvPath);
+    expect(await readFile(csvPath, "utf8")).toContain("Natal house");
+
+    await page.getByRole("button", { name: "Copy link" }).click();
+    const link = await page
+      .getByRole("textbox", {
+        name: "Share link",
+      })
+      .inputValue();
+    await page.goto(`/${new URL(link).hash}`);
+    await expect(
+      page.getByRole("img", {
+        name: "Solar return comparison wheel",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Solar return 2030",
+      }),
+    ).toBeVisible();
+    await page.getByRole("radio", { name: "Return alone" }).check();
+    await expect(
+      page.getByRole("img", {
+        name: "Solar return chart wheel",
+      }),
+    ).toBeVisible();
+  });
+}

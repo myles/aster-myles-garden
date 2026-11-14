@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { AspectSet, DEFAULT_ASPECT_SETTINGS, OrbSize } from "@/lib/aspects";
 import { HouseSystem } from "@/lib/houses";
 import { buildShareUrl, parseShareHash } from "@/lib/share";
+import { SolarReturnStyle } from "@/lib/solar-return";
 import { ComparisonStyle } from "@/lib/synastry";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
@@ -424,4 +425,42 @@ describe("share links for a solar return", () => {
     const hash = "#date=2000-01-01&time=12:00&place=1" + extra;
     expect(() => parseShareHash(hash)).toThrow(message);
   });
+});
+
+it("round-trips the solar return bi-wheel style", () => {
+  const hash =
+    "#date=2000-01-01&time=12:00&place=1&return=2026&returnStyle=biWheel";
+  expect(parseShareHash(hash)?.solarReturn).toMatchObject({
+    year: 2026,
+    style: "biWheel",
+  });
+});
+
+it("rejects an unknown solar return style", () => {
+  expect(() =>
+    parseShareHash(
+      "#date=2000-01-01&time=12:00&place=1&return=2026&returnStyle=other",
+    ),
+  ).toThrow("solar return style");
+});
+
+it("builds a link for the solar return comparison", () => {
+  const url = new URL(
+    buildShareUrl(CHART.details, SITE_URL, {
+      solarReturn: {
+        year: 2026,
+        place: CHART.details.place,
+        style: SolarReturnStyle.BiWheel,
+      },
+    }),
+  );
+  expect(parseShareHash(url.hash)?.solarReturn?.style).toBe(
+    SolarReturnStyle.BiWheel,
+  );
+});
+
+it("rejects a solar return style without a return", () => {
+  expect(() =>
+    parseShareHash("#date=2000-01-01&time=12:00&place=1&returnStyle=biWheel"),
+  ).toThrow("needs a solar return year");
 });

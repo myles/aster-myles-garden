@@ -23,13 +23,13 @@
 - [x] House system and aspect settings remembered in the browser between visits
 - [x] Clear the lint warnings, then have CI fail on new ones
 - [x] Keep angle labels clear of bodies' degrees and retrograde marks
+- [x] A solar return set against the natal chart as a bi-wheel, as well as on its own
 
 ## Charts
 
 - [ ] Sidereal zodiac, with a choice of ayanamsa
 - [ ] Optional high-precision ephemeris files, and Chiron with them: the built-in Moshier ephemeris has no asteroids
 - [ ] Secondary progressions: the chart moved on a day for each year of life, set against the natal chart as transits are
-- [ ] A solar return set against the natal chart as a bi-wheel, as well as on its own
 
 ## Polish
 

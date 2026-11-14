@@ -4,7 +4,6 @@
 
 import type { Chart } from "@/lib/chart";
 import type { Composite } from "@/lib/composite";
-import type { SolarReturn } from "@/lib/solar-return";
 import type { Synastry } from "@/lib/synastry";
 import type { Transits } from "@/lib/transits";
 
@@ -13,7 +12,9 @@ import {
   buildComparisonCsv,
   buildCompositeCsv,
   buildTransitsCsv,
+  buildSolarReturnCsv,
 } from "@/lib/csv";
+import { SolarReturnStyle, type SolarReturn } from "@/lib/solar-return";
 
 export enum ExportFormat {
   Svg = "svg",
@@ -34,7 +35,11 @@ export type ExportSubject =
   | { kind: SubjectKind.Comparison; synastry: Synastry }
   | { kind: SubjectKind.Composite; composite: Composite }
   | { kind: SubjectKind.Transits; transits: Transits }
-  | { kind: SubjectKind.SolarReturn; solarReturn: SolarReturn };
+  | {
+      kind: SubjectKind.SolarReturn;
+      solarReturn: SolarReturn;
+      style?: SolarReturnStyle;
+    };
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SVG_MIME_TYPE = "image/svg+xml";
@@ -96,7 +101,10 @@ function buildCsv(subject: ExportSubject): string {
     case SubjectKind.Transits:
       return buildTransitsCsv(subject.transits);
     case SubjectKind.SolarReturn:
-      return buildChartCsv(subject.solarReturn.chart);
+      return buildSolarReturnCsv(
+        subject.solarReturn,
+        subject.style ?? SolarReturnStyle.Standalone,
+      );
   }
 }
 
@@ -258,7 +266,8 @@ function describeSubject(subject: ExportSubject): string {
     case SubjectKind.SolarReturn:
       return (
         `${describeChart(subject.solarReturn.natal)}-solar-return-` +
-        subject.solarReturn.year
+        subject.solarReturn.year +
+        (subject.style === SolarReturnStyle.BiWheel ? "-bi-wheel" : "")
       );
   }
 }

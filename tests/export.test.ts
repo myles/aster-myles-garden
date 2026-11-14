@@ -8,10 +8,11 @@ import {
   exportWheel,
   SubjectKind,
 } from "@/lib/export";
+import { SolarReturnStyle } from "@/lib/solar-return";
 import { compareCharts } from "@/lib/synastry";
 import { drawBiWheel, drawWheel } from "@/lib/wheel";
 
-import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "./fixtures/chart";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SVG_MIME = "image/svg+xml";
@@ -296,6 +297,18 @@ describe("exportWheel", () => {
     const backdrop = file.querySelector(":scope > rect");
     expect(backdrop?.getAttribute("x")).toBe("-90");
     expect(backdrop?.getAttribute("width")).toBe("780");
+  });
+
+  it("names and exports the solar return comparison tables", async () => {
+    exportTables({
+      kind: SubjectKind.SolarReturn,
+      solarReturn: SOLAR_RETURN,
+      style: SolarReturnStyle.BiWheel,
+    });
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-solar-return-2026-bi-wheel.csv",
+    );
+    expect(await downloads[0].blob.text()).toContain("Natal house");
   });
 
   it("names transits after the chart and the moment, in UTC", async () => {
