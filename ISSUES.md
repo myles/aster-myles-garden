@@ -100,7 +100,7 @@ Search for London, move focus away, then return to the place field and press Arr
 
 **Resolution:** Focusing the place field re-runs the search once the index has loaded, so leaving and returning reopens the suggestions for the text still there. With the list closed, Arrow Down re-runs the search and opens it, as the WAI-ARIA combobox pattern expects. A place that's already chosen stays closed either way, because the search skips the text of a chosen place. Component tests for refocusing, and for Arrow Down after Escape, failed before the fix and pass afterwards. A further test checks that a chosen place's list stays closed.
 
-### 8. Mobile wheel labels are too small
+### 8. Mobile wheel labels are too small — fixed
 
 **Location:** `src/components/ChartWheel.svelte`; wheel sizing in `src/lib/wheel.ts`.
 
@@ -109,6 +109,8 @@ At a 375px viewport, the comparison wheel scales its degree labels to roughly 5p
 **Suggested fix:** Provide an enlarged wheel view or zoom controls. Retain the position tables and written description as readable alternatives.
 
 **Verification:** Inspected the rendered natal and comparison wheels at a 375px viewport.
+
+**Resolution:** An **Enlarge wheel** toggle under every wheel (natal, comparison and transits) widens it to 56rem inside a box that scrolls sideways, rather than fitting it to the screen. The page itself doesn't scroll sideways. While enlarged, the box is a labelled, focusable region, so it can also be scrolled from the keyboard. The button keeps one label and reports its state with `aria-pressed`. The size is set on a wrapper, not on the `<svg>` that D3 owns, so downloads are unchanged. At 375px in Chromium, the wheel grows from 343px to 896px wide and its label boxes from 8px to 20px tall. The tables and written description remain the readable alternatives. Component tests for the toggle and the scrollable region failed before the fix and pass afterwards.
 
 ### 9. Successful submission leaves the wheel below the viewport
 
