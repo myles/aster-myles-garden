@@ -139,6 +139,18 @@ describe("saved charts", () => {
     expect(() => readSavedCharts(storage)).toThrow("damaged");
   });
 
+  it("reports a stored chart with an impossible date", () => {
+    storage.setItem(
+      SAVED_CHARTS_KEY,
+      JSON.stringify({
+        version: 1,
+        charts: [{ ...ME, id: "1", date: "2024-02-31" }],
+      }),
+    );
+
+    expect(() => readSavedCharts(storage)).toThrow("damaged");
+  });
+
   it("explains a storage that won't take the chart", () => {
     expect(() => addSavedChart(new FullStorage(), ME)).toThrow(
       "This browser wouldn't save the chart.",

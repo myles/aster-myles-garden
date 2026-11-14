@@ -20,7 +20,9 @@ import {
   formatTimeValue,
   isTimeZone,
   parseLocalDate,
+  parseLocalDateTime,
   parseLocalTime,
+  toUtc,
 } from "@/lib/time";
 
 const DATE_PARAM = "date";
@@ -35,8 +37,9 @@ const HOUSE_PARAM = "house";
 const TRANSITS_PARAM = "transits";
 
 /** A transit moment in UTC, to the minute. Example: "2026-11-13T20:05Z". */
-const TRANSITS_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}Z$/;
+const TRANSITS_PATTERN = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})Z$/;
 const MINUTE_ISO_LENGTH = "2026-11-13T20:05".length;
+const TRANSITS_TIME_ZONE = "UTC";
 
 /** Spelled out, so a link that lost its time reads as broken. */
 const UNKNOWN_TIME_VALUE = "unknown";
@@ -154,12 +157,19 @@ function readTransitsAt(params: URLSearchParams): Date | undefined {
     return undefined;
   }
 
-  const at = new Date(value);
-  if (!TRANSITS_PATTERN.test(value) || Number.isNaN(at.getTime())) {
-    throw new Error(`The link's transit moment isn't valid: "${value}".`);
+  const invalidMessage = `The link's transit moment isn't valid: "${value}".`;
+  const match = TRANSITS_PATTERN.exec(value);
+  if (!match) {
+    throw new Error(invalidMessage);
   }
 
-  return at;
+  // Read through the date and time parsers, since Date rolls an
+  // impossible moment such as 31 February into the next month.
+  try {
+    return toUtc(parseLocalDateTime(match[1], match[2]), TRANSITS_TIME_ZONE);
+  } catch (cause) {
+    throw new Error(invalidMessage, { cause });
+  }
 }
 
 function writePerson(

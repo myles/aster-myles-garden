@@ -60,7 +60,7 @@ The date field permits dates through year `9999`, but the bundled calculation en
 
 **Resolution:** `canCalculateMoment` and `canCalculateDate` in `src/lib/chart.ts` check against the engine's span, Julian days 625,000.5 to 2,818,000.5 (`SWE_MIN_JULIAN_DAY` and `SWE_MAX_JULIAN_DAY`). That runs from about 3000 BCE to 29 April 3003. A date is checked across its whole local day, since a chart without a birth time reads both ends. The site and the API's `isInEngineRange` share these checks. Birth dates, comparison dates, typed transit moments and transit moments from share links are all checked before calculating, and the form says the supported span instead of passing on the engine's error. Transits are calculated inside a try/catch, so any remaining failure is reported in the transit form instead of interrupting rendering. Every date field now stops at 31 December 3002. Unit tests cover the range boundaries, including a date whose local day runs past the end west of UTC. App tests cover a birth date, a transit date and a share link in the year 9999, plus a transit calculation that throws. All failed before the fix and pass afterwards.
 
-### 5. Shared links accept impossible dates and times
+### 5. Shared links accept impossible dates and times — fixed
 
 **Location:** `src/lib/time.ts`, `parseLocalDate` and `parseLocalTime`; `src/lib/share.ts`.
 
@@ -70,7 +70,9 @@ The parsers validate string shape but not calendar validity or time ranges. `202
 
 **Verification:** Direct conversion reproduced the normalisation. A temporary regression test confirmed that a shared link with `date=2024-02-31&time=99:99` does not throw.
 
-**API:** Input is not affected: `chartRequestSchemaV1` in `src/lib/api/schemas.ts` rejects `2024-02-31` and `99:99` with a 400, and `tests/api-schemas.test.ts` covers both. The share links the API returns are built from validated details, so they're always well formed, but `parseShareHash` still accepts damaged ones. Validate dates and times once in `src/lib/time.ts` and use the same rules in the parsers and the API schema, so the two can't drift.
+**API:** Input was not affected: `chartRequestSchemaV1` in `src/lib/api/schemas.ts` already rejected `2024-02-31` and `99:99` with a 400.
+
+**Resolution:** `parseLocalDate` now rejects months outside 1–12 and days that don't exist in their month, by the proleptic Gregorian calendar the date input uses, so `2024-02-29` is accepted and `1900-02-29` isn't. `parseLocalTime` rejects hours past 23 and minutes past 59. Shared links and saved charts already read dates and times through these parsers, so both now reject impossible values: a shared link reports the bad field, and stored charts with one are reported as damaged. A link's transit moment was read by `Date`, which also rolls `2024-02-31T12:00Z` into March and accepts `24:00`; it's now read through the same parsers. The year range is checked separately, by issue 4's range checks. The API validates with its own schema, so a table test checks that the schema and the parsers accept and reject the same dates and times. The parser, share-link and saved-chart tests failed before the fix and pass afterwards.
 
 ### 6. Comparison updates can leave mismatched charts — fixed
 
