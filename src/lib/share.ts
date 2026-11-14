@@ -47,6 +47,10 @@ const ORBS_PARAM = "orbs";
 const TRANSITS_PARAM = "transits";
 // How a comparison is shown, written only when it isn't the bi-wheel.
 const COMPARISON_PARAM = "comparison";
+const RETURN_PARAM = "return";
+
+/** A solar return's year: 1 CE onwards. */
+const YEAR_PATTERN = /^[1-9]\d{0,3}$/;
 
 /** A transit moment in UTC, to the minute. Example: "2026-11-13T20:05Z". */
 const TRANSITS_PATTERN = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})Z$/;
@@ -58,17 +62,18 @@ const UNKNOWN_TIME_VALUE = "unknown";
 
 const PLACE_ID_PATTERN = /^[1-9]\d*$/;
 
-/** Form values carried by a share link, as the form's inputs hold them. */
 /**
- * One person's birth details, as the form's inputs hold them. A listed
- * place comes as its GeoNames ID, to look up; a place entered by its
- * coordinates comes whole.
+ * A place carried by a share link. A listed place comes as its GeoNames
+ * ID, to look up; a place entered by its coordinates comes whole.
  */
+export type SharedPlace = { placeId: number } | { place: Place };
+
+/** One person's birth details, as the form's inputs hold them. */
 export type SharedPerson = {
   date: string;
   /** Undefined when the birth time isn't known. */
   time?: string;
-} & ({ placeId: number } | { place: Place });
+} & SharedPlace;
 
 /** Form values carried by a share link. */
 export type SharedDetails = SharedPerson & {
@@ -80,14 +85,20 @@ export type SharedDetails = SharedPerson & {
   comparisonStyle?: ComparisonStyle;
   /** The moment to show transits for, when the link is for transits. */
   transitsAt?: Date;
+  /** When the link is for a solar return. No place means the birthplace. */
+  solarReturn?: { year: number; place?: SharedPlace };
 };
 
-/** What a link can add to a chart: a comparison or transits, not both. */
+/**
+ * What a link can add to a chart: one of a comparison, transits or a
+ * solar return.
+ */
 export type ShareAddition = {
   comparedWith?: BirthDetails;
   /** How the comparison is shown. Undefined means the bi-wheel. */
   comparisonStyle?: ComparisonStyle;
   transitsAt?: Date;
+  solarReturn?: { year: number; place: Place };
 };
 
 /** How a person's fields are named in a link and in its errors. */
@@ -110,6 +121,13 @@ const SECOND_PERSON: PersonParams = {
   possessive: "The second chart's",
 };
 
+/** Where a solar return is cast: "place_return", "lat_return" and so on. */
+const RETURN_PLACE: PersonParams = {
+  suffix: "_return",
+  subject: "The link's solar return",
+  possessive: "The solar return's",
+};
+
 /**
  * Builds a link that reopens a chart, along with a comparison or transits
  * when the addition names one. A comparison shares the house system and
@@ -118,7 +136,12 @@ const SECOND_PERSON: PersonParams = {
 export function buildShareUrl(
   details: BirthDetails,
   siteUrl: string,
-  { comparedWith, comparisonStyle, transitsAt }: ShareAddition = {},
+  {
+    comparedWith,
+    comparisonStyle,
+    transitsAt,
+    solarReturn,
+  }: ShareAddition = {},
 ): string {
   const url = new URL("/", siteUrl);
   const params = new URLSearchParams();
@@ -131,6 +154,12 @@ export function buildShareUrl(
   }
   if (comparedWith && comparisonStyle === ComparisonStyle.Composite) {
     params.set(COMPARISON_PARAM, comparisonStyle);
+  }
+  if (solarReturn) {
+    params.set(RETURN_PARAM, String(solarReturn.year));
+    if (!isSamePlace(solarReturn.place, details.place)) {
+      writePlace(params, solarReturn.place, RETURN_PLACE);
+    }
   }
   if (transitsAt) {
     const minute = transitsAt.toISOString().slice(0, MINUTE_ISO_LENGTH);
@@ -167,9 +196,13 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
   const comparedWith = readPerson(params, SECOND_PERSON);
   const comparisonStyle = readComparisonStyle(params, comparedWith);
   const transitsAt = readTransitsAt(params);
+  const solarReturn = readSolarReturn(params);
 
-  if (comparedWith && transitsAt) {
-    throw new Error("The link can't show both a comparison and transits.");
+  const additions = [comparedWith, transitsAt, solarReturn].filter(Boolean);
+  if (additions.length > 1) {
+    throw new Error(
+      "The link can show only one of a comparison, transits or a solar return.",
+    );
   }
 
   return {
@@ -179,7 +212,43 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
     comparedWith,
     comparisonStyle,
     transitsAt,
+    solarReturn,
   };
+}
+
+/** Undefined when the link isn't for a solar return. */
+function readSolarReturn(
+  params: URLSearchParams,
+): SharedDetails["solarReturn"] {
+  const year = params.get(RETURN_PARAM);
+  if (year === null) {
+    return undefined;
+  }
+
+  if (!YEAR_PATTERN.test(year)) {
+    throw new Error(`The solar return's year isn't valid: "${year}".`);
+  }
+
+  const place = readPlace(params, RETURN_PLACE);
+  if (!place && hasPlaceField(params, RETURN_PLACE)) {
+    throw new Error(`${RETURN_PLACE.subject} is missing its place.`);
+  }
+
+  return { year: Number(year), place };
+}
+
+/** Listed places match by ID; places entered by coordinates, whole. */
+function isSamePlace(a: Place, b: Place): boolean {
+  if (a.id !== undefined || b.id !== undefined) {
+    return a.id === b.id;
+  }
+
+  return (
+    a.latitude === b.latitude &&
+    a.longitude === b.longitude &&
+    a.timeZone === b.timeZone &&
+    a.name === b.name
+  );
 }
 
 /** Undefined when the link doesn't choose how a comparison is shown. */
@@ -294,22 +363,15 @@ function readPerson(
   params: URLSearchParams,
   person: PersonParams,
 ): SharedPerson | undefined {
-  const read = (name: string) => params.get(name + person.suffix);
-  const date = read(DATE_PARAM);
-  const time = read(TIME_PARAM);
-  const placeId = read(PLACE_PARAM);
-  const latitude = read(LATITUDE_PARAM);
-  const longitude = read(LONGITUDE_PARAM);
-  const timeZone = read(TIME_ZONE_PARAM);
-  const hasCoordinates =
-    latitude !== null && longitude !== null && timeZone !== null;
+  const date = params.get(DATE_PARAM + person.suffix);
+  const time = params.get(TIME_PARAM + person.suffix);
 
-  const fields = [date, time, placeId, latitude, longitude, timeZone];
-  if (fields.every((field) => field === null)) {
+  if (date === null && time === null && !hasPlaceField(params, person)) {
     return undefined;
   }
 
-  if (date === null || time === null || (placeId === null && !hasCoordinates)) {
+  const place = readPlace(params, person);
+  if (date === null || time === null || !place) {
     throw new Error(`${person.subject} is missing its date, time or place.`);
   }
 
@@ -321,17 +383,39 @@ function readPerson(
     parseLocalTime(time);
   }
 
-  const birth = { date, time: isTimeUnknown ? undefined : time };
+  return { date, time: isTimeUnknown ? undefined : time, ...place };
+}
+
+/** Whether the link has any of the fields that name this place. */
+function hasPlaceField(params: URLSearchParams, person: PersonParams): boolean {
+  return [PLACE_PARAM, LATITUDE_PARAM, LONGITUDE_PARAM, TIME_ZONE_PARAM].some(
+    (name) => params.get(name + person.suffix) !== null,
+  );
+}
+
+/** Undefined when the link doesn't fully name this place. */
+function readPlace(
+  params: URLSearchParams,
+  person: PersonParams,
+): SharedPlace | undefined {
+  const read = (name: string) => params.get(name + person.suffix);
+  const placeId = read(PLACE_PARAM);
+  const latitude = read(LATITUDE_PARAM);
+  const longitude = read(LONGITUDE_PARAM);
+  const timeZone = read(TIME_ZONE_PARAM);
 
   if (placeId !== null) {
     if (!PLACE_ID_PATTERN.test(placeId)) {
       throw new Error(`${person.possessive} place isn't valid: "${placeId}".`);
     }
-    return { ...birth, placeId: Number(placeId) };
+    return { placeId: Number(placeId) };
   }
 
-  // hasCoordinates holds here, so none of the three is null.
-  if (!isTimeZone(timeZone!)) {
+  if (latitude === null || longitude === null || timeZone === null) {
+    return undefined;
+  }
+
+  if (!isTimeZone(timeZone)) {
     throw new Error(
       `${person.possessive} time zone isn't known: "${timeZone}".`,
     );
@@ -341,8 +425,8 @@ function readPerson(
   const place = createCoordinatePlace({
     ...coordinates,
     name: read(PLACE_NAME_PARAM) ?? "",
-    timeZone: timeZone!,
+    timeZone,
   });
 
-  return { ...birth, place };
+  return { place };
 }

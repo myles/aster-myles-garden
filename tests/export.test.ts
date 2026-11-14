@@ -249,6 +249,17 @@ describe("exportWheel", () => {
     expect(await downloads[0].blob.text()).toContain("Aspects between you");
   });
 
+  it("names a solar return after the natal chart and its year", async () => {
+    const solarReturn = { natal: CHART, year: 2026, chart: CHART };
+
+    exportTables({ kind: SubjectKind.SolarReturn, solarReturn });
+
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-solar-return-2026.csv",
+    );
+    expect(await downloads[0].blob.text()).toContain("Positions");
+  });
+
   it("downloads a composite's tables, named after both charts", async () => {
     const composite = {
       first: CHART,

@@ -12,6 +12,7 @@ import {
   canCalculateDate,
   canCalculateMoment,
   createChart,
+  createChartAt,
   usesFallbackHouses,
   type Chart,
 } from "@/lib/chart";
@@ -33,6 +34,10 @@ const TORONTO = {
   longitude: -79.3986,
   timeZone: "America/Toronto",
 };
+
+function sunAt(chart: Chart): number {
+  return chart.bodies.find((body) => body.body === Body.Sun)!.longitude;
+}
 
 describe("createChart", () => {
   let chart: Chart;
@@ -63,6 +68,17 @@ describe("createChart", () => {
 
     expect(minor.length).toBeGreaterThan(0);
     expect(withMinor.aspects).toEqual(expect.arrayContaining(chart.aspects));
+  });
+
+  it("can be cast for an exact moment, to the second", () => {
+    const at = new Date("2000-01-01T12:00:30Z");
+    const exact = createChartAt(chart.details, at);
+
+    expect(exact.bornAt).toBe(at);
+    expect(exact.julianDay).toBeCloseTo(chart.julianDay + 30 / 86_400, 9);
+    // The Sun moves about 1° a day, so 30 seconds is about 0.0004°.
+    expect(sunAt(exact) - sunAt(chart)).toBeCloseTo(0.0004, 4);
+    expect(exact.houses?.ascendant).not.toBe(chart.houses?.ascendant);
   });
 
   it("converts local birth time to UT", () => {

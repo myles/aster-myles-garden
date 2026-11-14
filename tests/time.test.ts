@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   formatDateValue,
   formatTimeValue,
+  fromJulianDay,
   getLocalTimeZone,
   getOffsetMinutes,
   isTimeZone,
@@ -149,6 +150,19 @@ describe("getOffsetMinutes", () => {
     const instant = new Date("2024-07-01T12:00:00Z");
     expect(getOffsetMinutes("America/Toronto", instant)).toBe(-240);
     expect(getOffsetMinutes("Asia/Kolkata", instant)).toBe(330);
+  });
+});
+
+describe("fromJulianDay", () => {
+  it("reads the J2000.0 epoch back", () => {
+    expect(fromJulianDay(2_451_545).toISOString()).toBe(
+      "2000-01-01T12:00:00.000Z",
+    );
+  });
+
+  it("undoes toJulianDay, to the millisecond", () => {
+    const at = new Date("1990-05-15T18:30:12.345Z");
+    expect(fromJulianDay(toJulianDay(at)).getTime()).toBe(at.getTime());
   });
 });
 

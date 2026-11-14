@@ -19,10 +19,10 @@
 - [x] Minor aspects and tight, standard or wide orbs, carried by share links and the API
 - [x] Works offline as an installed app, using a service worker
 - [x] Composite charts: the midpoints of two charts, with houses cast around the midpoint of their midheavens
+- [x] Solar returns: the year's chart for the moment the Sun returns to its natal position, cast wherever you choose
 
 ## Charts
 
-- [ ] Solar return charts
 - [ ] Sidereal zodiac, with a choice of ayanamsa
 - [ ] Optional high-precision ephemeris files, and Chiron with them: the built-in Moshier ephemeris has no asteroids
 

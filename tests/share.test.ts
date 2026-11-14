@@ -269,7 +269,7 @@ describe("share links for transits", () => {
     [
       "both transits and a second chart",
       "&transits=2026-11-13T20:05Z" + "&date2=1990-05-15&time2=12:00&place2=1",
-      "both",
+      "only one of",
     ],
   ])("rejects %s", (_, extra, message) => {
     const hash = "#date=2000-01-01&time=12:00&place=1" + extra;
@@ -342,6 +342,86 @@ describe("share links for a place entered by coordinates", () => {
     ["a latitude out of range", "&lat=95&lon=-79.4&tz=UTC", "Latitude"],
   ])("rejects %s", (_, place, message) => {
     const hash = "#date=2000-01-01&time=12:00" + place;
+    expect(() => parseShareHash(hash)).toThrow(message);
+  });
+});
+
+describe("share links for a solar return", () => {
+  const TORONTO = {
+    id: 6167865,
+    name: "Toronto",
+    region: "Ontario",
+    country: "Canada",
+    latitude: 43.7064,
+    longitude: -79.3986,
+    timeZone: "America/Toronto",
+  };
+  const BRAMPTON = {
+    name: "Brampton",
+    region: "",
+    country: "",
+    latitude: 43.68,
+    longitude: -79.77,
+    timeZone: "America/Toronto",
+  };
+
+  it("adds just the year when it's cast at the birthplace", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, {
+      solarReturn: { year: 2026, place: CHART.details.place },
+    });
+
+    expect(url).toBe(
+      "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
+        "&place=2643743&house=equal&return=2026",
+    );
+    expect(parseShareHash(new URL(url).hash)?.solarReturn).toEqual({
+      year: 2026,
+      place: undefined,
+    });
+  });
+
+  it("adds a listed place by its ID", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, {
+      solarReturn: { year: 2026, place: TORONTO },
+    });
+
+    expect(url).toMatch(/&return=2026&place_return=6167865$/);
+    expect(parseShareHash(new URL(url).hash)?.solarReturn).toEqual({
+      year: 2026,
+      place: { placeId: 6167865 },
+    });
+  });
+
+  it("adds a place entered by coordinates whole", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, {
+      solarReturn: { year: 2026, place: BRAMPTON },
+    });
+
+    expect(url).toContain(
+      "&return=2026&lat_return=43.68&lon_return=-79.77" +
+        "&tz_return=America/Toronto&name_return=Brampton",
+    );
+    expect(parseShareHash(new URL(url).hash)?.solarReturn).toEqual({
+      year: 2026,
+      place: { place: BRAMPTON },
+    });
+  });
+
+  it.each([
+    ["a year that isn't a number", "&return=soon", "solar return's year"],
+    ["a year before 1 CE", "&return=0", "solar return's year"],
+    [
+      "a place without its time zone",
+      "&return=2026&lat_return=43.68&lon_return=-79.77",
+      "solar return is missing its place",
+    ],
+    [
+      "a solar return and transits",
+      "&return=2026&transits=2026-11-13T20:05Z",
+      "only one of",
+    ],
+  ])("rejects %s", (_, extra, message) => {
+    const hash = "#date=2000-01-01&time=12:00&place=1" + extra;
     expect(() => parseShareHash(hash)).toThrow(message);
   });
 });

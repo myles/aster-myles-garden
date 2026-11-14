@@ -4,6 +4,7 @@
 
 import type { Chart } from "@/lib/chart";
 import type { Composite } from "@/lib/composite";
+import type { SolarReturn } from "@/lib/solar-return";
 import type { Synastry } from "@/lib/synastry";
 import type { Transits } from "@/lib/transits";
 
@@ -24,6 +25,7 @@ export enum SubjectKind {
   Comparison = "comparison",
   Composite = "composite",
   Transits = "transits",
+  SolarReturn = "solarReturn",
 }
 
 /** What's being exported, which decides the CSV and the file name. */
@@ -31,7 +33,8 @@ export type ExportSubject =
   | { kind: SubjectKind.Chart; chart: Chart }
   | { kind: SubjectKind.Comparison; synastry: Synastry }
   | { kind: SubjectKind.Composite; composite: Composite }
-  | { kind: SubjectKind.Transits; transits: Transits };
+  | { kind: SubjectKind.Transits; transits: Transits }
+  | { kind: SubjectKind.SolarReturn; solarReturn: SolarReturn };
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 const SVG_MIME_TYPE = "image/svg+xml";
@@ -92,6 +95,8 @@ function buildCsv(subject: ExportSubject): string {
       return buildCompositeCsv(subject.composite);
     case SubjectKind.Transits:
       return buildTransitsCsv(subject.transits);
+    case SubjectKind.SolarReturn:
+      return buildChartCsv(subject.solarReturn.chart);
   }
 }
 
@@ -227,6 +232,7 @@ function downloadBlob(blob: Blob, filename: string): void {
  * - compared → "aster-london-2000-01-01-1200-and-toronto-1990-05-15"
  * - composite → the comparison's name, then "-composite"
  * - transits → "aster-london-2000-01-01-1200-transits-2026-11-13-2000-utc"
+ * - solar return → "aster-london-2000-01-01-1200-solar-return-2026"
  */
 function buildFilename(subject: ExportSubject, extension: string): string {
   return `${FILENAME_PREFIX}-${describeSubject(subject)}.${extension}`;
@@ -244,6 +250,11 @@ function describeSubject(subject: ExportSubject): string {
       return (
         `${describeChart(subject.transits.natal)}-transits-` +
         describeInstant(subject.transits.at)
+      );
+    case SubjectKind.SolarReturn:
+      return (
+        `${describeChart(subject.solarReturn.natal)}-solar-return-` +
+        subject.solarReturn.year
       );
   }
 }

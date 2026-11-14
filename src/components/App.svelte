@@ -8,8 +8,10 @@
   import CompositeView from "@/components/CompositeView.svelte";
   import TransitView from "@/components/TransitView.svelte";
   import { Panel } from "@/components/panel";
+  import PlaceFields from "@/components/PlaceFields.svelte";
   import SaveChartRow from "@/components/SaveChartRow.svelte";
   import SavedChartList from "@/components/SavedChartList.svelte";
+  import SolarReturnView from "@/components/SolarReturnView.svelte";
   import {
     ASPECT_SET_NAMES,
     AspectSet,
@@ -41,7 +43,12 @@
     removeSavedChart,
     type SavedChart,
   } from "@/lib/saved-charts";
-  import { parseShareHash, type SharedPerson } from "@/lib/share";
+  import {
+    parseShareHash,
+    type SharedPerson,
+    type SharedPlace,
+  } from "@/lib/share";
+  import { createSolarReturn, findCurrentReturnYear } from "@/lib/solar-return";
   import { createComposite } from "@/lib/composite";
   import {
     compareCharts,
@@ -71,6 +78,11 @@
 
   const COMPARE_DATE_ID = "compare-date";
   const TRANSIT_DATE_ID = "transit-date";
+  const RETURN_YEAR_ID = "return-year";
+
+  const RETURN_NEEDS_TIME =
+    "A solar return needs your birth time. Enter it above and draw your " +
+    "chart again.";
 
   // Below Tailwind's lg breakpoint the layout stacks: forms, then result.
   const STACKED_LAYOUT_QUERY = "(width < 64rem)";
@@ -101,6 +113,12 @@
   let transitTime = $state("");
   let transitsAt: Date | undefined = $state.raw();
   let transitError = $state("");
+  // A number input binds a number, or null while it's empty.
+  let returnYear: number | null = $state(null);
+  let returnPlace: Place | undefined = $state.raw();
+  // The year and place shown, set when the form is submitted.
+  let shownReturn: { year: number; place: Place } | undefined = $state.raw();
+  let returnError = $state("");
   let savedCharts: SavedChart[] = $state.raw([]);
   // Why saved charts can't be used, e.g. the browser blocks storage.
   let savedChartsError = $state("");
@@ -134,6 +152,25 @@
   });
   const composite = $derived(compositeResult?.composite);
   const compareAlert = $derived(compareError || compositeResult?.failure || "");
+
+  // Finding a return can throw, e.g. for a year the engine can't reach.
+  // Caught here, it's reported in the return form, as transits are.
+  const solarReturnResult = $derived.by(() => {
+    if (panel !== Panel.SolarReturn || !chart || !shownReturn) {
+      return undefined;
+    }
+
+    try {
+      const { year, place } = shownReturn;
+      return { solarReturn: createSolarReturn(chart, year, place) };
+    } catch (cause) {
+      return {
+        failure: `Couldn't find the solar return: ${describeError(cause)}`,
+      };
+    }
+  });
+  const solarReturn = $derived(solarReturnResult?.solarReturn);
+  const returnAlert = $derived(returnError || solarReturnResult?.failure || "");
 
   // The engine is loaded whenever a chart exists, and transitsAt is
   // checked against its range, but a calculation can still throw. Caught
@@ -195,6 +232,15 @@
         comparisonStyle = shared.comparisonStyle ?? ComparisonStyle.BiWheel;
         panel = Panel.Comparison;
       }
+      if (shared.solarReturn) {
+        const { year, place } = shared.solarReturn;
+        // No place in the link means the birthplace.
+        const resolved = place ? await resolvePlace(place) : yours.place!;
+        returnYear = year;
+        returnPlace = resolved;
+        shownReturn = { year, place: resolved };
+        panel = Panel.SolarReturn;
+      }
       if (shared.transitsAt) {
         setTransitMoment(shared.transitsAt);
         panel = Panel.Transits;
@@ -220,14 +266,14 @@
   }
 
   /** A place entered by coordinates comes whole; a listed one is looked up. */
-  async function resolvePlace(person: SharedPerson): Promise<Place> {
-    if ("place" in person) {
-      return person.place;
+  async function resolvePlace(shared: SharedPlace): Promise<Place> {
+    if ("place" in shared) {
+      return shared.place;
     }
 
-    const place = findPlace(await loadPlaceIndex(), person.placeId);
+    const place = findPlace(await loadPlaceIndex(), shared.placeId);
     if (!place) {
-      throw new Error(`No place has the ID ${person.placeId}.`);
+      throw new Error(`No place has the ID ${shared.placeId}.`);
     }
     return place;
   }
@@ -446,6 +492,54 @@
     return openPanel(Panel.Transits, TRANSIT_DATE_ID);
   }
 
+  /**
+   * Opens the solar return in effect now, cast at the birthplace. Without
+   * a birth time, it opens on why there isn't one.
+   */
+  function startSolarReturn(): Promise<void> {
+    returnPlace = chart?.details.place;
+    shownReturn = undefined;
+    returnError = "";
+
+    if (!chart?.details.time) {
+      returnYear = null;
+      returnError = RETURN_NEEDS_TIME;
+      return openPanel(Panel.SolarReturn, RETURN_YEAR_ID);
+    }
+
+    try {
+      const year = findCurrentReturnYear(chart, new Date());
+      returnYear = year;
+      shownReturn = { year, place: chart.details.place };
+    } catch (cause) {
+      returnError = `Couldn't find the solar return: ${describeError(cause)}`;
+    }
+    return openPanel(Panel.SolarReturn, RETURN_YEAR_ID);
+  }
+
+  function showSolarReturn(): void {
+    if (!chart?.details.time) {
+      returnError = RETURN_NEEDS_TIME;
+      return;
+    }
+    if (returnYear === null || !Number.isInteger(returnYear)) {
+      returnError = "Enter a year, such as 2026.";
+      return;
+    }
+    if (!returnPlace) {
+      returnError = "Choose a place from the list, or enter its coordinates.";
+      return;
+    }
+
+    shownReturn = { year: returnYear, place: returnPlace };
+    returnError = "";
+  }
+
+  function onReturnSubmit(event: SubmitEvent): void {
+    event.preventDefault();
+    showSolarReturn();
+  }
+
   /** Back to your chart alone, forgetting any comparison or transits. */
   function closePanel(): void {
     panel = Panel.None;
@@ -454,6 +548,8 @@
     compareError = "";
     transitsAt = undefined;
     transitError = "";
+    shownReturn = undefined;
+    returnError = "";
   }
 
   /** Shows transits for a moment and puts it in the transit form. */
@@ -675,6 +771,13 @@
         >
           See transits
         </button>
+        <button
+          type="button"
+          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
+          onclick={startSolarReturn}
+        >
+          See solar return
+        </button>
       </div>
     {/if}
 
@@ -748,6 +851,65 @@
           hidden={transitAlert.length === 0}
         >
           {transitAlert}
+        </p>
+      </form>
+    {/if}
+
+    {#if panel === Panel.SolarReturn}
+      <form
+        aria-label="Solar return"
+        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
+        novalidate
+        onsubmit={onReturnSubmit}
+      >
+        <div>
+          <h2 class="font-serif text-lg">Solar return</h2>
+          <p class="text-ink-muted text-xs">
+            The chart for the moment the Sun gets back to where it was when you
+            were born, cast for where you are on that birthday.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label for={RETURN_YEAR_ID} class="text-sm font-medium">Year</label>
+          <input
+            id={RETURN_YEAR_ID}
+            name="returnYear"
+            type="number"
+            inputmode="numeric"
+            required
+            min="1"
+            max="3002"
+            step="1"
+            class="border-rule bg-paper rounded border px-3 py-2"
+            bind:value={returnYear}
+          />
+        </div>
+
+        <PlaceFields idPrefix="return" bind:place={returnPlace} />
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="submit"
+            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
+          >
+            Show solar return
+          </button>
+          <button
+            type="button"
+            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+            onclick={closePanel}
+          >
+            Back to your chart
+          </button>
+        </div>
+
+        <p
+          role="alert"
+          class="text-sm text-[var(--challenging)]"
+          hidden={returnAlert.length === 0}
+        >
+          {returnAlert}
         </p>
       </form>
     {/if}
@@ -841,6 +1003,8 @@
       <ComparisonView {synastry} />
     {:else if transits}
       <TransitView {transits} timeZone={transitTimeZone} />
+    {:else if solarReturn}
+      <SolarReturnView {solarReturn} />
     {:else if chart}
       <ChartView {chart} />
     {:else}

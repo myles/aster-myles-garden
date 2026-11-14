@@ -101,6 +101,21 @@ export function createChart(
 ): Chart {
   const time = details.time ?? UNKNOWN_TIME_STANDIN;
   const bornAt = toUtc({ ...details.date, ...time }, details.place.timeZone);
+
+  return createChartAt(details, bornAt, ephemeris);
+}
+
+/**
+ * Builds a chart for an exact moment, such as a solar return found by
+ * search, rather than reading it from the wall clock, which can't name
+ * seconds and repeats an hour when the clocks go back. `details` still
+ * gives the place, settings and whether the time is known.
+ */
+export function createChartAt(
+  details: BirthDetails,
+  bornAt: Date,
+  ephemeris: Ephemeris = browserEphemeris,
+): Chart {
   const julianDay = toJulianDay(bornAt);
 
   const positions = ephemeris.calculateBodies(julianDay);

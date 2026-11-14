@@ -2,6 +2,7 @@
 
 import type { Chart } from "@/lib/chart";
 import type { Composite } from "@/lib/composite";
+import type { SolarReturn } from "@/lib/solar-return";
 import type { Transits } from "@/lib/transits";
 
 import { AspectType } from "@/lib/aspects";
@@ -123,4 +124,11 @@ export const COMPOSITE: Composite = {
   })),
   houses: CHART.houses,
   aspects: CHART.aspects,
+};
+
+/** Your chart standing in for its own return, which only the year marks. */
+export const SOLAR_RETURN: SolarReturn = {
+  natal: CHART,
+  year: 2026,
+  chart: CHART,
 };

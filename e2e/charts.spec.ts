@@ -78,6 +78,26 @@ test("draws the composite of two charts", async ({ page }) => {
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
+test("finds a solar return and casts it elsewhere", async ({ page }) => {
+  await drawChart(page);
+  await page.getByRole("button", { name: "See solar return" }).click();
+  await expect(
+    page.getByRole("img", { name: "Solar return chart wheel" }),
+  ).toBeVisible();
+
+  const form = page.getByRole("form", { name: "Solar return" });
+  await form.getByLabel("Year").fill("2030");
+  await form.getByRole("combobox", { name: "Place" }).fill("Toronto");
+  await placeOptions(form).first().click();
+  await form.getByRole("button", { name: "Show solar return" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Solar return 2030" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Toronto, Ontario, Canada ·/)).toBeVisible();
+  await expect(form.getByRole("alert")).toHaveCount(0);
+});
+
 test("preserves both charts when comparison details are incomplete", async ({
   page,
 }) => {

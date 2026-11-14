@@ -86,11 +86,21 @@ Add `comparison=composite` to show a composite chart instead of the bi-wheel: on
 
 ### Transits
 
-Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact (or less, for a tighter orb), and which natal house each is in. A link can carry `transits` or a second chart, not both.
+Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact (or less, for a tighter orb), and which natal house each is in. A link can carry only one of `transits`, a second chart or `return`.
 
 ```
 https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&transits=2026-11-13T20:05Z
 ```
+
+### Solar returns
+
+Add `return` with a year to show that year's solar return: the chart for the moment the Sun gets back to its natal position, near the birthday. It's cast at the birthplace unless the link gives another place, as `place_return`, or `lat_return`, `lon_return`, `tz_return` and optionally `name_return`, in the same formats as `place`, `lat`, `lon`, `tz` and `name`. A solar return needs the birth time.
+
+```
+https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&return=2026&place_return=2643743
+```
+
+That link shows the 2026 solar return for someone born in Toronto, cast in London.
 
 ## Finding a place's GeoNames ID
 
@@ -124,6 +134,7 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&lat=43.6833&lon=-79.7667&
 - Downloads of the wheel as SVG or PNG and of both tables as CSV, and a Copy link button that produces a link in the format above.
 - In a comparison: the bi-wheel, an Aspects between you table, and each person's positions with a column for the house it falls in on the other person's chart.
 - In a composite: one wheel, with the composite's positions and aspects.
+- In a solar return: the return's wheel, positions and aspects, and the moment the Sun returns, on the clock where it's cast.
 - With transits: the bi-wheel, a Transits to your chart table, and the transiting planets' positions with the natal house each is in.
 
 ## More

@@ -176,6 +176,14 @@ export function toJulianDay(instant: Date): number {
   return instant.getTime() / MS_PER_DAY + UNIX_EPOCH_JULIAN_DAY;
 }
 
+/**
+ * The instant at a Julian day (UT); the inverse of toJulianDay. Rounded
+ * to the millisecond, the finest a Date holds.
+ */
+export function fromJulianDay(julianDay: number): Date {
+  return new Date(Math.round((julianDay - UNIX_EPOCH_JULIAN_DAY) * MS_PER_DAY));
+}
+
 /** Reads an instant on a time zone's wall clock; the inverse of toUtc. */
 export function toLocal(instant: Date, timeZone: string): LocalDateTime {
   const epochMs = instant.getTime();

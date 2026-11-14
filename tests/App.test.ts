@@ -10,6 +10,7 @@ import { createComposite } from "@/lib/composite";
 import { HouseSystem } from "@/lib/houses";
 import { loadPlaceIndex } from "@/lib/places";
 import { addSavedChart, readSavedCharts } from "@/lib/saved-charts";
+import { createSolarReturn, findCurrentReturnYear } from "@/lib/solar-return";
 import { toUtc } from "@/lib/time";
 import { createTransits } from "@/lib/transits";
 
@@ -17,6 +18,7 @@ import {
   CHART,
   CHART_WITHOUT_TIME,
   COMPOSITE,
+  SOLAR_RETURN,
   TRANSITS,
 } from "./fixtures/chart";
 import { PLACE_INDEX } from "./fixtures/places";
@@ -44,6 +46,12 @@ vi.mock("@/lib/transits", async (importOriginal) => ({
 vi.mock("@/lib/composite", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/composite")>()),
   createComposite: vi.fn(),
+}));
+
+vi.mock("@/lib/solar-return", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/solar-return")>()),
+  createSolarReturn: vi.fn(),
+  findCurrentReturnYear: vi.fn(),
 }));
 
 vi.mock("@/lib/places", async (importOriginal) => ({
@@ -733,6 +741,152 @@ describe("App comparing two charts", () => {
         "I don't know the time",
       ).checked,
     ).toBe(true);
+  });
+});
+
+describe("App showing a solar return", () => {
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(createSolarReturn).mockReset().mockReturnValue(SOLAR_RETURN);
+    vi.mocked(findCurrentReturnYear).mockReset().mockReturnValue(2026);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  function returnForm() {
+    return within(screen.getByRole("form", { name: "Solar return" }));
+  }
+
+  async function openSolarReturn(): Promise<void> {
+    render(App);
+    await fillDateTime();
+    await choosePlace();
+    await submit();
+    await screen.findByRole("heading", { name: CHART_HEADING });
+    await fireEvent.click(
+      screen.getByRole("button", { name: "See solar return" }),
+    );
+  }
+
+  it("opens on the return in effect, at the birthplace", async () => {
+    await openSolarReturn();
+
+    expect(
+      await screen.findByRole("heading", { name: "Solar return 2026" }),
+    ).toBeTruthy();
+    expect(createSolarReturn).toHaveBeenLastCalledWith(
+      CHART,
+      2026,
+      CHART.details.place,
+    );
+    expect(returnForm().getByLabelText<HTMLInputElement>("Year").value).toBe(
+      "2026",
+    );
+    expect(document.activeElement?.id).toBe("return-year");
+  });
+
+  it("shows the return for another year", async () => {
+    await openSolarReturn();
+
+    await fireEvent.input(returnForm().getByLabelText("Year"), {
+      target: { value: "2030" },
+    });
+    await fireEvent.click(
+      returnForm().getByRole("button", { name: "Show solar return" }),
+    );
+
+    expect(createSolarReturn).toHaveBeenLastCalledWith(
+      CHART,
+      2030,
+      CHART.details.place,
+    );
+  });
+
+  it("asks for a whole year", async () => {
+    await openSolarReturn();
+    vi.mocked(createSolarReturn).mockClear();
+
+    await fireEvent.input(returnForm().getByLabelText("Year"), {
+      target: { value: "" },
+    });
+    await fireEvent.click(
+      returnForm().getByRole("button", { name: "Show solar return" }),
+    );
+
+    expect(returnForm().getByRole("alert").textContent).toContain(
+      "Enter a year",
+    );
+    expect(createSolarReturn).not.toHaveBeenCalled();
+  });
+
+  it("explains that a return needs the birth time", async () => {
+    vi.mocked(createChart).mockReturnValue(CHART_WITHOUT_TIME);
+    render(App);
+    await fillDateTime();
+    await fireEvent.click(screen.getByLabelText("I don't know the time"));
+    await choosePlace();
+    await submit();
+    await screen.findByRole("heading", { name: CHART_HEADING });
+
+    await fireEvent.click(
+      screen.getByRole("button", { name: "See solar return" }),
+    );
+
+    expect(returnForm().getByRole("alert").textContent).toContain(
+      "needs your birth time",
+    );
+    expect(createSolarReturn).not.toHaveBeenCalled();
+  });
+
+  it("reports a return that can't be found", async () => {
+    vi.mocked(createSolarReturn).mockImplementation(() => {
+      throw new Error("The engine gave up.");
+    });
+
+    await openSolarReturn();
+
+    expect(returnForm().getByRole("alert").textContent).toContain(
+      "Couldn't find the solar return: The engine gave up.",
+    );
+  });
+
+  it("goes back to your chart", async () => {
+    await openSolarReturn();
+
+    await fireEvent.click(
+      returnForm().getByRole("button", { name: "Back to your chart" }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: CHART_HEADING }),
+    ).toBeTruthy();
+  });
+
+  it("opens a return from a share link", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/#date=2000-01-01&time=12:00&place=2643743&return=2027" +
+        "&place_return=6167865",
+    );
+    render(App);
+
+    expect(
+      await screen.findByRole("heading", { name: "Solar return 2026" }),
+    ).toBeTruthy();
+    expect(createSolarReturn).toHaveBeenLastCalledWith(
+      CHART,
+      2027,
+      expect.objectContaining({ id: 6167865, name: "Toronto" }),
+    );
+    expect(returnForm().getByLabelText<HTMLInputElement>("Year").value).toBe(
+      "2027",
+    );
   });
 });
 
