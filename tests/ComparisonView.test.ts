@@ -4,9 +4,10 @@ import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import ComparisonView from "@/components/ComparisonView.svelte";
+import { HouseSystem } from "@/lib/houses";
 import { compareCharts } from "@/lib/synastry";
 
-import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
+import { CHART, CHART_WITHOUT_TIME, POLAR_CHART } from "./fixtures/chart";
 
 // Their Sun at 190° squares your Sun and Mars.
 const THEIRS = {
@@ -74,6 +75,31 @@ describe("ComparisonView", () => {
         name: "Your house",
       }),
     ).toBeNull();
+  });
+
+  it("says when a chart's houses fell back to Porphyry", () => {
+    // Asked for Placidus too, at a latitude where it can be cast.
+    const theirs = {
+      ...POLAR_CHART,
+      houses: { ...POLAR_CHART.houses!, houseSystem: HouseSystem.Placidus },
+    };
+
+    render(ComparisonView, { synastry: compareCharts(POLAR_CHART, theirs) });
+
+    expect(screen.getByText(/^Porphyry houses\./)).toBeTruthy();
+    expect(
+      screen.getByText(
+        /Placidus houses can't be cast this close to the pole, so your chart uses Porphyry houses/,
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText(/their chart uses Porphyry/)).toBeNull();
+  });
+
+  it("names the house system both charts use", () => {
+    render(ComparisonView, { synastry: compareCharts(CHART, THEIRS) });
+
+    expect(screen.getByText(/^Equal houses\./)).toBeTruthy();
+    expect(screen.queryByText(/can't be cast this close/)).toBeNull();
   });
 
   it("shares a link to the whole comparison", async () => {

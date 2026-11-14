@@ -2,9 +2,11 @@ import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { Body } from "@/lib/bodies";
-import { createChart, type Chart } from "@/lib/chart";
+import { createChart, usesFallbackHouses, type Chart } from "@/lib/chart";
 import { loadEphemeris } from "@/lib/ephemeris";
 import { HOUSE_COUNT, HouseSystem } from "@/lib/houses";
+
+import { CHART, CHART_WITHOUT_TIME, POLAR_CHART } from "./fixtures/chart";
 
 const WASM_PATH = "node_modules/@swisseph/browser/dist/swisseph.wasm";
 const WASM_DATA_URL =
@@ -119,5 +121,19 @@ describe("createChart without a birth time", () => {
     for (const body of known.bodies) {
       expect(body.possibleSigns).toBeUndefined();
     }
+  });
+});
+
+describe("usesFallbackHouses", () => {
+  it("is true when the houses were cast with another system", () => {
+    expect(usesFallbackHouses(POLAR_CHART)).toBe(true);
+  });
+
+  it("is false when the houses use the system asked for", () => {
+    expect(usesFallbackHouses(CHART)).toBe(false);
+  });
+
+  it("is false without houses", () => {
+    expect(usesFallbackHouses(CHART_WITHOUT_TIME)).toBe(false);
   });
 });
