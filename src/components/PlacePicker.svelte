@@ -100,12 +100,29 @@
     activeIndex = -1;
   }
 
+  // Leaving the field closes the list, so coming back reopens it for
+  // the text still there. The index loads on first focus.
+  function onFocus(): void {
+    if (index) {
+      search();
+      return;
+    }
+
+    void loadIndex();
+  }
+
   function onInput(event: Event & { currentTarget: HTMLInputElement }): void {
     query = event.currentTarget.value;
     search();
   }
 
   function onKeyDown(event: KeyboardEvent): void {
+    // Arrow Down reopens a closed list, as comboboxes do.
+    if (!isOpen && event.key === "ArrowDown") {
+      event.preventDefault();
+      search();
+      return;
+    }
     if (!isOpen) {
       return;
     }
@@ -162,7 +179,7 @@
     aria-describedby={statusId}
     class="border-rule bg-paper rounded border px-3 py-2"
     value={query}
-    onfocus={loadIndex}
+    onfocus={onFocus}
     oninput={onInput}
     onkeydown={onKeyDown}
     onblur={close}

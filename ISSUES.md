@@ -88,7 +88,7 @@ Draw a comparison, clear the second person's place, then change the house system
 
 ## P3 — Usability
 
-### 7. Place suggestions do not reopen after leaving the field
+### 7. Place suggestions do not reopen after leaving the field — fixed
 
 **Location:** `src/components/PlacePicker.svelte`, `loadIndex` and keyboard handling.
 
@@ -97,6 +97,8 @@ Search for London, move focus away, then return to the place field and press Arr
 **Suggested fix:** Re-run the search on focus when an index is available, and allow Arrow Down to reopen matching suggestions.
 
 **Verification:** Reproduced with a temporary component regression test.
+
+**Resolution:** Focusing the place field re-runs the search once the index has loaded, so leaving and returning reopens the suggestions for the text still there. With the list closed, Arrow Down re-runs the search and opens it, as the WAI-ARIA combobox pattern expects. A place that's already chosen stays closed either way, because the search skips the text of a chosen place. Component tests for refocusing, and for Arrow Down after Escape, failed before the fix and pass afterwards. A further test checks that a chosen place's list stays closed.
 
 ### 8. Mobile wheel labels are too small
 
