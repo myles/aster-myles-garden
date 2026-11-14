@@ -11,6 +11,8 @@ import {
   SWE_BODIES,
   SWE_CALCULATION_FLAGS,
   SWE_HOUSE_SYSTEMS,
+  SWE_POLAR_FALLBACK_SYSTEM,
+  SWE_POLAR_LIMITED_SYSTEMS,
 } from "@/lib/ephemeris-codes";
 import { HOUSE_COUNT, type HouseSystem } from "@/lib/houses";
 
@@ -29,6 +31,11 @@ export type HousePositions = {
   cusps: number[];
   ascendant: number;
   midheaven: number;
+  /**
+   * The system the cusps were cast with: Porphyry, inside the polar
+   * circles, when the one asked for can't be cast there.
+   */
+  houseSystem: HouseSystem;
 };
 
 /**
@@ -98,7 +105,8 @@ export function calculateBodies(julianDay: number): BodyPosition[] {
 /**
  * House cusps and angles for a Julian day (UT) and place. Longitude is
  * east-positive. Above the polar circles, Swiss Ephemeris falls back to
- * Porphyry for systems that can't be computed there (e.g. Placidus).
+ * Porphyry for systems that can't be computed there (e.g. Placidus), and
+ * `houseSystem` in the result says so.
  */
 export function calculateHouses(
   julianDay: number,
@@ -108,6 +116,32 @@ export function calculateHouses(
 ): HousePositions {
   _assertLoaded();
 
+  const houses = _castHouses(julianDay, latitude, longitude, houseSystem);
+  if (!SWE_POLAR_LIMITED_SYSTEMS.has(houseSystem)) {
+    return houses;
+  }
+
+  // The WASM binding drops the engine's error code, so a fallback shows
+  // only as cusps identical to the fallback system's.
+  const fallback = _castHouses(
+    julianDay,
+    latitude,
+    longitude,
+    SWE_POLAR_FALLBACK_SYSTEM,
+  );
+  const isFallback = houses.cusps.every(
+    (cusp, index) => cusp === fallback.cusps[index],
+  );
+
+  return isFallback ? fallback : houses;
+}
+
+function _castHouses(
+  julianDay: number,
+  latitude: number,
+  longitude: number,
+  houseSystem: HouseSystem,
+): HousePositions {
   const houses = _swe.calculateHouses(
     julianDay,
     latitude,
@@ -120,6 +154,7 @@ export function calculateHouses(
     cusps: houses.cusps.slice(1, HOUSE_COUNT + 1),
     ascendant: houses.ascendant,
     midheaven: houses.mc,
+    houseSystem,
   };
 }
 

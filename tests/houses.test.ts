@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { Body } from "@/lib/bodies";
-import { findHouse, isHouseSystem, placeInHouses } from "@/lib/houses";
+import {
+  findHouse,
+  HouseSystem,
+  isHouseSystem,
+  placeInHouses,
+} from "@/lib/houses";
 
 const EQUAL_CUSPS = Array.from({ length: 12 }, (_, i) => i * 30);
 // Cusps that wrap past 0° Aries partway round.
@@ -25,7 +30,12 @@ describe("findHouse", () => {
 });
 
 describe("placeInHouses", () => {
-  const houses = { cusps: EQUAL_CUSPS, ascendant: 0, midheaven: 270 };
+  const houses = {
+    cusps: EQUAL_CUSPS,
+    ascendant: 0,
+    midheaven: 270,
+    houseSystem: HouseSystem.Equal,
+  };
 
   it("finds the house each body falls in", () => {
     const bodies = [

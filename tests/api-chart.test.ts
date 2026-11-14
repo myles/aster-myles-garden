@@ -26,6 +26,14 @@ const BIRTH = {
   placeName: "Toronto",
 };
 
+const TROMSO_BIRTH = {
+  date: "2000-01-01",
+  time: "12:00",
+  latitude: 69.65,
+  longitude: 18.96,
+  timeZone: "Europe/Oslo",
+};
+
 function postChart(body: unknown): Promise<Response> {
   return handleChartRequest(
     new Request(CHART_URL, {
@@ -83,6 +91,7 @@ describe("formatChartForApi", () => {
     expect(formatted.bornAt).toBe("2000-01-01T12:00:00.000Z");
     expect(formatted.isTimeKnown).toBe(true);
     expect(formatted.houseSystem).toBe(HouseSystem.Equal);
+    expect(formatted.effectiveHouseSystem).toBe(HouseSystem.Equal);
     expect(formatted.bodies[0]).toEqual({
       body: Body.Sun,
       name: "Sun",
@@ -124,12 +133,33 @@ describe("handleChartRequest", () => {
     });
   });
 
+  it("names the house system it used", async () => {
+    const chart = (await (await postChart(BIRTH)).json()) as ChartV1;
+
+    expect(chart.houseSystem).toBe(HouseSystem.Placidus);
+    expect(chart.effectiveHouseSystem).toBe(HouseSystem.Placidus);
+  });
+
+  it.each([HouseSystem.Placidus, HouseSystem.Koch])(
+    "falls back from %s to Porphyry inside the Arctic Circle",
+    async (houseSystem) => {
+      const response = await postChart({ ...TROMSO_BIRTH, houseSystem });
+      const chart = (await response.json()) as ChartV1;
+
+      expect(response.status).toBe(200);
+      expect(chart.houseSystem).toBe(houseSystem);
+      expect(chart.effectiveHouseSystem).toBe(HouseSystem.Porphyry);
+      expect(chart.houses?.cusps).toHaveLength(12);
+    },
+  );
+
   it("leaves out houses without a birth time", async () => {
     const { time: _time, ...withoutTime } = BIRTH;
     const chart = (await (await postChart(withoutTime)).json()) as ChartV1;
 
     expect(chart.isTimeKnown).toBe(false);
     expect(chart.houses).toBeUndefined();
+    expect(chart.effectiveHouseSystem).toBeUndefined();
     expect(chart.bodies.every((body) => body.house === undefined)).toBe(true);
     expect(chart.bodies.every((body) => body.possibleSigns)).toBe(true);
   });

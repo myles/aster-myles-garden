@@ -30,15 +30,21 @@ The conversion does not consistently implement its documented policy of choosing
 
 ## P2 — Fix next
 
-### 3. Polar charts display the wrong house-system label
+### 3. Polar charts display the wrong house-system label — fixed in the API
 
-**Location:** `src/lib/ephemeris.ts`, `calculateHouses`; house-system labels in chart views.
+**Location:** `src/lib/ephemeris.ts`, `calculateHouses`; house-system labels in chart views. In the API: `src/lib/server/ephemeris.ts`, `calculateHouses`, and `src/lib/api/chart.ts`.
 
 Swiss Ephemeris falls back to Porphyry when it cannot calculate a requested system such as Placidus at polar latitudes. The application retains the requested system in the chart details, so the result is still labelled Placidus. At latitude `69.65`, longitude `18.96`, and Julian day `2451545`, the Placidus request returned cusps identical to an explicit Porphyry request.
 
 **Suggested fix:** Surface the fallback and display the actual house system, or ask the visitor to choose a supported system. Ensure comparisons and shared charts communicate the same behaviour.
 
 **Verification:** Reproduced against the installed WebAssembly calculation engine.
+
+**API:** The native engine behind `POST /api/v1/chart` (`@swisseph/node`) didn't fall back: it threw "Failed to calculate houses" where the WebAssembly engine returns Porphyry cusps. At the same latitude and longitude, Placidus and Koch requests returned HTTP 500, while Porphyry and Whole Sign returned 200. Reproduced by calling `handleChartRequest` directly.
+
+**Resolution (API):** Both drivers now report the system they actually cast with, as `houseSystem` on `HousePositions`. Swiss Ephemeris only falls back for Placidus and Koch (`SWE_POLAR_LIMITED_SYSTEMS` in `src/lib/ephemeris-codes.ts`). The native driver catches the binding's error for those two systems alone and casts Porphyry itself; any other error is rethrown. The WebAssembly binding drops the engine's error code, so the browser driver detects a fallback when the cusps exactly match Porphyry's. The API returns `effectiveHouseSystem` alongside the requested `houseSystem`, and leaves it out when there's no birth time. Driver tests at Tromsø failed before the fix and pass for both drivers; API tests confirm a 200 with `effectiveHouseSystem: "porphyry"` for Placidus and Koch. The built Vercel function returns the same.
+
+**Still open (site):** The chart views still label houses with the requested system. `chart.houses.houseSystem` now holds the system actually used, so the remaining fix is to display it, and to say when it differs from the one chosen.
 
 ### 4. Unsupported transit dates can throw outside error handling
 
@@ -50,6 +56,8 @@ The date field permits dates through year `9999`, but the bundled calculation en
 
 **Verification:** Confirmed that the installed engine rejects year `9999`; the uncaught calculation path was identified in code. The resulting browser behaviour remains unverified.
 
+**API:** Not affected: the API has no transits, and `POST /api/v1/chart` rejects birth dates outside the engine's range with a 400 before calculating. The range, Julian days 625,000.5 to 2,818,000.5 (about 3000 BCE to April 3003 CE), is in `SWE_MIN_JULIAN_DAY` and `SWE_MAX_JULIAN_DAY` in `src/lib/ephemeris-codes.ts`, and `isInEngineRange` in `src/lib/api/chart.ts` checks a birth date against it. The app's fix should reuse them, so the site and the API accept the same dates.
+
 ### 5. Shared links accept impossible dates and times
 
 **Location:** `src/lib/time.ts`, `parseLocalDate` and `parseLocalTime`; `src/lib/share.ts`.
@@ -59,6 +67,8 @@ The parsers validate string shape but not calendar validity or time ranges. `202
 **Suggested fix:** Validate real calendar dates, the supported year range, hours from 0 to 23 and minutes from 0 to 59. Reuse this validation when reading shared links and saved charts.
 
 **Verification:** Direct conversion reproduced the normalisation. A temporary regression test confirmed that a shared link with `date=2024-02-31&time=99:99` does not throw.
+
+**API:** Input is not affected: `chartRequestSchemaV1` in `src/lib/api/schemas.ts` rejects `2024-02-31` and `99:99` with a 400, and `tests/api-schemas.test.ts` covers both. The share links the API returns are built from validated details, so they're always well formed, but `parseShareHash` still accepts damaged ones. Validate dates and times once in `src/lib/time.ts` and use the same rules in the parsers and the API schema, so the two can't drift.
 
 ### 6. Comparison updates can leave mismatched charts — fixed
 

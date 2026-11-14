@@ -89,6 +89,7 @@ export function formatChartForApi(chart: Chart): ChartV1 {
     julianDay: chart.julianDay,
     isTimeKnown: details.time !== undefined,
     houseSystem: details.houseSystem,
+    effectiveHouseSystem: houses?.houseSystem,
     bodies: chart.bodies.map((placed) => ({
       body: placed.body,
       name: BODY_INFO[placed.body].name,

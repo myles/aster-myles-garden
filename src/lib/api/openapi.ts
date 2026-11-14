@@ -72,9 +72,9 @@ const DOCUMENT: ZodOpenApiObject = {
         description:
           "Positions, houses and aspects for a birth date, local time and " +
           "place. Without a time, the chart is cast for local noon and " +
-          "has no houses or angles. Above the polar circles, systems such " +
-          "as Placidus can't be calculated and the engine falls back to " +
-          "Porphyry, while `houseSystem` still names the one requested.",
+          "has no houses or angles. Above the polar circles, Placidus " +
+          "and Koch can't be cast, so the houses fall back to Porphyry " +
+          "and `effectiveHouseSystem` says so.",
         tags: [TAG_CHARTS],
         requestBody: {
           required: true,

@@ -10,6 +10,8 @@ const J2000_JULIAN_DAY = 2_451_545;
 // 1990-05-15 18:30 UT, an arbitrary moment away from J2000.
 const LATER_JULIAN_DAY = 2_448_027.270_833;
 const TORONTO = { latitude: 43.7064, longitude: -79.3986 };
+// Tromsø, inside the Arctic Circle, where Placidus and Koch can't be cast.
+const TROMSO = { latitude: 69.65, longitude: 18.96 };
 
 // The native and WASM builds differ by float rounding: up to about 1e-5°
 // in position (0.03″) and 6e-5° a day in speed, over 1850–2130. Far below
@@ -92,4 +94,61 @@ describe("nodeEphemeris.calculateHouses", () => {
       );
     }
   });
+});
+
+describe("polar house systems", () => {
+  const drivers = [
+    ["nodeEphemeris", nodeEphemeris],
+    ["browserEphemeris", browserEphemeris],
+  ] as const;
+
+  const castAtTromso = (
+    ephemeris: (typeof drivers)[number][1],
+    houseSystem: HouseSystem,
+  ) =>
+    ephemeris.calculateHouses(
+      J2000_JULIAN_DAY,
+      TROMSO.latitude,
+      TROMSO.longitude,
+      houseSystem,
+    );
+
+  it.each(drivers)(
+    "%s falls back to Porphyry for Placidus and Koch",
+    (_name, ephemeris) => {
+      const porphyry = castAtTromso(ephemeris, HouseSystem.Porphyry);
+
+      for (const houseSystem of [HouseSystem.Placidus, HouseSystem.Koch]) {
+        const houses = castAtTromso(ephemeris, houseSystem);
+
+        expect(houses.houseSystem).toBe(HouseSystem.Porphyry);
+        expect(houses.cusps).toEqual(porphyry.cusps);
+      }
+    },
+  );
+
+  it.each(drivers)("%s keeps systems that work there", (_name, ephemeris) => {
+    for (const houseSystem of [
+      HouseSystem.Regiomontanus,
+      HouseSystem.WholeSign,
+    ]) {
+      expect(castAtTromso(ephemeris, houseSystem).houseSystem).toBe(
+        houseSystem,
+      );
+    }
+  });
+
+  it.each(drivers)(
+    "%s reports the requested system away from the poles",
+    (_name, ephemeris) => {
+      const houses = ephemeris.calculateHouses(
+        LATER_JULIAN_DAY,
+        TORONTO.latitude,
+        TORONTO.longitude,
+        HouseSystem.Placidus,
+      );
+
+      expect(houses.houseSystem).toBe(HouseSystem.Placidus);
+    },
+  );
 });

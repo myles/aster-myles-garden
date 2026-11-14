@@ -182,7 +182,15 @@ export const chartSchemaV1 = z
     }),
     julianDay: z.number().meta({ description: "The birth moment, as UT." }),
     isTimeKnown: z.boolean(),
-    houseSystem: houseSystemSchema,
+    houseSystem: houseSystemSchema.meta({
+      description: "The house system asked for.",
+    }),
+    effectiveHouseSystem: houseSystemSchema.optional().meta({
+      description:
+        "The house system the houses were cast with. Porphyry inside " +
+        "the polar circles, where Placidus and Koch can't be cast; " +
+        "otherwise the one asked for. Absent without a birth time.",
+    }),
     bodies: z.array(placedBodySchemaV1),
     houses: housesSchemaV1.optional().meta({
       description: "Absent without a birth time.",

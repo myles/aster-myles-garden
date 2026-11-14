@@ -25,6 +25,16 @@ export const SWE_CALCULATION_FLAGS = CommonCalculationFlags.DefaultMoshier;
 export const SWE_MIN_JULIAN_DAY = 625_000.5;
 export const SWE_MAX_JULIAN_DAY = 2_818_000.5;
 
+/**
+ * Systems Swiss Ephemeris can't cast inside the polar circles. There it
+ * casts the fallback system instead, and returns an error code.
+ */
+export const SWE_POLAR_LIMITED_SYSTEMS: ReadonlySet<HouseSystem> = new Set([
+  HouseSystem.Placidus,
+  HouseSystem.Koch,
+]);
+export const SWE_POLAR_FALLBACK_SYSTEM = HouseSystem.Porphyry;
+
 export const SWE_BODIES: Record<Body, Planet | LunarPoint> = {
   [Body.Sun]: Planet.Sun,
   [Body.Moon]: Planet.Moon,
