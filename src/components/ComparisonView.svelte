@@ -8,14 +8,14 @@
   import PositionsTable from "@/components/PositionsTable.svelte";
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
-  import type { Chart } from "@/lib/chart";
+  import { usesFallbackHouses, type Chart } from "@/lib/chart";
   import { SubjectKind } from "@/lib/export";
   import {
     formatBirthDate,
     formatBirthMoment,
     formatDegrees,
   } from "@/lib/format";
-  import { HOUSE_SYSTEM_NAMES } from "@/lib/houses";
+  import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
   import type { Synastry } from "@/lib/synastry";
 
@@ -33,9 +33,27 @@
   });
 
   const people = $derived([
-    { label: "You", chart: synastry.first },
-    { label: "Them", chart: synastry.second },
+    { label: "You", chart: synastry.first, subject: "your chart uses" },
+    { label: "Them", chart: synastry.second, subject: "their chart uses" },
   ]);
+
+  // The overlays use your houses, so the label follows your chart's.
+  const houseSystem = $derived(
+    synastry.first.houses?.houseSystem ?? synastry.first.details.houseSystem,
+  );
+
+  // Each person can be at a different latitude, so each may fall back.
+  const fallbackNotes = $derived(
+    people
+      .filter(({ chart }) => usesFallbackHouses(chart))
+      .map(({ chart, subject }) =>
+        describeHouseFallback(
+          chart.details.houseSystem,
+          chart.houses!.houseSystem,
+          subject,
+        ),
+      ),
+  );
 
   const isMissingTime = $derived(
     !synastry.first.houses || !synastry.second.houses,
@@ -61,10 +79,16 @@
     {/each}
   </dl>
   <p class="text-ink-muted mt-2 text-sm">
-    {HOUSE_SYSTEM_NAMES[synastry.first.details.houseSystem]} houses. Your planets
-    sit inside the zodiac; theirs, in
+    {HOUSE_SYSTEM_NAMES[houseSystem]} houses. Your planets sit inside the zodiac;
+    theirs, in
     <span class="text-accent font-medium">this colour</span>, sit outside it.
   </p>
+
+  {#each fallbackNotes as note (note)}
+    <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">
+      {note}
+    </p>
+  {/each}
 
   {#if isMissingTime}
     <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">

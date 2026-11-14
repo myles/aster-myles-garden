@@ -30,7 +30,7 @@ The conversion does not consistently implement its documented policy of choosing
 
 ## P2 — Fix next
 
-### 3. Polar charts display the wrong house-system label — fixed in the API
+### 3. Polar charts display the wrong house-system label — fixed
 
 **Location:** `src/lib/ephemeris.ts`, `calculateHouses`; house-system labels in chart views. In the API: `src/lib/server/ephemeris.ts`, `calculateHouses`, and `src/lib/api/chart.ts`.
 
@@ -44,7 +44,7 @@ Swiss Ephemeris falls back to Porphyry when it cannot calculate a requested syst
 
 **Resolution (API):** Both drivers now report the system they actually cast with, as `houseSystem` on `HousePositions`. Swiss Ephemeris only falls back for Placidus and Koch (`SWE_POLAR_LIMITED_SYSTEMS` in `src/lib/ephemeris-codes.ts`). The native driver catches the binding's error for those two systems alone and casts Porphyry itself; any other error is rethrown. The WebAssembly binding drops the engine's error code, so the browser driver detects a fallback when the cusps exactly match Porphyry's. The API returns `effectiveHouseSystem` alongside the requested `houseSystem`, and leaves it out when there's no birth time. Driver tests at Tromsø failed before the fix and pass for both drivers; API tests confirm a 200 with `effectiveHouseSystem: "porphyry"` for Placidus and Koch. The built Vercel function returns the same.
 
-**Still open (site):** The chart views still label houses with the requested system. `chart.houses.houseSystem` now holds the system actually used, so the remaining fix is to display it, and to say when it differs from the one chosen.
+**Resolution (site):** The chart view's subheading names the system the houses were actually cast with, read from `chart.houses.houseSystem`. When that differs from the one chosen, a note explains: "Placidus houses can't be cast this close to the pole, so these are Porphyry houses." A comparison labels its houses by your chart, since the overlays use your houses, and adds a note for each person whose chart fell back, as the two can be at different latitudes. `usesFallbackHouses` in `src/lib/chart.ts` makes the comparison, and `describeHouseFallback` in `src/lib/houses.ts` writes the note. Component tests for a Tromsø chart failed before the fix and pass afterwards. Shared charts open through the same views, so they behave the same way.
 
 ### 4. Unsupported transit dates can throw outside error handling
 

@@ -45,6 +45,17 @@ export type Chart = {
   aspects: Aspect[];
 };
 
+/**
+ * Whether the houses were cast with a system other than the one asked
+ * for: inside the polar circles, Placidus and Koch fall back to Porphyry.
+ */
+export function usesFallbackHouses(chart: Chart): boolean {
+  return (
+    chart.houses !== undefined &&
+    chart.houses.houseSystem !== chart.details.houseSystem
+  );
+}
+
 /** Without a birth time, the chart is cast for the middle of the day. */
 const UNKNOWN_TIME_STANDIN: LocalTime = { hour: 12, minute: 0 };
 const DAY_START: LocalTime = { hour: 0, minute: 0 };

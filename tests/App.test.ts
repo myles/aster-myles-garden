@@ -14,7 +14,8 @@ import { createTransits } from "@/lib/transits";
 import { CHART, CHART_WITHOUT_TIME, TRANSITS } from "./fixtures/chart";
 import { PLACE_INDEX } from "./fixtures/places";
 
-vi.mock("@/lib/chart", () => ({
+vi.mock("@/lib/chart", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/chart")>()),
   createChart: vi.fn(),
   loadChartEngine: vi.fn(),
 }));

@@ -30,6 +30,22 @@ export const HOUSE_SYSTEM_NAMES: Record<HouseSystem, string> = {
 
 export const HOUSE_COUNT = 12;
 
+/**
+ * Why a chart's houses aren't the system asked for, naming whose chart.
+ * Example: (Placidus, Porphyry, "these are") → "Placidus houses can't be
+ * cast this close to the pole, so these are Porphyry houses."
+ */
+export function describeHouseFallback(
+  requested: HouseSystem,
+  used: HouseSystem,
+  subject: string,
+): string {
+  return (
+    `${HOUSE_SYSTEM_NAMES[requested]} houses can't be cast this close to ` +
+    `the pole, so ${subject} ${HOUSE_SYSTEM_NAMES[used]} houses.`
+  );
+}
+
 export function isHouseSystem(value: string): value is HouseSystem {
   return Object.values(HouseSystem).includes(value as HouseSystem);
 }
