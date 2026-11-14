@@ -2,17 +2,19 @@
 // talks to @swisseph/browser; everything else works with the domain types
 // exported here.
 
-import {
-  LunarPoint,
-  Planet,
-  HouseSystem as SweHouseSystem,
-  SwissEphemeris,
-} from "@swisseph/browser";
+import { SwissEphemeris } from "@swisseph/browser";
 // Resolved by Vite to the hashed asset URL, so dev and build agree.
 import DEFAULT_WASM_URL from "@swisseph/browser/dist/swisseph.wasm?url";
 
 import { Body } from "@/lib/bodies";
-import { HOUSE_COUNT, HouseSystem } from "@/lib/houses";
+import {
+  SWE_BODIES,
+  SWE_CALCULATION_FLAGS,
+  SWE_HOUSE_SYSTEMS,
+  SWE_POLAR_FALLBACK_SYSTEM,
+  SWE_POLAR_LIMITED_SYSTEMS,
+} from "@/lib/ephemeris-codes";
+import { HOUSE_COUNT, type HouseSystem } from "@/lib/houses";
 
 export type BodyPosition = {
   body: Body;
@@ -29,30 +31,25 @@ export type HousePositions = {
   cusps: number[];
   ascendant: number;
   midheaven: number;
+  /**
+   * The system the cusps were cast with: Porphyry, inside the polar
+   * circles, when the one asked for can't be cast there.
+   */
+  houseSystem: HouseSystem;
 };
 
-const SWE_BODIES: Record<Body, Planet | LunarPoint> = {
-  [Body.Sun]: Planet.Sun,
-  [Body.Moon]: Planet.Moon,
-  [Body.Mercury]: Planet.Mercury,
-  [Body.Venus]: Planet.Venus,
-  [Body.Mars]: Planet.Mars,
-  [Body.Jupiter]: Planet.Jupiter,
-  [Body.Saturn]: Planet.Saturn,
-  [Body.Uranus]: Planet.Uranus,
-  [Body.Neptune]: Planet.Neptune,
-  [Body.Pluto]: Planet.Pluto,
-  [Body.NorthNode]: LunarPoint.TrueNode,
-};
-
-const SWE_HOUSE_SYSTEMS: Record<HouseSystem, SweHouseSystem> = {
-  [HouseSystem.Placidus]: SweHouseSystem.Placidus,
-  [HouseSystem.Koch]: SweHouseSystem.Koch,
-  [HouseSystem.WholeSign]: SweHouseSystem.WholeSign,
-  [HouseSystem.Equal]: SweHouseSystem.Equal,
-  [HouseSystem.Porphyry]: SweHouseSystem.Porphyrius,
-  [HouseSystem.Regiomontanus]: SweHouseSystem.Regiomontanus,
-  [HouseSystem.Campanus]: SweHouseSystem.Campanus,
+/**
+ * What the chart service needs from an ephemeris. The browser and server
+ * each have a driver; both use the Moshier ephemeris, so they agree.
+ */
+export type Ephemeris = {
+  calculateBodies(julianDay: number): BodyPosition[];
+  calculateHouses(
+    julianDay: number,
+    latitude: number,
+    longitude: number,
+    houseSystem: HouseSystem,
+  ): HousePositions;
 };
 
 const _swe = new SwissEphemeris();
@@ -90,7 +87,11 @@ export function calculateBodies(julianDay: number): BodyPosition[] {
   _assertLoaded();
 
   return Object.values(Body).map((body) => {
-    const position = _swe.calculatePosition(julianDay, SWE_BODIES[body]);
+    const position = _swe.calculatePosition(
+      julianDay,
+      SWE_BODIES[body],
+      SWE_CALCULATION_FLAGS,
+    );
 
     return {
       body,
@@ -104,7 +105,8 @@ export function calculateBodies(julianDay: number): BodyPosition[] {
 /**
  * House cusps and angles for a Julian day (UT) and place. Longitude is
  * east-positive. Above the polar circles, Swiss Ephemeris falls back to
- * Porphyry for systems that can't be computed there (e.g. Placidus).
+ * Porphyry for systems that can't be computed there (e.g. Placidus), and
+ * `houseSystem` in the result says so.
  */
 export function calculateHouses(
   julianDay: number,
@@ -114,6 +116,32 @@ export function calculateHouses(
 ): HousePositions {
   _assertLoaded();
 
+  const houses = _castHouses(julianDay, latitude, longitude, houseSystem);
+  if (!SWE_POLAR_LIMITED_SYSTEMS.has(houseSystem)) {
+    return houses;
+  }
+
+  // The WASM binding drops the engine's error code, so a fallback shows
+  // only as cusps identical to the fallback system's.
+  const fallback = _castHouses(
+    julianDay,
+    latitude,
+    longitude,
+    SWE_POLAR_FALLBACK_SYSTEM,
+  );
+  const isFallback = houses.cusps.every(
+    (cusp, index) => cusp === fallback.cusps[index],
+  );
+
+  return isFallback ? fallback : houses;
+}
+
+function _castHouses(
+  julianDay: number,
+  latitude: number,
+  longitude: number,
+  houseSystem: HouseSystem,
+): HousePositions {
   const houses = _swe.calculateHouses(
     julianDay,
     latitude,
@@ -126,5 +154,9 @@ export function calculateHouses(
     cusps: houses.cusps.slice(1, HOUSE_COUNT + 1),
     ascendant: houses.ascendant,
     midheaven: houses.mc,
+    houseSystem,
   };
 }
+
+/** The WASM driver. Requires loadEphemeris() to have resolved. */
+export const browserEphemeris: Ephemeris = { calculateBodies, calculateHouses };

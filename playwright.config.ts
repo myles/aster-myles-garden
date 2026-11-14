@@ -23,10 +23,13 @@ export default defineConfig({
     },
   ],
   webServer: {
-    // Keep Astro in the foreground so Playwright can stop it after tests.
+    // `astro preview` doesn't run under the Vercel adapter, so Vite serves
+    // the built static site. The browser tests don't call the API. Keep it
+    // in the foreground so Playwright can stop it after tests.
     command:
       "npm run build && " +
-      "npm run preview -- --ignore-lock --host 127.0.0.1 --port 4399",
+      "vite preview --outDir dist/client --host 127.0.0.1 --port 4399 " +
+      "--strictPort",
     url: BASE_URL,
     reuseExistingServer: false,
   },

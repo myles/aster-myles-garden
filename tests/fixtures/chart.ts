@@ -47,6 +47,7 @@ export const CHART: Chart = {
     cusps: Array.from({ length: 12 }, (_, i) => i * 30),
     ascendant: 0,
     midheaven: 270,
+    houseSystem: HouseSystem.Equal,
   },
   aspects: [
     {

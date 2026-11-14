@@ -12,9 +12,9 @@ Most birth chart tools send your details off to a server you don't control, then
 
 ## Features
 
-- **Fully client-side.** Positions, house cusps, and angles are computed in-browser via Swiss Ephemeris (WASM). Nothing is sent anywhere unless you want it to be.
+- **Client-side.** On the site, positions, house cusps, and angles are computed in-browser via Swiss Ephemeris (WASM). Nothing you enter there is sent anywhere unless you want it to be.
 - **Accurate by default.** High-precision ephemeris data, with sensible handling of historical time zones and daylight saving.
-- **Static deploy.** Ships as a static Astro site — no backend to run or pay for.
+- **Static site, small API.** The site ships as static files. A separate [JSON API](#api) runs on a server, for tools that can't run the page.
 - **Readable chart wheel.** Rendered as SVG, so it stays crisp at any size and is easy to style or export. A written description of what it shows is read out by screen readers and shown under the wheel.
 - **Multiple house systems.** Placidus by default, with others available.
 
@@ -32,13 +32,13 @@ Every step above happens in the browser. The WASM module is loaded once on first
 
 ## Tech stack
 
-| Layer     | Choice                 |
-| --------- | ---------------------- |
-| Framework | Astro                  |
-| Language  | TypeScript             |
-| Ephemeris | Swiss Ephemeris (WASM) |
-| Hosting   | Vercel (static)        |
-| Rendering | SVG                    |
+| Layer     | Choice                      |
+| --------- | --------------------------- |
+| Framework | Astro                       |
+| Language  | TypeScript                  |
+| Ephemeris | Swiss Ephemeris (WASM)      |
+| Hosting   | Vercel (static + functions) |
+| Rendering | SVG                         |
 
 ## Getting started
 
@@ -79,6 +79,42 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 7. Press **See transits** to set the sky at a moment, now by default, against your chart. Transits count within 2° of exact, and the time is read in your own time zone.
 8. Type a name under **Save as** to keep a chart's details in this browser. Saved charts appear at the top of each form, where **Use** fills it in and draws it, and **Forget** removes it. They're stored only in your browser's local storage and never sent anywhere.
 
+## API
+
+A small JSON API calculates the same charts on a server, so tools such as the garden's MCP server can draw one without running the page. It uses Swiss Ephemeris through [`@swisseph/node`](https://github.com/swisseph-js/swisseph), with the same Moshier ephemeris as the browser, so a chart's share link draws what the API returned.
+
+The OpenAPI document is at [`/api/v1/openapi.json`](https://aster.myles.garden/api/v1/openapi.json).
+
+| Endpoint                | Does                                                                                                                            |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/v1/chart`    | Takes a date, local time, latitude, longitude, time zone and house system; returns positions, houses, aspects and a share link. |
+| `GET /api/v1/places?q=` | Searches the GeoNames index for a birthplace's latitude, longitude and time zone.                                               |
+
+```bash
+curl -s https://aster.myles.garden/api/v1/places?q=toronto
+
+curl -s -X POST https://aster.myles.garden/api/v1/chart \
+  -H 'Content-Type: application/json' \
+  -d '{"date":"1990-05-15","time":"14:30","latitude":43.7064,"longitude":-79.3986,"timeZone":"America/Toronto"}'
+```
+
+Leave out `time` when the birth time isn't known: the chart is cast for local noon, without houses or angles. Dates run from roughly 3000 BCE to 3000 CE.
+
+### Privacy
+
+- Birth details are only ever accepted in the request body, never the URL, so they stay out of access logs.
+- They're never logged or stored. On an unexpected error the server logs only the error's type, since engine messages quote the birth moment.
+- Chart responses are sent with `Cache-Control: no-store`.
+- Validation errors name the field and the rule, never the value sent.
+
+### How the code is laid out
+
+- `src/pages/api/v1/` — routes. HTTP only; each hands its request to `src/lib/api/`.
+- `src/lib/api/schemas.ts` — strict Zod schemas for every request and response. They validate input, guard output, and generate the OpenAPI document (`src/lib/api/openapi.ts`, via [`zod-openapi`](https://www.npmjs.com/package/zod-openapi)), so the document can't drift from the routes.
+- `src/lib/server/` — server-only drivers: the native ephemeris and the bundled place index. The chart service takes the ephemeris as an argument, so the browser and server share every calculation above it.
+
+`astro preview` doesn't run under the Vercel adapter. Use `npm run dev` to try the API locally.
+
 ## Roadmap
 
 See [ROADMAP.md](./ROADMAP.md).
@@ -94,7 +130,7 @@ If you want to build on this in a closed-source or permissively-licensed project
 ## Acknowledgements
 
 - [Swiss Ephemeris](https://www.astro.com/swisseph/) by Dieter Koch and Alois Treindl, Astrodienst AG — the calculation engine that makes this possible.
-- The maintainers of [`@swisseph/browser`](https://github.com/swisseph-js/swisseph), the WASM bindings that bring it to the web.
+- The maintainers of [`@swisseph/browser`](https://github.com/swisseph-js/swisseph) and `@swisseph/node`, the WASM and native bindings that bring it to the web and the API.
 - [GeoNames](https://www.geonames.org/) for place data, under CC BY 4.0.
 
 ## Code quality
@@ -107,7 +143,7 @@ CI runs tests with coverage and JUnit reports, Astro checks, formatting and lint
 
 ## Browser tests
 
-The E2E suite uses [Playwright](https://playwright.dev/docs/test-webserver) against a production build. It starts its own preview server on `127.0.0.1:4399`; keep that port free.
+The E2E suite uses [Playwright](https://playwright.dev/docs/test-webserver) against a production build. It serves the built static site with `vite preview` on `127.0.0.1:4399`; keep that port free. The browser tests don't call the API; its routes are covered by unit tests.
 
 1. Run `npx playwright install chromium` once to install the browser.
 2. Run `npm run test:e2e` to build and test desktop and 375px mobile Chromium.

@@ -1,0 +1,275 @@
+// The API's request and response shapes. They guard the routes' input and
+// output, and the OpenAPI document is generated from them, so the
+// document can't drift from what the routes accept and return.
+//
+// Every object is strict: a plain z.object silently strips keys it doesn't
+// declare, so a formatter that drifts from its schema would go unnoticed.
+// `.meta({ id })` names a schema as an OpenAPI component; give it once,
+// here, since calling `.meta()` again makes a copy without the id.
+
+import { z } from "astro/zod";
+
+import { AspectQuality, AspectType } from "@/lib/aspects";
+import { Body } from "@/lib/bodies";
+import { DEFAULT_HOUSE_SYSTEM, HOUSE_COUNT, HouseSystem } from "@/lib/houses";
+import { isTimeZone } from "@/lib/time";
+import { SIGNS } from "@/lib/zodiac";
+
+const MAX_LATITUDE_DEGREES = 90;
+const MAX_LONGITUDE_DEGREES = 180;
+const MAX_PLACE_NAME_CHARS = 80;
+const MAX_QUERY_CHARS = 100;
+
+export const DEFAULT_PLACES_LIMIT = 8;
+export const MAX_PLACES_LIMIT = 25;
+
+/** 24-hour wall-clock time, "00:00" to "23:59". */
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+const signSchema = z
+  .enum(SIGNS.map((sign) => sign.name))
+  .meta({ id: "Sign", description: "A zodiac sign." });
+
+const bodySchema = z
+  .enum(Body)
+  .meta({ id: "Body", description: "A planet or point." });
+
+const houseSystemSchema = z.enum(HouseSystem).meta({
+  id: "HouseSystem",
+  description: "How the sky is divided into the 12 houses.",
+});
+
+const houseNumberSchema = z.int().min(1).max(HOUSE_COUNT);
+
+const longitudeDescription = "Ecliptic longitude, in degrees, 0 to 360.";
+const labelDescription = "The longitude as degrees within its sign.";
+
+export const chartRequestSchemaV1 = z
+  .strictObject({
+    date: z.iso.date().meta({
+      description: "The birth date, as YYYY-MM-DD.",
+      examples: ["1990-05-15"],
+    }),
+    time: z
+      .string()
+      .regex(TIME_PATTERN, "Expected a 24-hour time, as HH:MM")
+      .optional()
+      .meta({
+        description:
+          "The local clock time at the birthplace, as 24-hour HH:MM. " +
+          "Do not convert it to UTC. Leave it out when the birth time " +
+          "isn't known: the chart is then cast for local noon, without " +
+          "houses or angles.",
+        examples: ["14:30"],
+      }),
+    latitude: z
+      .number()
+      .min(-MAX_LATITUDE_DEGREES)
+      .max(MAX_LATITUDE_DEGREES)
+      .meta({
+        description: "The birthplace's latitude, in decimal degrees.",
+        examples: [43.7064],
+      }),
+    longitude: z
+      .number()
+      .min(-MAX_LONGITUDE_DEGREES)
+      .max(MAX_LONGITUDE_DEGREES)
+      .meta({
+        description:
+          "The birthplace's longitude, in decimal degrees, east positive.",
+        examples: [-79.4163],
+      }),
+    timeZone: z
+      .string()
+      .refine(isTimeZone, "Expected an IANA time zone, e.g. America/Toronto")
+      .meta({
+        description:
+          "The birthplace's IANA time zone. Its historical offset, " +
+          "daylight saving included, is applied for the birth date.",
+        examples: ["America/Toronto"],
+      }),
+    houseSystem: houseSystemSchema.default(DEFAULT_HOUSE_SYSTEM),
+    placeName: z
+      .string()
+      .trim()
+      .max(MAX_PLACE_NAME_CHARS)
+      .optional()
+      .meta({
+        description: "A name for the birthplace, shown by the share link.",
+        examples: ["Toronto"],
+      }),
+  })
+  .meta({ id: "ChartRequest", description: "Birth details for a chart." });
+
+export type ChartRequestV1 = z.infer<typeof chartRequestSchemaV1>;
+
+const placedBodySchemaV1 = z
+  .strictObject({
+    body: bodySchema,
+    name: z.string().meta({ examples: ["Sun"] }),
+    longitude: z.number().meta({ description: longitudeDescription }),
+    latitude: z
+      .number()
+      .meta({ description: "Ecliptic latitude, in degrees." }),
+    speed: z.number().meta({
+      description:
+        "Change in longitude, in degrees per day. Negative when retrograde.",
+    }),
+    sign: signSchema,
+    label: z
+      .string()
+      .meta({ description: labelDescription, examples: ["24° 21′ Taurus"] }),
+    isRetrograde: z.boolean(),
+    house: houseNumberSchema.optional().meta({
+      description: "The house the body is in. Absent without a birth time.",
+    }),
+    possibleSigns: z
+      .array(signSchema)
+      .optional()
+      .meta({
+        description:
+          "Only without a birth time: every sign the body is in at some " +
+          "point on the birth date. Two signs means it changed sign that day.",
+      }),
+  })
+  .meta({ id: "PlacedBody" });
+
+const angleSchemaV1 = z
+  .strictObject({
+    longitude: z.number().meta({ description: longitudeDescription }),
+    sign: signSchema,
+    label: z.string().meta({ description: labelDescription }),
+  })
+  .meta({ id: "Angle" });
+
+const cuspSchemaV1 = z
+  .strictObject({
+    house: houseNumberSchema,
+    longitude: z.number().meta({ description: longitudeDescription }),
+    sign: signSchema,
+    label: z.string().meta({ description: labelDescription }),
+  })
+  .meta({ id: "HouseCusp" });
+
+const housesSchemaV1 = z
+  .strictObject({
+    cusps: z
+      .array(cuspSchemaV1)
+      .length(HOUSE_COUNT)
+      .meta({ description: "The 12 house cusps, first house first." }),
+    ascendant: angleSchemaV1,
+    midheaven: angleSchemaV1,
+  })
+  .meta({ id: "Houses" });
+
+const aspectSchemaV1 = z
+  .strictObject({
+    first: bodySchema,
+    second: bodySchema,
+    type: z.enum(AspectType).meta({ id: "AspectType" }),
+    quality: z.enum(AspectQuality).meta({ id: "AspectQuality" }),
+    orbDegrees: z.number().meta({
+      description: "How far the separation is from exact, in degrees.",
+    }),
+  })
+  .meta({ id: "Aspect" });
+
+export const chartSchemaV1 = z
+  .strictObject({
+    bornAt: z.iso.datetime().meta({
+      description: "The birth moment in UTC.",
+      examples: ["1990-05-15T18:30:00.000Z"],
+    }),
+    julianDay: z.number().meta({ description: "The birth moment, as UT." }),
+    isTimeKnown: z.boolean(),
+    houseSystem: houseSystemSchema.meta({
+      description: "The house system asked for.",
+    }),
+    effectiveHouseSystem: houseSystemSchema.optional().meta({
+      description:
+        "The house system the houses were cast with. Porphyry inside " +
+        "the polar circles, where Placidus and Koch can't be cast; " +
+        "otherwise the one asked for. Absent without a birth time.",
+    }),
+    bodies: z.array(placedBodySchemaV1),
+    houses: housesSchemaV1.optional().meta({
+      description: "Absent without a birth time.",
+    }),
+    aspects: z.array(aspectSchemaV1).meta({
+      description: "Major aspects between the planets, tightest first.",
+    }),
+    shareUrl: z.url().meta({
+      description:
+        "A link that draws this chart on the site. The details ride in " +
+        "its # fragment, which browsers never send to a server.",
+    }),
+  })
+  .meta({ id: "Chart", description: "A natal chart." });
+
+export type ChartV1 = z.infer<typeof chartSchemaV1>;
+
+export const placesQuerySchemaV1 = z.object({
+  q: z
+    .string()
+    .trim()
+    .min(1)
+    .max(MAX_QUERY_CHARS)
+    .meta({
+      description:
+        "A place name. Text after a comma narrows by region or country.",
+      examples: ["london, canada"],
+    }),
+  limit: z.coerce
+    .number<string>()
+    .int()
+    .min(1)
+    .max(MAX_PLACES_LIMIT)
+    .default(DEFAULT_PLACES_LIMIT)
+    .meta({ description: "The most places to return." }),
+});
+
+export const placeSchemaV1 = z
+  .strictObject({
+    id: z.int().meta({ description: "GeoNames ID.", examples: [6058560] }),
+    name: z.string().meta({ examples: ["London"] }),
+    region: z.string().meta({ examples: ["Ontario"] }),
+    country: z.string().meta({ examples: ["Canada"] }),
+    label: z.string().meta({ examples: ["London, Ontario, Canada"] }),
+    latitude: z.number(),
+    longitude: z.number(),
+    timeZone: z.string().meta({ examples: ["America/Toronto"] }),
+  })
+  .meta({ id: "Place", description: "A GeoNames city." });
+
+export type PlaceV1 = z.infer<typeof placeSchemaV1>;
+
+export const placesPageSchemaV1 = z
+  .strictObject({
+    next: z.null().meta({ description: "Always null: not paginated." }),
+    previous: z.null().meta({ description: "Always null: not paginated." }),
+    count: z.int().min(0),
+    result: z.array(placeSchemaV1).meta({
+      description: "Most populous first; prefix matches before the rest.",
+    }),
+  })
+  .meta({ id: "PlacesPage" });
+
+export const errorSchemaV1 = z
+  .strictObject({
+    error: z.string().meta({ examples: ["latitude: Too big"] }),
+  })
+  .meta({ id: "Error" });
+
+/**
+ * One line per problem, naming the field and the rule it broke. Zod's
+ * messages describe the rule, not the value, so nothing submitted is
+ * repeated back.
+ */
+export function formatValidationError(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const field = issue.path.join(".") || "body";
+      return `${field}: ${issue.message}`;
+    })
+    .join("; ");
+}
