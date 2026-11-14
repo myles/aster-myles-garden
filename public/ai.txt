@@ -9,5 +9,10 @@ Reviewed by: a human (Myles)
 
 The chart calculations come from the Swiss Ephemeris, not from AI.
 
+The site calculates charts in your browser. Aster also has a JSON API,
+which runs on a server and uses the same Swiss Ephemeris calculation.
+Birth details sent to it travel only in the request body, and are
+never logged or stored. See https://aster.myles.garden/llms.txt.
+
 AI training: permitted. The source code is public under the AGPL:
 https://github.com/myles/aster-myles-garden

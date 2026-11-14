@@ -6,10 +6,10 @@ import type { Place } from "@/lib/places";
 
 import { findAspects, type Aspect } from "@/lib/aspects";
 import {
-  calculateBodies,
-  calculateHouses,
+  browserEphemeris,
   loadEphemeris,
   type BodyPosition,
+  type Ephemeris,
   type HousePositions,
 } from "@/lib/ephemeris";
 import { findHouse, type HouseSystem } from "@/lib/houses";
@@ -55,22 +55,30 @@ export function loadChartEngine(): Promise<void> {
   return loadEphemeris();
 }
 
-/** Builds a chart. Requires loadChartEngine() to have resolved. */
-export function createChart(details: BirthDetails): Chart {
+/**
+ * Builds a chart. In the browser, requires loadChartEngine() to have
+ * resolved; the server passes its own ephemeris driver.
+ */
+export function createChart(
+  details: BirthDetails,
+  ephemeris: Ephemeris = browserEphemeris,
+): Chart {
   const time = details.time ?? UNKNOWN_TIME_STANDIN;
   const bornAt = toUtc({ ...details.date, ...time }, details.place.timeZone);
   const julianDay = toJulianDay(bornAt);
 
-  const positions = calculateBodies(julianDay);
+  const positions = ephemeris.calculateBodies(julianDay);
   const houses = details.time
-    ? calculateHouses(
+    ? ephemeris.calculateHouses(
         julianDay,
         details.place.latitude,
         details.place.longitude,
         details.houseSystem,
       )
     : undefined;
-  const possibleSigns = details.time ? undefined : findPossibleSigns(details);
+  const possibleSigns = details.time
+    ? undefined
+    : findPossibleSigns(details, ephemeris);
 
   const bodies = positions.map((position) => ({
     ...position,
@@ -94,9 +102,12 @@ export function createChart(details: BirthDetails): Chart {
  * comparing its positions at the start and end of that local day. No
  * body moves fast enough to cross two sign boundaries in a day.
  */
-function findPossibleSigns(details: BirthDetails): Map<Body, Sign[]> {
+function findPossibleSigns(
+  details: BirthDetails,
+  ephemeris: Ephemeris,
+): Map<Body, Sign[]> {
   const calculateAt = (time: LocalTime) =>
-    calculateBodies(
+    ephemeris.calculateBodies(
       toJulianDay(toUtc({ ...details.date, ...time }, details.place.timeZone)),
     );
   const atStart = calculateAt(DAY_START);

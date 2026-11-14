@@ -2,17 +2,17 @@
 // talks to @swisseph/browser; everything else works with the domain types
 // exported here.
 
-import {
-  LunarPoint,
-  Planet,
-  HouseSystem as SweHouseSystem,
-  SwissEphemeris,
-} from "@swisseph/browser";
+import { SwissEphemeris } from "@swisseph/browser";
 // Resolved by Vite to the hashed asset URL, so dev and build agree.
 import DEFAULT_WASM_URL from "@swisseph/browser/dist/swisseph.wasm?url";
 
 import { Body } from "@/lib/bodies";
-import { HOUSE_COUNT, HouseSystem } from "@/lib/houses";
+import {
+  SWE_BODIES,
+  SWE_CALCULATION_FLAGS,
+  SWE_HOUSE_SYSTEMS,
+} from "@/lib/ephemeris-codes";
+import { HOUSE_COUNT, type HouseSystem } from "@/lib/houses";
 
 export type BodyPosition = {
   body: Body;
@@ -31,28 +31,18 @@ export type HousePositions = {
   midheaven: number;
 };
 
-const SWE_BODIES: Record<Body, Planet | LunarPoint> = {
-  [Body.Sun]: Planet.Sun,
-  [Body.Moon]: Planet.Moon,
-  [Body.Mercury]: Planet.Mercury,
-  [Body.Venus]: Planet.Venus,
-  [Body.Mars]: Planet.Mars,
-  [Body.Jupiter]: Planet.Jupiter,
-  [Body.Saturn]: Planet.Saturn,
-  [Body.Uranus]: Planet.Uranus,
-  [Body.Neptune]: Planet.Neptune,
-  [Body.Pluto]: Planet.Pluto,
-  [Body.NorthNode]: LunarPoint.TrueNode,
-};
-
-const SWE_HOUSE_SYSTEMS: Record<HouseSystem, SweHouseSystem> = {
-  [HouseSystem.Placidus]: SweHouseSystem.Placidus,
-  [HouseSystem.Koch]: SweHouseSystem.Koch,
-  [HouseSystem.WholeSign]: SweHouseSystem.WholeSign,
-  [HouseSystem.Equal]: SweHouseSystem.Equal,
-  [HouseSystem.Porphyry]: SweHouseSystem.Porphyrius,
-  [HouseSystem.Regiomontanus]: SweHouseSystem.Regiomontanus,
-  [HouseSystem.Campanus]: SweHouseSystem.Campanus,
+/**
+ * What the chart service needs from an ephemeris. The browser and server
+ * each have a driver; both use the Moshier ephemeris, so they agree.
+ */
+export type Ephemeris = {
+  calculateBodies(julianDay: number): BodyPosition[];
+  calculateHouses(
+    julianDay: number,
+    latitude: number,
+    longitude: number,
+    houseSystem: HouseSystem,
+  ): HousePositions;
 };
 
 const _swe = new SwissEphemeris();
@@ -90,7 +80,11 @@ export function calculateBodies(julianDay: number): BodyPosition[] {
   _assertLoaded();
 
   return Object.values(Body).map((body) => {
-    const position = _swe.calculatePosition(julianDay, SWE_BODIES[body]);
+    const position = _swe.calculatePosition(
+      julianDay,
+      SWE_BODIES[body],
+      SWE_CALCULATION_FLAGS,
+    );
 
     return {
       body,
@@ -128,3 +122,6 @@ export function calculateHouses(
     midheaven: houses.mc,
   };
 }
+
+/** The WASM driver. Requires loadEphemeris() to have resolved. */
+export const browserEphemeris: Ephemeris = { calculateBodies, calculateHouses };

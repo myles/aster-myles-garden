@@ -32,10 +32,10 @@
 
 A small API, in the same style as the other myles.garden sites, so the garden's MCP server can draw charts.
 
-- [ ] `POST /api/v1/chart`: takes a date, time, latitude, longitude, time zone and house system, and returns positions, houses, aspects and a share link.
-- [ ] `GET /api/v1/places?q=`: place search, so callers can find a GeoNames ID.
+- [x] `POST /api/v1/chart`: takes a date, time, latitude, longitude, time zone and house system, and returns positions, houses, aspects and a share link.
+- [x] `GET /api/v1/places?q=`: place search, so callers can find a GeoNames latitude and longitude.
 - [ ] A client in `@myles-garden/sdk`, and `get_birth_chart` and `search_places` tools in the MCP server.
-- [ ] Privacy: birth details only ever in request bodies, never logged, and the README, `llms.txt` and `ai.txt` updated to say the API runs on a server.
+- [x] Privacy: birth details only ever in request bodies, never logged, and the README, `llms.txt` and `ai.txt` updated to say the API runs on a server.
 
 ## AT Protocol
 
