@@ -1,12 +1,12 @@
 <!-- A composite: one chart for two people, made from the midpoints of
      their positions, with its own houses, positions and aspects. -->
 <script lang="ts">
-  import AspectTable from "@/components/AspectTable.svelte";
-  import ChartDownloads from "@/components/ChartDownloads.svelte";
-  import ChartShare from "@/components/ChartShare.svelte";
-  import ChartWheel from "@/components/ChartWheel.svelte";
-  import ComparedPeople from "@/components/ComparedPeople.svelte";
-  import PositionsTable from "@/components/PositionsTable.svelte";
+  import AspectTable from "@/components/chart/AspectTable.svelte";
+  import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
+  import ChartShare from "@/components/chart/ChartShare.svelte";
+  import ChartWheel from "@/components/chart/ChartWheel.svelte";
+  import ComparedPeople from "@/components/chart/ComparedPeople.svelte";
+  import PositionsTable from "@/components/chart/PositionsTable.svelte";
   import type { Composite } from "@/lib/composite";
   import { SubjectKind } from "@/lib/export";
   import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";

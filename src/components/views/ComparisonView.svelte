@@ -2,11 +2,11 @@
      outside, the aspects between them, and each person's positions with
      where their planets fall in the other's houses. -->
 <script lang="ts">
-  import ChartDownloads from "@/components/ChartDownloads.svelte";
-  import ChartShare from "@/components/ChartShare.svelte";
-  import ChartWheel from "@/components/ChartWheel.svelte";
-  import ComparedPeople from "@/components/ComparedPeople.svelte";
-  import PositionsTable from "@/components/PositionsTable.svelte";
+  import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
+  import ChartShare from "@/components/chart/ChartShare.svelte";
+  import ChartWheel from "@/components/chart/ChartWheel.svelte";
+  import ComparedPeople from "@/components/chart/ComparedPeople.svelte";
+  import PositionsTable from "@/components/chart/PositionsTable.svelte";
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
   import { usesFallbackHouses } from "@/lib/chart";

@@ -3,7 +3,7 @@
 import { render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import ChartView from "@/components/ChartView.svelte";
+import ChartView from "@/components/views/ChartView.svelte";
 
 import { CHART, POLAR_CHART } from "./fixtures/chart";
 

@@ -2,10 +2,10 @@
      moment around it, and the aspects the transiting planets make to
      yours. -->
 <script lang="ts">
-  import ChartDownloads from "@/components/ChartDownloads.svelte";
-  import ChartShare from "@/components/ChartShare.svelte";
-  import ChartWheel from "@/components/ChartWheel.svelte";
-  import PositionsTable from "@/components/PositionsTable.svelte";
+  import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
+  import ChartShare from "@/components/chart/ChartShare.svelte";
+  import ChartWheel from "@/components/chart/ChartWheel.svelte";
+  import PositionsTable from "@/components/chart/PositionsTable.svelte";
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
   import { SubjectKind } from "@/lib/export";

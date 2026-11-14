@@ -1,11 +1,11 @@
 <!-- A solar return: the chart for the moment the Sun gets back to its natal
      position, cast where you are that year, with its positions and aspects. -->
 <script lang="ts">
-  import AspectTable from "@/components/AspectTable.svelte";
-  import ChartDownloads from "@/components/ChartDownloads.svelte";
-  import ChartShare from "@/components/ChartShare.svelte";
-  import ChartWheel from "@/components/ChartWheel.svelte";
-  import PositionsTable from "@/components/PositionsTable.svelte";
+  import AspectTable from "@/components/chart/AspectTable.svelte";
+  import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
+  import ChartShare from "@/components/chart/ChartShare.svelte";
+  import ChartWheel from "@/components/chart/ChartWheel.svelte";
+  import PositionsTable from "@/components/chart/PositionsTable.svelte";
   import { Body } from "@/lib/bodies";
   import { usesFallbackHouses } from "@/lib/chart";
   import { SubjectKind } from "@/lib/export";

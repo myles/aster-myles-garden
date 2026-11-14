@@ -1,7 +1,7 @@
 <!-- Date, time and place fields for one person. Used for your chart and for
      the person you compare it with, so every id takes a prefix. -->
 <script lang="ts">
-  import PlaceFields from "@/components/PlaceFields.svelte";
+  import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
   import { LAST_CALCULABLE_DATE_VALUE } from "@/lib/chart";
   import type { Place } from "@/lib/places";
 

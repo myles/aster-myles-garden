@@ -3,7 +3,7 @@
 import { render, screen } from "@testing-library/svelte";
 import { describe, expect, it } from "vitest";
 
-import AspectTable from "@/components/AspectTable.svelte";
+import AspectTable from "@/components/chart/AspectTable.svelte";
 
 describe("AspectTable", () => {
   it("spans every column when there are no aspects", () => {

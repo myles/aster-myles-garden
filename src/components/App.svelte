@@ -2,16 +2,16 @@
      and wheel renderer — never to the ephemeris. Once your chart is drawn,
      a second form compares it with someone else's or shows its transits. -->
 <script lang="ts">
-  import BirthFields from "@/components/BirthFields.svelte";
-  import ChartView from "@/components/ChartView.svelte";
-  import ComparisonView from "@/components/ComparisonView.svelte";
-  import CompositeView from "@/components/CompositeView.svelte";
-  import TransitView from "@/components/TransitView.svelte";
+  import BirthFields from "@/components/birth-form/BirthFields.svelte";
+  import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
   import { Panel } from "@/components/panel";
-  import PlaceFields from "@/components/PlaceFields.svelte";
-  import SaveChartRow from "@/components/SaveChartRow.svelte";
-  import SavedChartList from "@/components/SavedChartList.svelte";
-  import SolarReturnView from "@/components/SolarReturnView.svelte";
+  import SaveChartRow from "@/components/saved-charts/SaveChartRow.svelte";
+  import SavedChartList from "@/components/saved-charts/SavedChartList.svelte";
+  import ChartView from "@/components/views/ChartView.svelte";
+  import ComparisonView from "@/components/views/ComparisonView.svelte";
+  import CompositeView from "@/components/views/CompositeView.svelte";
+  import SolarReturnView from "@/components/views/SolarReturnView.svelte";
+  import TransitView from "@/components/views/TransitView.svelte";
   import {
     ASPECT_SET_NAMES,
     AspectSet,

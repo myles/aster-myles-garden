@@ -1,8 +1,8 @@
 <!-- A place, chosen from the list or, if it isn't listed, entered by its
      coordinates. Every id takes a prefix, so several can share a page. -->
 <script lang="ts">
-  import CoordinateFields from "@/components/CoordinateFields.svelte";
-  import PlacePicker from "@/components/PlacePicker.svelte";
+  import CoordinateFields from "@/components/birth-form/CoordinateFields.svelte";
+  import PlacePicker from "@/components/birth-form/PlacePicker.svelte";
   import type { Place } from "@/lib/places";
 
   let { idPrefix, place = $bindable() }: { idPrefix: string; place?: Place } =

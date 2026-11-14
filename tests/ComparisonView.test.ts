@@ -3,7 +3,7 @@
 import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import ComparisonView from "@/components/ComparisonView.svelte";
+import ComparisonView from "@/components/views/ComparisonView.svelte";
 import { HouseSystem } from "@/lib/houses";
 import { compareCharts } from "@/lib/synastry";
 

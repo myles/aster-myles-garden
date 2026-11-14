@@ -1,9 +1,9 @@
 <script lang="ts">
-  import AspectTable from "@/components/AspectTable.svelte";
-  import ChartDownloads from "@/components/ChartDownloads.svelte";
-  import ChartShare from "@/components/ChartShare.svelte";
-  import ChartWheel from "@/components/ChartWheel.svelte";
-  import PositionsTable from "@/components/PositionsTable.svelte";
+  import AspectTable from "@/components/chart/AspectTable.svelte";
+  import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
+  import ChartShare from "@/components/chart/ChartShare.svelte";
+  import ChartWheel from "@/components/chart/ChartWheel.svelte";
+  import PositionsTable from "@/components/chart/PositionsTable.svelte";
   import { usesFallbackHouses, type Chart } from "@/lib/chart";
   import { SubjectKind } from "@/lib/export";
   import {

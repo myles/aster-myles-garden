@@ -3,8 +3,8 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import ChartDownloads from "@/components/ChartDownloads.svelte";
-import ChartView from "@/components/ChartView.svelte";
+import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
+import ChartView from "@/components/views/ChartView.svelte";
 import {
   ExportFormat,
   exportTables,

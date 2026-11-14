@@ -3,7 +3,7 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import SolarReturnView from "@/components/SolarReturnView.svelte";
+import SolarReturnView from "@/components/views/SolarReturnView.svelte";
 import { HouseSystem } from "@/lib/houses";
 import { SolarReturnStyle } from "@/lib/solar-return";
 

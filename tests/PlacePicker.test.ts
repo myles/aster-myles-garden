@@ -3,7 +3,7 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import PlacePicker from "@/components/PlacePicker.svelte";
+import PlacePicker from "@/components/birth-form/PlacePicker.svelte";
 import { loadPlaceIndex } from "@/lib/places";
 
 import { PLACE_INDEX } from "./fixtures/places";
