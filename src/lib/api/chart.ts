@@ -6,12 +6,16 @@
 import { SITE_URL } from "@/consts";
 import { ASPECT_INFO } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
-import { createChart, type BirthDetails, type Chart } from "@/lib/chart";
-import { SWE_MAX_JULIAN_DAY, SWE_MIN_JULIAN_DAY } from "@/lib/ephemeris-codes";
+import {
+  canCalculateDate,
+  createChart,
+  type BirthDetails,
+  type Chart,
+} from "@/lib/chart";
 import { createCoordinatePlace, parseCoordinates } from "@/lib/places";
 import { nodeEphemeris } from "@/lib/server/ephemeris";
 import { buildShareUrl } from "@/lib/share";
-import { parseLocalDate, parseLocalTime, toJulianDay, toUtc } from "@/lib/time";
+import { parseLocalDate, parseLocalTime } from "@/lib/time";
 import { formatLongitude, getSign } from "@/lib/zodiac";
 
 import {
@@ -59,18 +63,7 @@ export function toBirthDetails(request: ChartRequestV1): BirthDetails {
 
 /** Whether the engine can calculate every moment the chart needs. */
 export function isInEngineRange(details: BirthDetails): boolean {
-  // The whole birth date is checked, since an unknown time reads both ends.
-  const dayEdges = [
-    { hour: 0, minute: 0 },
-    { hour: 23, minute: 59 },
-  ];
-
-  return dayEdges.every((time) => {
-    const julianDay = toJulianDay(
-      toUtc({ ...details.date, ...time }, details.place.timeZone),
-    );
-    return julianDay >= SWE_MIN_JULIAN_DAY && julianDay <= SWE_MAX_JULIAN_DAY;
-  });
+  return canCalculateDate(details.date, details.place.timeZone);
 }
 
 function formatAngle(longitude: number) {
