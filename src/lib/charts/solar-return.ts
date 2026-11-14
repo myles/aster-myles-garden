@@ -4,11 +4,15 @@
 
 import type { Place } from "@/lib/places";
 
-import { Body } from "@/lib/bodies";
-import { canCalculateMoment, createChartAt, type Chart } from "@/lib/chart";
-import { browserEphemeris, type Ephemeris } from "@/lib/ephemeris";
+import { Body } from "@/lib/astrology/bodies";
+import { normalizeDegrees } from "@/lib/astrology/zodiac";
+import {
+  canCalculateMoment,
+  createChartAt,
+  type Chart,
+} from "@/lib/charts/chart";
+import { browserEphemeris, type Ephemeris } from "@/lib/engine/ephemeris";
 import { fromJulianDay, toJulianDay, toLocal } from "@/lib/time";
-import { normalizeDegrees } from "@/lib/zodiac";
 
 /** The mean length of the Sun's year, in days. */
 const TROPICAL_YEAR_DAYS = 365.242_19;

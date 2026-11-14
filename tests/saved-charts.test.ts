@@ -8,7 +8,7 @@ import {
   readSavedCharts,
   removeSavedChart,
   SAVED_CHARTS_KEY,
-} from "@/lib/saved-charts";
+} from "@/lib/storage/saved-charts";
 
 import { CHART } from "./fixtures/chart";
 import { FullStorage, MemoryStorage } from "./fixtures/storage";

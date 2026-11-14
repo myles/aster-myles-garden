@@ -1,10 +1,10 @@
 // Compares two natal charts: the aspects between them, and where each
 // person's planets fall in the other's houses.
 
-import type { Chart } from "@/lib/chart";
+import type { Chart } from "@/lib/charts/chart";
 
-import { findAspectsBetween, type Aspect } from "@/lib/aspects";
-import { placeInHouses, type HouseOverlay } from "@/lib/houses";
+import { findAspectsBetween, type Aspect } from "@/lib/astrology/aspects";
+import { placeInHouses, type HouseOverlay } from "@/lib/astrology/houses";
 
 /** How a comparison is shown. */
 export enum ComparisonStyle {

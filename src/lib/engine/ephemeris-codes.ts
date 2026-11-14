@@ -8,11 +8,11 @@ import {
   HouseSystem as SweHouseSystem,
 } from "@swisseph/core";
 
-import type { BodyPosition } from "@/lib/ephemeris";
+import type { BodyPosition } from "@/lib/engine/ephemeris";
 
-import { Body, BODIES } from "@/lib/bodies";
-import { HouseSystem } from "@/lib/houses";
-import { normalizeDegrees } from "@/lib/zodiac";
+import { Body, BODIES } from "@/lib/astrology/bodies";
+import { HouseSystem } from "@/lib/astrology/houses";
+import { normalizeDegrees } from "@/lib/astrology/zodiac";
 
 /**
  * The Moshier ephemeris, with speeds. It needs no data files, so the

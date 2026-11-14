@@ -6,12 +6,15 @@
   import ChartShare from "@/components/chart/ChartShare.svelte";
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
   import PositionsTable from "@/components/chart/PositionsTable.svelte";
-  import { ASPECT_INFO } from "@/lib/aspects";
-  import { BODY_INFO } from "@/lib/bodies";
-  import { SubjectKind } from "@/lib/export";
+  import { ASPECT_INFO } from "@/lib/astrology/aspects";
+  import { BODY_INFO } from "@/lib/astrology/bodies";
+  import { SubjectKind } from "@/lib/downloads/export";
   import { formatBirthDate, formatDegrees, formatInstant } from "@/lib/format";
   import { formatPlace } from "@/lib/places";
-  import { TRANSIT_MAX_ORB_DEGREES, type Transits } from "@/lib/transits";
+  import {
+    TRANSIT_MAX_ORB_DEGREES,
+    type Transits,
+  } from "@/lib/charts/transits";
 
   let { transits, timeZone }: { transits: Transits; timeZone: string } =
     $props();

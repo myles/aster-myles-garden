@@ -1,12 +1,12 @@
 <!-- Hosts the D3 wheel. Svelte owns the <svg>; D3 owns everything in it. -->
 <script lang="ts">
-  import { describeBiWheel, describeWheel } from "@/lib/describe";
+  import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
   import {
     drawBiWheel,
     drawWheel,
     type BiWheel,
     type WheelChart,
-  } from "@/lib/wheel";
+  } from "@/lib/wheel/wheel";
 
   // svg is bindable so the chart's downloads can export the drawn wheel.
   // With biWheel, it draws a bi-wheel instead of the chart alone. title

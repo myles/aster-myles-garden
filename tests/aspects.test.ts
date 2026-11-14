@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { BodyPosition } from "@/lib/ephemeris";
+import type { BodyPosition } from "@/lib/engine/ephemeris";
 
 import {
   AspectSet,
@@ -11,8 +11,8 @@ import {
   isAspectSet,
   isOrbSize,
   OrbSize,
-} from "@/lib/aspects";
-import { Body } from "@/lib/bodies";
+} from "@/lib/astrology/aspects";
+import { Body } from "@/lib/astrology/bodies";
 
 const at = (body: Body, longitude: number): BodyPosition => ({
   body,

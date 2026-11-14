@@ -1,6 +1,6 @@
 <!-- The two people in a comparison: where and when each was born. -->
 <script lang="ts">
-  import type { Chart } from "@/lib/chart";
+  import type { Chart } from "@/lib/charts/chart";
   import { formatBirthDate, formatBirthMoment } from "@/lib/format";
   import { formatPlace } from "@/lib/places";
 

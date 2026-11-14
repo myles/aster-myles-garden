@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AspectSet, DEFAULT_ASPECT_SETTINGS } from "@/lib/aspects";
+import { AspectSet, DEFAULT_ASPECT_SETTINGS } from "@/lib/astrology/aspects";
 import {
   describeError,
   formatBirthDate,

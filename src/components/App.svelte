@@ -18,7 +18,7 @@
     DEFAULT_ASPECT_SETTINGS,
     ORB_SIZE_NAMES,
     OrbSize,
-  } from "@/lib/aspects";
+  } from "@/lib/astrology/aspects";
   import {
     canCalculateDate,
     canCalculateMoment,
@@ -27,23 +27,23 @@
     loadChartEngine,
     type BirthDetails,
     type Chart,
-  } from "@/lib/chart";
+  } from "@/lib/charts/chart";
   import { describeError } from "@/lib/format";
   import {
     DEFAULT_HOUSE_SYSTEM,
     HOUSE_SYSTEM_NAMES,
     HouseSystem,
     isHouseSystem,
-  } from "@/lib/houses";
+  } from "@/lib/astrology/houses";
   import { findPlace, loadPlaceIndex, type Place } from "@/lib/places";
-  import { readPreferences, writePreferences } from "@/lib/preferences";
+  import { readPreferences, writePreferences } from "@/lib/storage/preferences";
   import {
     addSavedChart,
     getBrowserStorage,
     readSavedCharts,
     removeSavedChart,
     type SavedChart,
-  } from "@/lib/saved-charts";
+  } from "@/lib/storage/saved-charts";
   import {
     parseShareHash,
     type SharedPerson,
@@ -53,13 +53,13 @@
     createSolarReturn,
     findCurrentReturnYear,
     SolarReturnStyle,
-  } from "@/lib/solar-return";
-  import { createComposite } from "@/lib/composite";
+  } from "@/lib/charts/solar-return";
+  import { createComposite } from "@/lib/charts/composite";
   import {
     compareCharts,
     COMPARISON_STYLE_NAMES,
     ComparisonStyle,
-  } from "@/lib/synastry";
+  } from "@/lib/charts/synastry";
   import {
     formatDateValue,
     formatTimeValue,
@@ -70,7 +70,7 @@
     toLocal,
     toUtc,
   } from "@/lib/time";
-  import { createTransits } from "@/lib/transits";
+  import { createTransits } from "@/lib/charts/transits";
   import { onMount, tick } from "svelte";
 
   /** One person's form fields. */

@@ -6,8 +6,9 @@ import {
   AspectRank,
   AspectSet,
   DEFAULT_ASPECT_SETTINGS,
-} from "@/lib/aspects";
-import { Body } from "@/lib/bodies";
+} from "@/lib/astrology/aspects";
+import { Body } from "@/lib/astrology/bodies";
+import { HOUSE_COUNT, HouseSystem } from "@/lib/astrology/houses";
 import {
   canCalculateDate,
   canCalculateMoment,
@@ -15,9 +16,8 @@ import {
   createChartAt,
   usesFallbackHouses,
   type Chart,
-} from "@/lib/chart";
-import { loadEphemeris } from "@/lib/ephemeris";
-import { HOUSE_COUNT, HouseSystem } from "@/lib/houses";
+} from "@/lib/charts/chart";
+import { loadEphemeris } from "@/lib/engine/ephemeris";
 
 import { CHART, CHART_WITHOUT_TIME, POLAR_CHART } from "./fixtures/chart";
 

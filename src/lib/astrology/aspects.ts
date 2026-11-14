@@ -1,7 +1,7 @@
-import type { BodyPosition } from "@/lib/ephemeris";
+import type { BodyPosition } from "@/lib/engine/ephemeris";
 
-import { Body, BODY_INFO, BodyKind } from "@/lib/bodies";
-import { separateDegrees } from "@/lib/zodiac";
+import { Body, BODY_INFO, BodyKind } from "@/lib/astrology/bodies";
+import { separateDegrees } from "@/lib/astrology/zodiac";
 
 export enum AspectType {
   Conjunction = "conjunction",

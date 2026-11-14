@@ -1,17 +1,21 @@
 // Lays out a chart's tables side by side as CSV, with a blank column
 // between each. Cells match the on-screen tables.
 
-import type { Chart } from "@/lib/chart";
-import type { Composite } from "@/lib/composite";
-import type { HouseOverlay } from "@/lib/houses";
-import type { Transits } from "@/lib/transits";
+import type { HouseOverlay } from "@/lib/astrology/houses";
+import type { Chart } from "@/lib/charts/chart";
+import type { Composite } from "@/lib/charts/composite";
+import type { Transits } from "@/lib/charts/transits";
 
-import { ASPECT_INFO, type Aspect, type AspectSettings } from "@/lib/aspects";
-import { BODY_INFO, type Body } from "@/lib/bodies";
+import {
+  ASPECT_INFO,
+  type Aspect,
+  type AspectSettings,
+} from "@/lib/astrology/aspects";
+import { BODY_INFO, type Body } from "@/lib/astrology/bodies";
+import { formatLongitude } from "@/lib/astrology/zodiac";
+import { SolarReturnStyle, type SolarReturn } from "@/lib/charts/solar-return";
+import { compareCharts, type Synastry } from "@/lib/charts/synastry";
 import { formatDegrees, formatNoAspects, formatPlacement } from "@/lib/format";
-import { SolarReturnStyle, type SolarReturn } from "@/lib/solar-return";
-import { compareCharts, type Synastry } from "@/lib/synastry";
-import { formatLongitude } from "@/lib/zodiac";
 
 type Row = string[];
 

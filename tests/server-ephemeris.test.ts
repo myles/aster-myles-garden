@@ -1,9 +1,9 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { Body } from "@/lib/bodies";
-import { browserEphemeris, loadEphemeris } from "@/lib/ephemeris";
-import { HouseSystem } from "@/lib/houses";
+import { Body } from "@/lib/astrology/bodies";
+import { HouseSystem } from "@/lib/astrology/houses";
+import { browserEphemeris, loadEphemeris } from "@/lib/engine/ephemeris";
 import { nodeEphemeris } from "@/lib/server/ephemeris";
 
 const J2000_JULIAN_DAY = 2_451_545;

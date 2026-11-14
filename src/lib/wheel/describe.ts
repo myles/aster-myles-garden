@@ -3,17 +3,21 @@
 // wheel shows at a glance: which way round it sits, how the planets
 // cluster around it, their balance, and the lines across the centre.
 
-import type { Chart, PlacedBody } from "@/lib/chart";
-import type { BiWheel, WheelChart } from "@/lib/wheel";
+import type { Chart, PlacedBody } from "@/lib/charts/chart";
+import type { BiWheel, WheelChart } from "@/lib/wheel/wheel";
 
 import {
   ASPECT_INFO,
   AspectQuality,
   AspectRank,
   type Aspect,
-} from "@/lib/aspects";
-import { BODY_INFO, BodyKind } from "@/lib/bodies";
-import { formatLongitude, getSign, normalizeDegrees } from "@/lib/zodiac";
+} from "@/lib/astrology/aspects";
+import { BODY_INFO, BodyKind } from "@/lib/astrology/bodies";
+import {
+  formatLongitude,
+  getSign,
+  normalizeDegrees,
+} from "@/lib/astrology/zodiac";
 
 /** Matches the wheel: without an ascendant, 0° Aries sits on the left. */
 const NATURAL_WHEEL_START_DEGREES = 0;

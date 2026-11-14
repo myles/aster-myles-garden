@@ -4,20 +4,27 @@ import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import App from "@/components/App.svelte";
-import { AspectSet, DEFAULT_ASPECT_SETTINGS, OrbSize } from "@/lib/aspects";
-import { createChart, loadChartEngine } from "@/lib/chart";
-import { createComposite } from "@/lib/composite";
-import { HouseSystem } from "@/lib/houses";
+import {
+  AspectSet,
+  DEFAULT_ASPECT_SETTINGS,
+  OrbSize,
+} from "@/lib/astrology/aspects";
+import { HouseSystem } from "@/lib/astrology/houses";
+import { createChart, loadChartEngine } from "@/lib/charts/chart";
+import { createComposite } from "@/lib/charts/composite";
+import {
+  createSolarReturn,
+  findCurrentReturnYear,
+} from "@/lib/charts/solar-return";
+import { createTransits } from "@/lib/charts/transits";
 import { loadPlaceIndex } from "@/lib/places";
 import {
   PREFERENCES_KEY,
   readPreferences,
   writePreferences,
-} from "@/lib/preferences";
-import { addSavedChart, readSavedCharts } from "@/lib/saved-charts";
-import { createSolarReturn, findCurrentReturnYear } from "@/lib/solar-return";
+} from "@/lib/storage/preferences";
+import { addSavedChart, readSavedCharts } from "@/lib/storage/saved-charts";
 import { toUtc } from "@/lib/time";
-import { createTransits } from "@/lib/transits";
 
 import {
   CHART,
@@ -28,8 +35,8 @@ import {
 } from "./fixtures/chart";
 import { PLACE_INDEX } from "./fixtures/places";
 
-vi.mock("@/lib/chart", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/chart")>()),
+vi.mock("@/lib/charts/chart", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/charts/chart")>()),
   createChart: vi.fn(),
   loadChartEngine: vi.fn(),
 }));
@@ -43,18 +50,18 @@ vi.mock("@/lib/time", async (importOriginal) => ({
 }));
 
 // The real one needs the WASM engine, which these tests never load.
-vi.mock("@/lib/transits", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/transits")>()),
+vi.mock("@/lib/charts/transits", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/charts/transits")>()),
   createTransits: vi.fn(),
 }));
 
-vi.mock("@/lib/composite", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/composite")>()),
+vi.mock("@/lib/charts/composite", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/charts/composite")>()),
   createComposite: vi.fn(),
 }));
 
-vi.mock("@/lib/solar-return", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/solar-return")>()),
+vi.mock("@/lib/charts/solar-return", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/charts/solar-return")>()),
   createSolarReturn: vi.fn(),
   findCurrentReturnYear: vi.fn(),
 }));

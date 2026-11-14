@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { AspectSet, DEFAULT_ASPECT_SETTINGS, OrbSize } from "@/lib/aspects";
-import { HouseSystem } from "@/lib/houses";
+import {
+  AspectSet,
+  DEFAULT_ASPECT_SETTINGS,
+  OrbSize,
+} from "@/lib/astrology/aspects";
+import { HouseSystem } from "@/lib/astrology/houses";
+import { SolarReturnStyle } from "@/lib/charts/solar-return";
+import { ComparisonStyle } from "@/lib/charts/synastry";
 import { buildShareUrl, parseShareHash } from "@/lib/share";
-import { SolarReturnStyle } from "@/lib/solar-return";
-import { ComparisonStyle } from "@/lib/synastry";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 

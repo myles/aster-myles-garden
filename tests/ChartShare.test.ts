@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import ChartShare from "@/components/chart/ChartShare.svelte";
-import { HouseSystem } from "@/lib/houses";
+import { HouseSystem } from "@/lib/astrology/houses";
 
 import { CHART } from "./fixtures/chart";
 

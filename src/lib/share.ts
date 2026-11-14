@@ -6,23 +6,30 @@
 // Example: https://aster.myles.garden/#date=2000-01-01&time=12:00
 //            &place=2643743&house=placidus
 
-import type { BirthDetails } from "@/lib/chart";
+import type { BirthDetails } from "@/lib/charts/chart";
 
 import {
   DEFAULT_ASPECT_SETTINGS,
   isAspectSet,
   isOrbSize,
   type AspectSettings,
-} from "@/lib/aspects";
+} from "@/lib/astrology/aspects";
+import {
+  DEFAULT_HOUSE_SYSTEM,
+  HouseSystem,
+  isHouseSystem,
+} from "@/lib/astrology/houses";
+import {
+  isSolarReturnStyle,
+  SolarReturnStyle,
+} from "@/lib/charts/solar-return";
+import { ComparisonStyle, isComparisonStyle } from "@/lib/charts/synastry";
 import { formatCoordinates } from "@/lib/format";
-import { DEFAULT_HOUSE_SYSTEM, HouseSystem, isHouseSystem } from "@/lib/houses";
 import {
   createCoordinatePlace,
   parseCoordinates,
   type Place,
 } from "@/lib/places";
-import { isSolarReturnStyle, SolarReturnStyle } from "@/lib/solar-return";
-import { ComparisonStyle, isComparisonStyle } from "@/lib/synastry";
 import {
   formatDateValue,
   formatTimeValue,

@@ -2,7 +2,7 @@
      inside the birth form, so it can't be a form itself; Enter in the name
      field saves rather than drawing the chart. -->
 <script lang="ts">
-  import { MAX_NAME_CHARS } from "@/lib/saved-charts";
+  import { MAX_NAME_CHARS } from "@/lib/storage/saved-charts";
 
   let {
     idPrefix,

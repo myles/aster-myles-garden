@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { AspectSet, OrbSize } from "@/lib/aspects";
-import { HouseSystem } from "@/lib/houses";
+import { AspectSet, OrbSize } from "@/lib/astrology/aspects";
+import { HouseSystem } from "@/lib/astrology/houses";
 import {
   PREFERENCES_KEY,
   readPreferences,
   writePreferences,
-} from "@/lib/preferences";
+} from "@/lib/storage/preferences";
 
 import { FullStorage, MemoryStorage } from "./fixtures/storage";
 

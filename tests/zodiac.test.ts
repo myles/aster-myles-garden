@@ -5,7 +5,7 @@ import {
   getSign,
   normalizeDegrees,
   separateDegrees,
-} from "@/lib/zodiac";
+} from "@/lib/astrology/zodiac";
 
 describe("normalizeDegrees", () => {
   it("wraps values into [0, 360)", () => {

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { Body } from "@/lib/bodies";
+import { Body } from "@/lib/astrology/bodies";
 import {
   findHouse,
   HouseSystem,
   isHouseSystem,
   placeInHouses,
-} from "@/lib/houses";
+} from "@/lib/astrology/houses";
 
 const EQUAL_CUSPS = Array.from({ length: 12 }, (_, i) => i * 30);
 // Cusps that wrap past 0° Aries partway round.

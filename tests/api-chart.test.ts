@@ -8,10 +8,10 @@ import {
 } from "@/lib/api/chart";
 import { CACHE_NO_STORE } from "@/lib/api/http";
 import { chartRequestSchemaV1, type ChartV1 } from "@/lib/api/schemas";
-import { AspectRank, AspectSet, OrbSize } from "@/lib/aspects";
-import { Body } from "@/lib/bodies";
-import * as chartService from "@/lib/chart";
-import { HouseSystem } from "@/lib/houses";
+import { AspectRank, AspectSet, OrbSize } from "@/lib/astrology/aspects";
+import { Body } from "@/lib/astrology/bodies";
+import { HouseSystem } from "@/lib/astrology/houses";
+import * as chartService from "@/lib/charts/chart";
 import { parseShareHash } from "@/lib/share";
 
 import { CHART } from "./fixtures/chart";

@@ -2,11 +2,11 @@
      comparison, an overlay adds the house each body falls in on the other
      person's chart. -->
 <script lang="ts">
-  import { BODY_INFO } from "@/lib/bodies";
-  import type { Chart } from "@/lib/chart";
+  import { BODY_INFO } from "@/lib/astrology/bodies";
+  import type { Chart } from "@/lib/charts/chart";
   import { formatPlacement } from "@/lib/format";
-  import type { HouseOverlay } from "@/lib/houses";
-  import { formatLongitude } from "@/lib/zodiac";
+  import type { HouseOverlay } from "@/lib/astrology/houses";
+  import { formatLongitude } from "@/lib/astrology/zodiac";
 
   let {
     chart,

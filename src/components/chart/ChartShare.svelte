@@ -2,7 +2,7 @@
      until the button is pressed. -->
 <script lang="ts">
   import { SITE_URL } from "@/consts";
-  import type { BirthDetails } from "@/lib/chart";
+  import type { BirthDetails } from "@/lib/charts/chart";
   import { describeError } from "@/lib/format";
   import { buildShareUrl, type ShareAddition } from "@/lib/share";
 

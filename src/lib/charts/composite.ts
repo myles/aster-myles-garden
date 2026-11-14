@@ -3,16 +3,16 @@
 // are cast around the midpoint of their midheavens, at the latitude
 // halfway between their birthplaces.
 
-import type { Chart, PlacedBody } from "@/lib/chart";
+import type { Chart, PlacedBody } from "@/lib/charts/chart";
 
-import { findAspects, type Aspect } from "@/lib/aspects";
+import { findAspects, type Aspect } from "@/lib/astrology/aspects";
+import { findHouse } from "@/lib/astrology/houses";
+import { normalizeDegrees } from "@/lib/astrology/zodiac";
 import {
   browserEphemeris,
   type Ephemeris,
   type HousePositions,
-} from "@/lib/ephemeris";
-import { findHouse } from "@/lib/houses";
-import { normalizeDegrees } from "@/lib/zodiac";
+} from "@/lib/engine/ephemeris";
 
 const HALF_CIRCLE_DEGREES = 180;
 

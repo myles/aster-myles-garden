@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { Body } from "@/lib/bodies";
+import { Body } from "@/lib/astrology/bodies";
+import { HouseSystem } from "@/lib/astrology/houses";
 import {
   calculateBodies,
   calculateHouses,
   loadEphemeris,
-} from "@/lib/ephemeris";
-import { HouseSystem } from "@/lib/houses";
+} from "@/lib/engine/ephemeris";
 
 const J2000_JULIAN_DAY = 2_451_545;
 const LONDON = { latitude: 51.5085, longitude: -0.1257 };

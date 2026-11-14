@@ -1,14 +1,14 @@
 // A small, hand-built chart: two bodies in opposition, Equal houses.
 
-import type { Chart } from "@/lib/chart";
-import type { Composite } from "@/lib/composite";
-import type { SolarReturn } from "@/lib/solar-return";
-import type { Transits } from "@/lib/transits";
+import type { Chart } from "@/lib/charts/chart";
+import type { Composite } from "@/lib/charts/composite";
+import type { SolarReturn } from "@/lib/charts/solar-return";
+import type { Transits } from "@/lib/charts/transits";
 
-import { AspectType } from "@/lib/aspects";
-import { Body } from "@/lib/bodies";
-import { HouseSystem } from "@/lib/houses";
-import { SIGNS } from "@/lib/zodiac";
+import { AspectType } from "@/lib/astrology/aspects";
+import { Body } from "@/lib/astrology/bodies";
+import { HouseSystem } from "@/lib/astrology/houses";
+import { SIGNS } from "@/lib/astrology/zodiac";
 
 export const CHART: Chart = {
   details: {

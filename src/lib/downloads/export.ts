@@ -2,20 +2,20 @@
 // CSV. The on-screen wheel takes its colours and fonts from page CSS, so
 // those are resolved and written onto each element before it leaves the page.
 
-import type { Chart } from "@/lib/chart";
-import type { Composite } from "@/lib/composite";
-import type { Synastry } from "@/lib/synastry";
-import type { Transits } from "@/lib/transits";
+import type { Chart } from "@/lib/charts/chart";
+import type { Composite } from "@/lib/charts/composite";
+import type { Synastry } from "@/lib/charts/synastry";
+import type { Transits } from "@/lib/charts/transits";
 
+import { SolarReturnStyle, type SolarReturn } from "@/lib/charts/solar-return";
 import {
   buildChartCsv,
   buildComparisonCsv,
   buildCompositeCsv,
   buildTransitsCsv,
   buildSolarReturnCsv,
-} from "@/lib/csv";
+} from "@/lib/downloads/csv";
 import { formatCoordinates } from "@/lib/format";
-import { SolarReturnStyle, type SolarReturn } from "@/lib/solar-return";
 
 export enum ExportFormat {
   Svg = "svg",

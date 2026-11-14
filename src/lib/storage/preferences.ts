@@ -2,8 +2,12 @@
 // system and which aspects to find. Like saved charts, they live only in
 // the visitor's own storage, which is passed in so tests can fake it.
 
-import { isAspectSet, isOrbSize, type AspectSettings } from "@/lib/aspects";
-import { isHouseSystem, type HouseSystem } from "@/lib/houses";
+import {
+  isAspectSet,
+  isOrbSize,
+  type AspectSettings,
+} from "@/lib/astrology/aspects";
+import { isHouseSystem, type HouseSystem } from "@/lib/astrology/houses";
 
 export const PREFERENCES_KEY = "aster:preferences";
 

@@ -1,7 +1,7 @@
-import type { Body } from "@/lib/bodies";
-import type { HousePositions } from "@/lib/ephemeris";
+import type { Body } from "@/lib/astrology/bodies";
+import type { HousePositions } from "@/lib/engine/ephemeris";
 
-import { normalizeDegrees } from "@/lib/zodiac";
+import { normalizeDegrees } from "@/lib/astrology/zodiac";
 
 /** The house (1–12) each body falls in. */
 export type HouseOverlay = Partial<Record<Body, number>>;

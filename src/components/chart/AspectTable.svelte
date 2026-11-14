@@ -1,7 +1,11 @@
 <!-- One chart's aspects: each pair of planets, the aspect, and its orb. -->
 <script lang="ts">
-  import { ASPECT_INFO, type Aspect, type AspectSettings } from "@/lib/aspects";
-  import { BODY_INFO } from "@/lib/bodies";
+  import {
+    ASPECT_INFO,
+    type Aspect,
+    type AspectSettings,
+  } from "@/lib/astrology/aspects";
+  import { BODY_INFO } from "@/lib/astrology/bodies";
   import { formatDegrees, formatNoAspects } from "@/lib/format";
 
   let {

@@ -7,13 +7,16 @@
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
   import ComparedPeople from "@/components/chart/ComparedPeople.svelte";
   import PositionsTable from "@/components/chart/PositionsTable.svelte";
-  import { ASPECT_INFO } from "@/lib/aspects";
-  import { BODY_INFO } from "@/lib/bodies";
-  import { usesFallbackHouses } from "@/lib/chart";
-  import { SubjectKind } from "@/lib/export";
+  import { ASPECT_INFO } from "@/lib/astrology/aspects";
+  import { BODY_INFO } from "@/lib/astrology/bodies";
+  import { usesFallbackHouses } from "@/lib/charts/chart";
+  import { SubjectKind } from "@/lib/downloads/export";
   import { formatDegrees, formatNoAspects } from "@/lib/format";
-  import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
-  import type { Synastry } from "@/lib/synastry";
+  import {
+    describeHouseFallback,
+    HOUSE_SYSTEM_NAMES,
+  } from "@/lib/astrology/houses";
+  import type { Synastry } from "@/lib/charts/synastry";
 
   let { synastry }: { synastry: Synastry } = $props();
 

@@ -4,8 +4,8 @@ import { fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import SolarReturnView from "@/components/views/SolarReturnView.svelte";
-import { HouseSystem } from "@/lib/houses";
-import { SolarReturnStyle } from "@/lib/solar-return";
+import { HouseSystem } from "@/lib/astrology/houses";
+import { SolarReturnStyle } from "@/lib/charts/solar-return";
 
 import { CHART, POLAR_CHART, SOLAR_RETURN } from "./fixtures/chart";
 

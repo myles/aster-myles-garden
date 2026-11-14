@@ -6,7 +6,8 @@ import { SwissEphemeris } from "@swisseph/browser";
 // Resolved by Vite to the hashed asset URL, so dev and build agree.
 import DEFAULT_WASM_URL from "@swisseph/browser/dist/swisseph.wasm?url";
 
-import { Body } from "@/lib/bodies";
+import { Body } from "@/lib/astrology/bodies";
+import { HOUSE_COUNT, type HouseSystem } from "@/lib/astrology/houses";
 import {
   calculateEveryBody,
   SWE_BODIES,
@@ -14,8 +15,7 @@ import {
   SWE_HOUSE_SYSTEMS,
   SWE_POLAR_FALLBACK_SYSTEM,
   SWE_POLAR_LIMITED_SYSTEMS,
-} from "@/lib/ephemeris-codes";
-import { HOUSE_COUNT, type HouseSystem } from "@/lib/houses";
+} from "@/lib/engine/ephemeris-codes";
 
 export type BodyPosition = {
   body: Body;

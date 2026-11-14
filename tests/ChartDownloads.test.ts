@@ -10,12 +10,12 @@ import {
   exportTables,
   exportWheel,
   SubjectKind,
-} from "@/lib/export";
+} from "@/lib/downloads/export";
 
 import { CHART } from "./fixtures/chart";
 
-vi.mock("@/lib/export", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/export")>()),
+vi.mock("@/lib/downloads/export", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/downloads/export")>()),
   exportWheel: vi.fn(),
   exportTables: vi.fn(),
 }));

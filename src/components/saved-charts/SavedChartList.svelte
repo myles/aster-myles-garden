@@ -1,7 +1,7 @@
 <!-- Charts saved in this browser, to fill a form with one press. -->
 <script lang="ts">
   import { formatPlace } from "@/lib/places";
-  import type { SavedChart } from "@/lib/saved-charts";
+  import type { SavedChart } from "@/lib/storage/saved-charts";
 
   let {
     charts,

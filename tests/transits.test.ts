@@ -7,12 +7,12 @@ import {
   AspectSet,
   AspectType,
   DEFAULT_ASPECT_SETTINGS,
-} from "@/lib/aspects";
-import { Body } from "@/lib/bodies";
-import { createChart, type Chart } from "@/lib/chart";
-import { loadEphemeris } from "@/lib/ephemeris";
-import { HouseSystem } from "@/lib/houses";
-import { createTransits, TRANSIT_MAX_ORB_DEGREES } from "@/lib/transits";
+} from "@/lib/astrology/aspects";
+import { Body } from "@/lib/astrology/bodies";
+import { HouseSystem } from "@/lib/astrology/houses";
+import { createChart, type Chart } from "@/lib/charts/chart";
+import { createTransits, TRANSIT_MAX_ORB_DEGREES } from "@/lib/charts/transits";
+import { loadEphemeris } from "@/lib/engine/ephemeris";
 
 const WASM_PATH = "node_modules/@swisseph/browser/dist/swisseph.wasm";
 const WASM_DATA_URL =

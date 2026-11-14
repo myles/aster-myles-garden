@@ -1,24 +1,24 @@
 import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { AspectSet, DEFAULT_ASPECT_SETTINGS } from "@/lib/aspects";
-import { Body } from "@/lib/bodies";
-import { createChart, type BirthDetails, type Chart } from "@/lib/chart";
-import {
-  browserEphemeris,
-  calculateBodies,
-  loadEphemeris,
-} from "@/lib/ephemeris";
-import { HouseSystem } from "@/lib/houses";
+import { AspectSet, DEFAULT_ASPECT_SETTINGS } from "@/lib/astrology/aspects";
+import { Body } from "@/lib/astrology/bodies";
+import { HouseSystem } from "@/lib/astrology/houses";
+import { separateDegrees } from "@/lib/astrology/zodiac";
+import { createChart, type BirthDetails, type Chart } from "@/lib/charts/chart";
 import {
   createSolarReturn,
   findCurrentReturnYear,
   findSolarReturn,
   isSolarReturnStyle,
   SolarReturnStyle,
-} from "@/lib/solar-return";
+} from "@/lib/charts/solar-return";
+import {
+  browserEphemeris,
+  calculateBodies,
+  loadEphemeris,
+} from "@/lib/engine/ephemeris";
 import { toJulianDay } from "@/lib/time";
-import { separateDegrees } from "@/lib/zodiac";
 
 const WASM_PATH = "node_modules/@swisseph/browser/dist/swisseph.wasm";
 const WASM_DATA_URL =

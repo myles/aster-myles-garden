@@ -4,14 +4,17 @@
   import ChartShare from "@/components/chart/ChartShare.svelte";
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
   import PositionsTable from "@/components/chart/PositionsTable.svelte";
-  import { usesFallbackHouses, type Chart } from "@/lib/chart";
-  import { SubjectKind } from "@/lib/export";
+  import { usesFallbackHouses, type Chart } from "@/lib/charts/chart";
+  import { SubjectKind } from "@/lib/downloads/export";
   import {
     formatBirthDate,
     formatBirthMoment,
     formatCoordinates,
   } from "@/lib/format";
-  import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
+  import {
+    describeHouseFallback,
+    HOUSE_SYSTEM_NAMES,
+  } from "@/lib/astrology/houses";
   import { formatPlace } from "@/lib/places";
 
   let { chart }: { chart: Chart } = $props();

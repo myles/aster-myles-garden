@@ -7,10 +7,13 @@
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
   import ComparedPeople from "@/components/chart/ComparedPeople.svelte";
   import PositionsTable from "@/components/chart/PositionsTable.svelte";
-  import type { Composite } from "@/lib/composite";
-  import { SubjectKind } from "@/lib/export";
-  import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
-  import { ComparisonStyle } from "@/lib/synastry";
+  import type { Composite } from "@/lib/charts/composite";
+  import { SubjectKind } from "@/lib/downloads/export";
+  import {
+    describeHouseFallback,
+    HOUSE_SYSTEM_NAMES,
+  } from "@/lib/astrology/houses";
+  import { ComparisonStyle } from "@/lib/charts/synastry";
 
   let { composite }: { composite: Composite } = $props();
 

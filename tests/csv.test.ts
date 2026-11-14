@@ -1,16 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { ASPECT_INFO, AspectSet, AspectType, OrbSize } from "@/lib/aspects";
-import { Body, BODY_INFO } from "@/lib/bodies";
+import {
+  ASPECT_INFO,
+  AspectSet,
+  AspectType,
+  OrbSize,
+} from "@/lib/astrology/aspects";
+import { Body, BODY_INFO } from "@/lib/astrology/bodies";
+import { SolarReturnStyle } from "@/lib/charts/solar-return";
+import { compareCharts } from "@/lib/charts/synastry";
 import {
   buildChartCsv,
   buildComparisonCsv,
   buildCompositeCsv,
   buildTransitsCsv,
   buildSolarReturnCsv,
-} from "@/lib/csv";
-import { SolarReturnStyle } from "@/lib/solar-return";
-import { compareCharts } from "@/lib/synastry";
+} from "@/lib/downloads/csv";
 
 import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "./fixtures/chart";
 

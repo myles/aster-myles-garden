@@ -6,15 +6,21 @@
   import ChartShare from "@/components/chart/ChartShare.svelte";
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
   import PositionsTable from "@/components/chart/PositionsTable.svelte";
-  import { Body } from "@/lib/bodies";
-  import { usesFallbackHouses } from "@/lib/chart";
-  import { SubjectKind } from "@/lib/export";
+  import { Body } from "@/lib/astrology/bodies";
+  import { usesFallbackHouses } from "@/lib/charts/chart";
+  import { SubjectKind } from "@/lib/downloads/export";
   import { formatBirthMoment } from "@/lib/format";
-  import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
+  import {
+    describeHouseFallback,
+    HOUSE_SYSTEM_NAMES,
+  } from "@/lib/astrology/houses";
   import { formatPlace } from "@/lib/places";
-  import { SolarReturnStyle, type SolarReturn } from "@/lib/solar-return";
-  import { compareCharts } from "@/lib/synastry";
-  import { formatLongitude } from "@/lib/zodiac";
+  import {
+    SolarReturnStyle,
+    type SolarReturn,
+  } from "@/lib/charts/solar-return";
+  import { compareCharts } from "@/lib/charts/synastry";
+  import { formatLongitude } from "@/lib/astrology/zodiac";
 
   let {
     solarReturn,

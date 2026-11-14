@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import CompositeView from "@/components/views/CompositeView.svelte";
-import { HouseSystem } from "@/lib/houses";
+import { HouseSystem } from "@/lib/astrology/houses";
 
 import { CHART, COMPOSITE } from "./fixtures/chart";
 

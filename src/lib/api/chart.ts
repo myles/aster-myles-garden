@@ -4,19 +4,19 @@
 // body, are never written to a log, and the response is never cached.
 
 import { SITE_URL } from "@/consts";
-import { ASPECT_INFO, DEFAULT_ASPECT_SETTINGS } from "@/lib/aspects";
-import { BODY_INFO } from "@/lib/bodies";
+import { ASPECT_INFO, DEFAULT_ASPECT_SETTINGS } from "@/lib/astrology/aspects";
+import { BODY_INFO } from "@/lib/astrology/bodies";
+import { formatLongitude, getSign } from "@/lib/astrology/zodiac";
 import {
   canCalculateDate,
   createChart,
   type BirthDetails,
   type Chart,
-} from "@/lib/chart";
+} from "@/lib/charts/chart";
 import { createCoordinatePlace, parseCoordinates } from "@/lib/places";
 import { nodeEphemeris } from "@/lib/server/ephemeris";
 import { buildShareUrl } from "@/lib/share";
 import { parseLocalDate, parseLocalTime } from "@/lib/time";
-import { formatLongitude, getSign } from "@/lib/zodiac";
 
 import {
   errorResponse,

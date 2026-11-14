@@ -2,7 +2,7 @@
      the person you compare it with, so every id takes a prefix. -->
 <script lang="ts">
   import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
-  import { LAST_CALCULABLE_DATE_VALUE } from "@/lib/chart";
+  import { LAST_CALCULABLE_DATE_VALUE } from "@/lib/charts/chart";
   import type { Place } from "@/lib/places";
 
   let {

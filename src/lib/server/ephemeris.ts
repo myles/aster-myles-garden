@@ -1,14 +1,15 @@
 // Server driver for the Swiss Ephemeris, through the native @swisseph/node
-// binding. The API's counterpart to src/lib/ephemeris.ts: same domain
-// types, same engine codes and flags, so both draw the same chart.
+// binding. The API's counterpart to src/lib/engine/ephemeris.ts: same
+// domain types, same engine codes and flags, so both draw the same chart.
 
 import {
   calculateHouses as calculateSweHouses,
   calculatePosition,
 } from "@swisseph/node";
 
-import type { Ephemeris, HousePositions } from "@/lib/ephemeris";
+import type { Ephemeris, HousePositions } from "@/lib/engine/ephemeris";
 
+import { HOUSE_COUNT, type HouseSystem } from "@/lib/astrology/houses";
 import {
   calculateEveryBody,
   SWE_BODIES,
@@ -16,8 +17,7 @@ import {
   SWE_HOUSE_SYSTEMS,
   SWE_POLAR_FALLBACK_SYSTEM,
   SWE_POLAR_LIMITED_SYSTEMS,
-} from "@/lib/ephemeris-codes";
-import { HOUSE_COUNT, type HouseSystem } from "@/lib/houses";
+} from "@/lib/engine/ephemeris-codes";
 
 function castHouses(
   julianDay: number,

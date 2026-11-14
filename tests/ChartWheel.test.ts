@@ -4,7 +4,7 @@ import { fireEvent, render, screen, within } from "@testing-library/svelte";
 import { describe, expect, it } from "vitest";
 
 import ChartWheel from "@/components/chart/ChartWheel.svelte";
-import { describeBiWheel, describeWheel } from "@/lib/describe";
+import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
 
 import { CHART } from "./fixtures/chart";
 

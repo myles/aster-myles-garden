@@ -2,15 +2,15 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { SolarReturnStyle } from "@/lib/charts/solar-return";
+import { compareCharts } from "@/lib/charts/synastry";
 import {
   ExportFormat,
   exportTables,
   exportWheel,
   SubjectKind,
-} from "@/lib/export";
-import { SolarReturnStyle } from "@/lib/solar-return";
-import { compareCharts } from "@/lib/synastry";
-import { drawBiWheel, drawWheel } from "@/lib/wheel";
+} from "@/lib/downloads/export";
+import { drawBiWheel, drawWheel } from "@/lib/wheel/wheel";
 
 import { CHART, CHART_WITHOUT_TIME, SOLAR_RETURN } from "./fixtures/chart";
 

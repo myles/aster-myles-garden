@@ -6,7 +6,7 @@
     exportTables,
     exportWheel,
     type ExportSubject,
-  } from "@/lib/export";
+  } from "@/lib/downloads/export";
   import { describeError } from "@/lib/format";
 
   let { subject, wheel }: { subject: ExportSubject; wheel?: SVGSVGElement } =

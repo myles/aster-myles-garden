@@ -16,11 +16,15 @@ import {
   AspectType,
   DEFAULT_ASPECT_SETTINGS,
   OrbSize,
-} from "@/lib/aspects";
-import { Body } from "@/lib/bodies";
-import { DEFAULT_HOUSE_SYSTEM, HOUSE_COUNT, HouseSystem } from "@/lib/houses";
+} from "@/lib/astrology/aspects";
+import { Body } from "@/lib/astrology/bodies";
+import {
+  DEFAULT_HOUSE_SYSTEM,
+  HOUSE_COUNT,
+  HouseSystem,
+} from "@/lib/astrology/houses";
+import { SIGNS } from "@/lib/astrology/zodiac";
 import { isTimeZone } from "@/lib/time";
-import { SIGNS } from "@/lib/zodiac";
 
 const MAX_LATITUDE_DEGREES = 90;
 const MAX_LONGITUDE_DEGREES = 180;

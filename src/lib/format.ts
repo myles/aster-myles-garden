@@ -1,11 +1,11 @@
-import type { Chart, PlacedBody } from "@/lib/chart";
+import type { Chart, PlacedBody } from "@/lib/charts/chart";
 
 import {
   AspectSet,
   DEFAULT_ASPECT_SETTINGS,
   type AspectSettings,
-} from "@/lib/aspects";
-import { formatLongitude, getSign } from "@/lib/zodiac";
+} from "@/lib/astrology/aspects";
+import { formatLongitude, getSign } from "@/lib/astrology/zodiac";
 
 const MINUTES_PER_DEGREE = 60;
 const COORDINATE_DECIMALS = 2;

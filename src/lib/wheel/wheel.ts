@@ -9,19 +9,19 @@
 import { select, type Selection } from "d3-selection";
 import { arc } from "d3-shape";
 
-import type { Chart, PlacedBody } from "@/lib/chart";
-import type { HousePositions } from "@/lib/ephemeris";
+import type { Chart, PlacedBody } from "@/lib/charts/chart";
+import type { HousePositions } from "@/lib/engine/ephemeris";
 
-import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
-import { BODY_INFO } from "@/lib/bodies";
-import { describeBiWheel, describeWheel } from "@/lib/describe";
-import { HOUSE_COUNT } from "@/lib/houses";
+import { ASPECT_INFO, type Aspect } from "@/lib/astrology/aspects";
+import { BODY_INFO } from "@/lib/astrology/bodies";
+import { HOUSE_COUNT } from "@/lib/astrology/houses";
 import {
   DEGREES_PER_CIRCLE,
   DEGREES_PER_SIGN,
   normalizeDegrees,
   SIGNS,
-} from "@/lib/zodiac";
+} from "@/lib/astrology/zodiac";
+import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
 
 const WHEEL_SIZE_PX = 600;
 const CENTRE_PX = WHEEL_SIZE_PX / 2;

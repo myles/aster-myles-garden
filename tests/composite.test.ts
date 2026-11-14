@@ -6,13 +6,13 @@ import {
   AspectRank,
   AspectSet,
   DEFAULT_ASPECT_SETTINGS,
-} from "@/lib/aspects";
-import { Body } from "@/lib/bodies";
-import { createChart, type BirthDetails, type Chart } from "@/lib/chart";
-import { createComposite, findMidpoint } from "@/lib/composite";
-import { browserEphemeris, loadEphemeris } from "@/lib/ephemeris";
-import { HouseSystem } from "@/lib/houses";
-import { separateDegrees } from "@/lib/zodiac";
+} from "@/lib/astrology/aspects";
+import { Body } from "@/lib/astrology/bodies";
+import { HouseSystem } from "@/lib/astrology/houses";
+import { separateDegrees } from "@/lib/astrology/zodiac";
+import { createChart, type BirthDetails, type Chart } from "@/lib/charts/chart";
+import { createComposite, findMidpoint } from "@/lib/charts/composite";
+import { browserEphemeris, loadEphemeris } from "@/lib/engine/ephemeris";
 
 const WASM_PATH = "node_modules/@swisseph/browser/dist/swisseph.wasm";
 const WASM_DATA_URL =

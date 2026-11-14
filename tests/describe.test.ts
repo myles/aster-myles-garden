@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { AspectType } from "@/lib/aspects";
-import { describeBiWheel, describeWheel } from "@/lib/describe";
-import { compareCharts } from "@/lib/synastry";
+import { AspectType } from "@/lib/astrology/aspects";
+import { compareCharts } from "@/lib/charts/synastry";
+import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 

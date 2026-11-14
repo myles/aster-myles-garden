@@ -5,8 +5,8 @@ import {
   formatValidationError,
   placesQuerySchemaV1,
 } from "@/lib/api/schemas";
-import { AspectSet, OrbSize } from "@/lib/aspects";
-import { HouseSystem } from "@/lib/houses";
+import { AspectSet, OrbSize } from "@/lib/astrology/aspects";
+import { HouseSystem } from "@/lib/astrology/houses";
 import { parseLocalDate, parseLocalTime } from "@/lib/time";
 
 const VALID_REQUEST = {

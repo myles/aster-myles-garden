@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import type { Chart } from "@/lib/chart";
+import type { Chart } from "@/lib/charts/chart";
 
-import { AspectSet, AspectType, DEFAULT_ASPECT_SETTINGS } from "@/lib/aspects";
-import { Body } from "@/lib/bodies";
-import { compareCharts } from "@/lib/synastry";
+import {
+  AspectSet,
+  AspectType,
+  DEFAULT_ASPECT_SETTINGS,
+} from "@/lib/astrology/aspects";
+import { Body } from "@/lib/astrology/bodies";
+import { compareCharts } from "@/lib/charts/synastry";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 

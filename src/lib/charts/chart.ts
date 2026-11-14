@@ -1,21 +1,28 @@
 // Chart service: turns birth details into a complete natal chart. Sits
 // between the UI and the ephemeris driver.
 
-import type { Body } from "@/lib/bodies";
+import type { Body } from "@/lib/astrology/bodies";
 import type { Place } from "@/lib/places";
 
-import { findAspects, type Aspect, type AspectSettings } from "@/lib/aspects";
+import {
+  findAspects,
+  type Aspect,
+  type AspectSettings,
+} from "@/lib/astrology/aspects";
+import { findHouse, type HouseSystem } from "@/lib/astrology/houses";
+import { getSign, type Sign } from "@/lib/astrology/zodiac";
 import {
   browserEphemeris,
   loadEphemeris,
   type BodyPosition,
   type Ephemeris,
   type HousePositions,
-} from "@/lib/ephemeris";
-import { SWE_MAX_JULIAN_DAY, SWE_MIN_JULIAN_DAY } from "@/lib/ephemeris-codes";
-import { findHouse, type HouseSystem } from "@/lib/houses";
+} from "@/lib/engine/ephemeris";
+import {
+  SWE_MAX_JULIAN_DAY,
+  SWE_MIN_JULIAN_DAY,
+} from "@/lib/engine/ephemeris-codes";
 import { toJulianDay, toUtc, type LocalDate, type LocalTime } from "@/lib/time";
-import { getSign, type Sign } from "@/lib/zodiac";
 
 export type BirthDetails = {
   date: LocalDate;

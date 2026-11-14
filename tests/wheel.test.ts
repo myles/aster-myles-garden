@@ -2,11 +2,11 @@
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { AspectType } from "@/lib/aspects";
-import { describeBiWheel, describeWheel } from "@/lib/describe";
-import { compareCharts } from "@/lib/synastry";
-import { drawBiWheel, drawWheel, spreadLongitudes } from "@/lib/wheel";
-import { separateDegrees } from "@/lib/zodiac";
+import { AspectType } from "@/lib/astrology/aspects";
+import { separateDegrees } from "@/lib/astrology/zodiac";
+import { compareCharts } from "@/lib/charts/synastry";
+import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
+import { drawBiWheel, drawWheel, spreadLongitudes } from "@/lib/wheel/wheel";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 
