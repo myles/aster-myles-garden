@@ -51,6 +51,60 @@ test("draws a chart using the real calculation engine", async ({ page }) => {
   await expect(page).toHaveURL("/");
 });
 
+for (const format of ["SVG", "PNG"]) {
+  test(`keeps angle labels clear and exports ${format}`, async ({
+    page,
+  }, testInfo) => {
+    await drawChart(page);
+    await page.evaluate(() => document.fonts.ready);
+
+    const wheel = page.getByRole("img", { name: "Natal chart wheel" });
+    const collisions = await wheel.evaluate((svg) => {
+      const labels = svg.querySelectorAll(".wheel-axis-label");
+      const annotations = svg.querySelectorAll(
+        ".wheel-body-degree, .wheel-body-retrograde",
+      );
+      const overlaps: string[] = [];
+
+      for (const label of labels) {
+        const axis = label.getBoundingClientRect();
+
+        for (const annotation of annotations) {
+          const body = annotation.getBoundingClientRect();
+          if (
+            axis.left < body.right &&
+            axis.right > body.left &&
+            axis.top < body.bottom &&
+            axis.bottom > body.top
+          ) {
+            overlaps.push(`${label.textContent}: ${annotation.textContent}`);
+          }
+        }
+      }
+
+      return overlaps;
+    });
+    expect(collisions).toEqual([]);
+    await wheel.screenshot({ path: testInfo.outputPath("wheel.png") });
+
+    const pendingDownload = page.waitForEvent("download");
+    await page
+      .getByRole("button", {
+        name: `Download wheel as ${format}`,
+      })
+      .click();
+    const download = await pendingDownload;
+
+    expect(await download.failure()).toBeNull();
+    expect(download.suggestedFilename()).toMatch(
+      new RegExp(`\\.${format.toLowerCase()}$`),
+    );
+    await download.saveAs(
+      testInfo.outputPath(`export.${format.toLowerCase()}`),
+    );
+  });
+}
+
 test("compares two charts and returns to the natal chart", async ({ page }) => {
   await compareCharts(page);
   await expect(

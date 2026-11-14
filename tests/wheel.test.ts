@@ -123,6 +123,51 @@ describe("drawWheel", () => {
     expect(Number(label?.getAttribute("x"))).toBeLessThan(150);
   });
 
+  it.each([0, 45, 90, 135, 180, 225, 270, 315])(
+    "keeps angle labels clear of bodies at %s degrees",
+    (longitude) => {
+      drawWheel(svg, {
+        ...CHART,
+        houses: { ...CHART.houses!, midheaven: longitude },
+        bodies: CHART.bodies.map((body, index) => ({
+          ...body,
+          longitude: longitude + 4 + index * 180,
+          isRetrograde: true,
+        })),
+      });
+
+      const labels = svg.querySelectorAll(".wheel-axis-label");
+      const annotations = svg.querySelectorAll(
+        ".wheel-body-degree, .wheel-body-retrograde",
+      );
+
+      for (const label of labels) {
+        const x = Number(label.getAttribute("x"));
+        const y = Number(label.getAttribute("y"));
+        const anchor = label.getAttribute("text-anchor");
+        const left = x - (anchor === "start" ? 0 : 20);
+        const right = x + (anchor === "end" ? 0 : 20);
+
+        for (const annotation of annotations) {
+          const bodyX = Number(annotation.getAttribute("x"));
+          const bodyY = Number(annotation.getAttribute("y"));
+          const halfWidth = annotation.classList.contains(
+            "wheel-body-retrograde",
+          )
+            ? 6
+            : 12;
+
+          // Conservative text bounds at the wheel's 11px font size.
+          const isClear =
+            right + 2 <= bodyX - halfWidth ||
+            left - 2 >= bodyX + halfWidth ||
+            Math.abs(y - bodyY) >= 16;
+          expect(isClear).toBe(true);
+        }
+      }
+    },
+  );
+
   it("updates in place when redrawn", () => {
     const sun = svg.querySelector("g.wheel-body");
     const direct = {

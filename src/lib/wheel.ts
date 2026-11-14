@@ -39,7 +39,7 @@ const BODY_RETROGRADE_RADIUS_PX = 176;
 const HOUSE_RING_RADIUS_PX = 152;
 const HOUSE_NUMBER_RADIUS_PX = 138;
 const ASPECT_RADIUS_PX = 124;
-const ANGLE_LABEL_RADIUS_PX = 164;
+const ANGLE_LABEL_RADIUS_PX = 159;
 const ANGLE_LABEL_OFFSET_DEGREES = 4;
 
 // The bi-wheel's outer ring, outside the zodiac. Its viewBox grows by a
@@ -101,7 +101,12 @@ type Layer = (typeof LAYERS)[number];
 
 type Point = { x: number; y: number };
 type Segment = { from: Point; to: Point; className: string };
-type Label = { at: Point; text: string; className: string };
+type Label = {
+  at: Point;
+  text: string;
+  className: string;
+  textAnchor?: "start" | "middle" | "end";
+};
 type Ring = { radius: number; className: string };
 
 /** Where a chart's bodies sit: inside the zodiac, or outside it. */
@@ -197,7 +202,7 @@ function joinLabels(parent: Parent, labels: Label[]): void {
     .attr("class", (d) => d.className)
     .attr("x", (d) => round(d.at.x))
     .attr("y", (d) => round(d.at.y))
-    .attr("text-anchor", "middle")
+    .attr("text-anchor", (d) => d.textAnchor ?? "middle")
     .attr("dominant-baseline", "central")
     .text((d) => d.text);
 }
@@ -323,15 +328,22 @@ function drawAxes(parent: Parent, houses: HousePositions | undefined): void {
 
   joinLabels(
     parent,
-    axes.map((axis) => ({
-      at: project(
+    axes.map((axis) => {
+      const at = project(
         axis.longitude + ANGLE_LABEL_OFFSET_DEGREES,
         ascendant,
         ANGLE_LABEL_RADIUS_PX,
-      ),
-      text: axis.label,
-      className: "wheel-axis-label",
-    })),
+      );
+
+      // Keep the text towards the centre, inside the bodies' annotation
+      // ring, even when a retrograde body sits directly on an angle.
+      return {
+        at,
+        text: axis.label,
+        className: "wheel-axis-label",
+        textAnchor: at.x < CENTRE_PX ? "start" : "end",
+      };
+    }),
   );
 }
 
