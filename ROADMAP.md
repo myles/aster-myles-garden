@@ -30,10 +30,16 @@
 - [ ] Sidereal zodiac, with a choice of ayanamsa
 - [ ] Optional high-precision ephemeris files, and Chiron with them: the built-in Moshier ephemeris has no asteroids
 - [ ] Secondary progressions: the chart moved on a day for each year of life, set against the natal chart as transits are
+- [ ] Lunar returns: the month's chart for the moment the Moon returns to its natal position, found the way solar returns are, on its own or against the natal chart
+- [ ] Exact transit dates: when each transit is exact, and when it comes into and leaves orb, found the way solar returns are
 
 ## Polish
 
 - [ ] Listen to the page with a real screen reader, such as VoiceOver or NVDA, for reading order and anything read twice
+- [ ] Measure angle labels' drawn size in the browser instead of estimating it, so they stay clear if the font or its size changes
+- [ ] Compare the browser tests' wheel screenshots against approved ones, so a label or glyph that moves fails the build
+- [ ] A smaller place index: at 2.6 MB, it's fetched and parsed whole on the first search, which may be slow on a phone. Measure first, then split or trim it if it is
+- [ ] Choose a light or dark wheel when downloading, rather than always taking the page's current theme
 
 ## API
 
