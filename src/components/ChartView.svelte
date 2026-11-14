@@ -50,7 +50,9 @@
 </script>
 
 <div>
-  <h2 class="font-serif text-2xl">{formatPlace(chart.details.place)}</h2>
+  <h2 class="font-serif text-2xl" tabindex="-1">
+    {formatPlace(chart.details.place)}
+  </h2>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
 
   {#if fallbackNote}

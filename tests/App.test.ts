@@ -39,9 +39,26 @@ vi.mock("@/lib/places", async (importOriginal) => ({
   loadPlaceIndex: vi.fn(),
 }));
 
+/**
+ * jsdom has no layout, so it has no matchMedia either. A narrow layout
+ * stacks the result below the forms, as on a phone.
+ */
+function stubLayout(isNarrow: boolean): void {
+  window.matchMedia = vi
+    .fn()
+    .mockReturnValue({ matches: isNarrow }) as unknown as typeof matchMedia;
+}
+
+function wasScrolledTo(element: Element): boolean {
+  return vi
+    .mocked(Element.prototype.scrollIntoView)
+    .mock.contexts.includes(element);
+}
+
 // Saved charts live in localStorage, which jsdom keeps between tests.
 beforeEach(() => {
   localStorage.clear();
+  stubLayout(false);
 });
 
 async function fillDateTime(): Promise<void> {
@@ -376,6 +393,24 @@ describe("App comparing two charts", () => {
     await vi.waitFor(() =>
       expect(document.activeElement?.id).toBe("compare-date"),
     );
+  });
+
+  it("brings the comparison into view on a narrow layout", async () => {
+    render(App);
+    await drawYourChart();
+    stubLayout(true);
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+
+    await fillTheirForm();
+    await pressCompare();
+
+    const heading = await screen.findByRole("heading", {
+      name: "Chart comparison",
+    });
+    await vi.waitFor(() => expect(document.activeElement).toBe(heading));
+    expect(wasScrolledTo(heading)).toBe(true);
   });
 
   it("draws the comparison with your house system", async () => {
@@ -1132,5 +1167,51 @@ describe("App with dates outside the engine's range", () => {
     expect(screen.getByLabelText<HTMLInputElement>("Date").max).toBe(
       "3002-12-31",
     );
+  });
+});
+
+describe("App revealing the result", () => {
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  it("brings the chart into view on a narrow layout", async () => {
+    stubLayout(true);
+    render(App);
+    await fillDateTime();
+    await choosePlace();
+
+    await submit();
+
+    const heading = await screen.findByRole("heading", { name: CHART_HEADING });
+    await vi.waitFor(() => expect(document.activeElement).toBe(heading));
+    expect(wasScrolledTo(heading)).toBe(true);
+  });
+
+  it("leaves focus alone when the chart is beside the form", async () => {
+    render(App);
+    await fillDateTime();
+    await choosePlace();
+
+    await submit();
+
+    const heading = await screen.findByRole("heading", { name: CHART_HEADING });
+    expect(document.activeElement).not.toBe(heading);
+    expect(wasScrolledTo(heading)).toBe(false);
+  });
+
+  it("keeps the form in view when its details are incomplete", async () => {
+    stubLayout(true);
+    render(App);
+
+    await submit();
+
+    expect(screen.getAllByRole("alert")[0].textContent).toContain(
+      "Enter both a date and a time.",
+    );
+    expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
   });
 });

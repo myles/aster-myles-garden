@@ -29,7 +29,7 @@
 </script>
 
 <div>
-  <h2 class="font-serif text-2xl">Transits</h2>
+  <h2 class="font-serif text-2xl" tabindex="-1">Transits</h2>
   <p class="text-ink-muted mt-1 text-sm">
     {formatInstant(transits.at, timeZone)} · against your chart for
     {formatPlace(transits.natal.details.place)},
