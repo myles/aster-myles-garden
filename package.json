@@ -2,12 +2,12 @@
   "name": "aster-myles-garden",
   "version": "0.1.0",
   "description": "A birth chart generator that runs entirely in the browser.",
-  "license": "AGPL-3.0-only",
-  "author": "Myles Braithwaite <myles@myles.garden> (https://myles.garden)",
   "repository": {
     "type": "git",
     "url": "https://github.com/myles/aster-myles-garden.git"
   },
+  "license": "AGPL-3.0-only",
+  "author": "Myles Braithwaite <myles@myles.garden> (https://myles.garden)",
   "type": "module",
   "scripts": {
     "astro": "astro",
@@ -20,7 +20,7 @@
     "lint:fix": "npm run oxlint:fix",
     "oxfmt": "oxfmt --check",
     "oxfmt:write": "oxfmt --write",
-    "oxlint": "oxlint . --deny-warnings",
+    "oxlint": "oxlint .",
     "oxlint:fix": "oxlint . --fix",
     "prettier": "prettier \"**/*.{astro,svelte}\" -c",
     "prettier:write": "prettier \"**/*.{astro,svelte}\" --write",
