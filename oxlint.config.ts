@@ -7,7 +7,7 @@ export default defineConfig({
     "no-console": "off",
     // Underscores mark private members in this project.
     "no-underscore-dangle": "off",
-    // Report existing style issues without blocking the tooling migration.
+    // Keep style diagnostics as warnings; lint fails on either severity.
     "import/no-unassigned-import": "warn",
     "promise/always-return": "warn",
     "unicorn/consistent-function-scoping": "warn",

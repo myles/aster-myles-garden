@@ -141,7 +141,7 @@ If you want to build on this in a closed-source or permissively-licensed project
 
 Run `npm run format` to check formatting and `npm run format:fix` to apply it. Oxfmt formats standard source and data files; Prettier handles Astro and Svelte files. Generated place data is excluded.
 
-Run `npm run lint` for oxlint, or `npm run lint:fix` for automatic fixes. Existing style issues are warnings; correctness checks remain errors.
+Run `npm run lint` for oxlint, or `npm run lint:fix` for automatic fixes. Lint fails on warnings as well as errors, locally and in CI.
 
 CI runs tests with coverage and JUnit reports, Astro checks, formatting and lint checks on pushes and pull requests to `main`. Use `npm run test:coverage` to generate coverage locally.
 

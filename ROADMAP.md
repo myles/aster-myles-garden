@@ -21,6 +21,7 @@
 - [x] Composite charts: the midpoints of two charts, with houses cast around the midpoint of their midheavens
 - [x] Solar returns: the year's chart for the moment the Sun returns to its natal position, cast wherever you choose
 - [x] House system and aspect settings remembered in the browser between visits
+- [x] Clear the lint warnings, then have CI fail on new ones
 
 ## Charts
 
@@ -32,7 +33,6 @@
 ## Polish
 
 - [ ] Keep the angle labels clear on the wheel: bodies' degrees and retrograde marks can sit on top of AC and DC
-- [ ] Clear the lint warnings, then have CI fail on new ones
 - [ ] Listen to the page with a real screen reader, such as VoiceOver or NVDA, for reading order and anything read twice
 
 ## API

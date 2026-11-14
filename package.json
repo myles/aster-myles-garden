@@ -20,7 +20,7 @@
     "lint:fix": "npm run oxlint:fix",
     "oxfmt": "oxfmt --check",
     "oxfmt:write": "oxfmt --write",
-    "oxlint": "oxlint .",
+    "oxlint": "oxlint . --deny-warnings",
     "oxlint:fix": "oxlint . --fix",
     "prettier": "prettier \"**/*.{astro,svelte}\" -c",
     "prettier:write": "prettier \"**/*.{astro,svelte}\" --write",
