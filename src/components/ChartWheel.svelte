@@ -1,16 +1,27 @@
 <!-- Hosts the D3 wheel. Svelte owns the <svg>; D3 owns everything in it. -->
 <script lang="ts">
-  import type { Chart } from "@/lib/chart";
   import { describeBiWheel, describeWheel } from "@/lib/describe";
-  import { drawBiWheel, drawWheel, type BiWheel } from "@/lib/wheel";
+  import {
+    drawBiWheel,
+    drawWheel,
+    type BiWheel,
+    type WheelChart,
+  } from "@/lib/wheel";
 
   // svg is bindable so the chart's downloads can export the drawn wheel.
-  // With biWheel, it draws a bi-wheel instead of the chart alone.
+  // With biWheel, it draws a bi-wheel instead of the chart alone. title
+  // names a single wheel that isn't a natal chart.
   let {
     chart,
     biWheel,
+    title,
     svg = $bindable(),
-  }: { chart: Chart; biWheel?: BiWheel; svg?: SVGSVGElement } = $props();
+  }: {
+    chart: WheelChart;
+    biWheel?: BiWheel;
+    title?: string;
+    svg?: SVGSVGElement;
+  } = $props();
 
   // On a phone the fitted wheel's labels are a few pixels tall. Enlarged,
   // it keeps this width and scrolls sideways instead, about three times
@@ -31,7 +42,7 @@
       return;
     }
 
-    drawWheel(svg!, chart);
+    drawWheel(svg!, chart, title);
   });
 </script>
 

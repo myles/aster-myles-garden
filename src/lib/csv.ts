@@ -2,11 +2,12 @@
 // between each. Cells match the on-screen tables.
 
 import type { Chart } from "@/lib/chart";
+import type { Composite } from "@/lib/composite";
 import type { HouseOverlay } from "@/lib/houses";
 import type { Synastry } from "@/lib/synastry";
 import type { Transits } from "@/lib/transits";
 
-import { ASPECT_INFO, type Aspect } from "@/lib/aspects";
+import { ASPECT_INFO, type Aspect, type AspectSettings } from "@/lib/aspects";
 import { BODY_INFO } from "@/lib/bodies";
 import { formatDegrees, formatNoAspects, formatPlacement } from "@/lib/format";
 import { formatLongitude } from "@/lib/zodiac";
@@ -40,7 +41,22 @@ export function buildChartCsv(chart: Chart): string {
     {
       title: "Aspects",
       headings: ASPECT_HEADINGS,
-      rows: buildAspectRows(chart),
+      rows: buildAspectRows(chart.aspects, chart.details.aspectSettings),
+    },
+  ]);
+}
+
+/** A composite: its Positions and Aspects tables, as for one chart. */
+export function buildCompositeCsv(composite: Composite): string {
+  return layOutSideBySide([
+    buildPositionsTable("Composite positions", composite),
+    {
+      title: "Aspects",
+      headings: ASPECT_HEADINGS,
+      rows: buildAspectRows(
+        composite.aspects,
+        composite.first.details.aspectSettings,
+      ),
     },
   ]);
 }
@@ -154,9 +170,12 @@ function buildPositionsTable(
   return { title, headings, rows };
 }
 
-function buildAspectRows({ aspects, details }: Chart): Row[] {
+function buildAspectRows(
+  aspects: Aspect[],
+  settings: AspectSettings | undefined,
+): Row[] {
   if (aspects.length === 0) {
-    return [[`${formatNoAspects(details.aspectSettings)} within orb.`, "", ""]];
+    return [[`${formatNoAspects(settings)} within orb.`, "", ""]];
   }
 
   return aspects.map((aspect) => {
@@ -174,8 +193,8 @@ function buildAspectRows({ aspects, details }: Chart): Row[] {
 
 function buildCrossAspectRows({ aspects, first }: Synastry): Row[] {
   if (aspects.length === 0) {
-    const text = `${formatNoAspects(first.details.aspectSettings)} between you.`;
-    return [[text, "", "", ""]];
+    const settings = first.details.aspectSettings;
+    return [[`${formatNoAspects(settings)} between you.`, "", "", ""]];
   }
 
   return aspects.map((aspect) => {

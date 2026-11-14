@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { AspectSet, DEFAULT_ASPECT_SETTINGS, OrbSize } from "@/lib/aspects";
 import { HouseSystem } from "@/lib/houses";
 import { buildShareUrl, parseShareHash } from "@/lib/share";
+import { ComparisonStyle } from "@/lib/synastry";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
 
@@ -205,8 +206,41 @@ describe("share links for a comparison", () => {
         "&date2=1990-05-15&time2=12:00&place2=x",
       "second chart's place",
     ],
+    [
+      "an unknown comparison style",
+      "#date=2000-01-01&time=12:00&place=1" +
+        "&date2=1990-05-15&time2=12:00&place2=1&comparison=blend",
+      "comparison",
+    ],
+    [
+      "a comparison style without a second chart",
+      "#date=2000-01-01&time=12:00&place=1&comparison=composite",
+      "second chart",
+    ],
   ])("rejects %s", (_, hash, message) => {
     expect(() => parseShareHash(hash)).toThrow(message);
+  });
+
+  it("asks for the composite when it's shown", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, {
+      comparedWith: THEIRS,
+      comparisonStyle: ComparisonStyle.Composite,
+    });
+
+    expect(url).toMatch(/&place2=2643743&comparison=composite$/);
+    expect(parseShareHash(new URL(url).hash)?.comparisonStyle).toBe(
+      ComparisonStyle.Composite,
+    );
+  });
+
+  it("leaves the bi-wheel, the default, out", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, {
+      comparedWith: THEIRS,
+      comparisonStyle: ComparisonStyle.BiWheel,
+    });
+
+    expect(url).not.toContain("comparison=");
+    expect(parseShareHash(new URL(url).hash)?.comparisonStyle).toBeUndefined();
   });
 });
 

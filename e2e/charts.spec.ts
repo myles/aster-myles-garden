@@ -1,6 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
+import { placeOptions } from "./places";
+
 const PLACE_FIXTURE_PATH = fileURLToPath(
   new URL("./fixtures/places.json", import.meta.url),
 );
@@ -9,7 +11,7 @@ async function fillBirthDetails(form: Locator, place: string): Promise<void> {
   await form.getByLabel("Date", { exact: true }).fill("2000-01-01");
   await form.getByLabel("Time", { exact: true }).fill("12:00");
   await form.getByRole("combobox", { name: "Place" }).fill(place);
-  await form.getByRole("option").first().click();
+  await placeOptions(form).first().click();
 }
 
 async function drawChart(page: Page): Promise<void> {
@@ -61,6 +63,19 @@ test("compares two charts and returns to the natal chart", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Chart comparison" }),
   ).toHaveCount(0);
+});
+
+test("draws the composite of two charts", async ({ page }) => {
+  await compareCharts(page);
+  await page.getByRole("radio", { name: "Composite" }).check();
+
+  await expect(
+    page.getByRole("img", { name: "Composite chart wheel" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Composite positions" }),
+  ).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
 });
 
 test("preserves both charts when comparison details are incomplete", async ({

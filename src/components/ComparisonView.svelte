@@ -5,19 +5,14 @@
   import ChartDownloads from "@/components/ChartDownloads.svelte";
   import ChartShare from "@/components/ChartShare.svelte";
   import ChartWheel from "@/components/ChartWheel.svelte";
+  import ComparedPeople from "@/components/ComparedPeople.svelte";
   import PositionsTable from "@/components/PositionsTable.svelte";
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
-  import { usesFallbackHouses, type Chart } from "@/lib/chart";
+  import { usesFallbackHouses } from "@/lib/chart";
   import { SubjectKind } from "@/lib/export";
-  import {
-    formatBirthDate,
-    formatBirthMoment,
-    formatDegrees,
-    formatNoAspects,
-  } from "@/lib/format";
+  import { formatDegrees, formatNoAspects } from "@/lib/format";
   import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
-  import { formatPlace } from "@/lib/places";
   import type { Synastry } from "@/lib/synastry";
 
   let { synastry }: { synastry: Synastry } = $props();
@@ -34,8 +29,8 @@
   });
 
   const people = $derived([
-    { label: "You", chart: synastry.first, subject: "your chart uses" },
-    { label: "Them", chart: synastry.second, subject: "their chart uses" },
+    { chart: synastry.first, subject: "your chart uses" },
+    { chart: synastry.second, subject: "their chart uses" },
   ]);
 
   // The overlays use your houses, so the label follows your chart's.
@@ -59,26 +54,11 @@
   const isMissingTime = $derived(
     !synastry.first.houses || !synastry.second.houses,
   );
-
-  function describeBirth(chart: Chart): string {
-    const moment = chart.details.time
-      ? formatBirthMoment(chart)
-      : `${formatBirthDate(chart)}, time unknown`;
-
-    return `${formatPlace(chart.details.place)} · ${moment}`;
-  }
 </script>
 
 <div>
   <h2 class="font-serif text-2xl" tabindex="-1">Chart comparison</h2>
-  <dl class="mt-2 flex flex-col gap-1 text-sm">
-    {#each people as person (person.label)}
-      <div class="flex gap-2">
-        <dt class="w-12 shrink-0 font-medium">{person.label}</dt>
-        <dd class="text-ink-muted">{describeBirth(person.chart)}</dd>
-      </div>
-    {/each}
-  </dl>
+  <ComparedPeople first={synastry.first} second={synastry.second} />
   <p class="text-ink-muted mt-2 text-sm">
     {HOUSE_SYSTEM_NAMES[houseSystem]} houses. Your planets sit inside the zodiac;
     theirs, in

@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
+import { placeOptions } from "./places";
+
 const PLACE_FIXTURE_PATH = fileURLToPath(
   new URL("./fixtures/places.json", import.meta.url),
 );
@@ -25,7 +27,7 @@ test("draws a chart offline once the site has been opened", async ({
   // Search for a place while online, so the place index is cached too.
   const form = page.getByRole("form", { name: "Your birth details" });
   await form.getByRole("combobox", { name: "Place" }).fill("London");
-  await expect(form.getByRole("option").first()).toBeVisible();
+  await expect(placeOptions(form).first()).toBeVisible();
 
   await context.setOffline(true);
   await page.reload();
@@ -34,7 +36,7 @@ test("draws a chart offline once the site has been opened", async ({
   await form.getByLabel("Date", { exact: true }).fill("2000-01-01");
   await form.getByLabel("Time", { exact: true }).fill("12:00");
   await form.getByRole("combobox", { name: "Place" }).fill("London");
-  await form.getByRole("option").first().click();
+  await placeOptions(form).first().click();
   await form.getByRole("button", { name: "Draw chart" }).click();
 
   await expect(

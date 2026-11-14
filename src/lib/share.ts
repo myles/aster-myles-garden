@@ -21,6 +21,7 @@ import {
   parseCoordinates,
   type Place,
 } from "@/lib/places";
+import { ComparisonStyle, isComparisonStyle } from "@/lib/synastry";
 import {
   formatDateValue,
   formatTimeValue,
@@ -44,6 +45,8 @@ const HOUSE_PARAM = "house";
 const ASPECTS_PARAM = "aspects";
 const ORBS_PARAM = "orbs";
 const TRANSITS_PARAM = "transits";
+// How a comparison is shown, written only when it isn't the bi-wheel.
+const COMPARISON_PARAM = "comparison";
 
 /** A transit moment in UTC, to the minute. Example: "2026-11-13T20:05Z". */
 const TRANSITS_PATTERN = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})Z$/;
@@ -73,6 +76,8 @@ export type SharedDetails = SharedPerson & {
   aspectSettings: AspectSettings;
   /** The second person, when the link is for a comparison. */
   comparedWith?: SharedPerson;
+  /** Only when the link shows a comparison other than the bi-wheel. */
+  comparisonStyle?: ComparisonStyle;
   /** The moment to show transits for, when the link is for transits. */
   transitsAt?: Date;
 };
@@ -80,6 +85,8 @@ export type SharedDetails = SharedPerson & {
 /** What a link can add to a chart: a comparison or transits, not both. */
 export type ShareAddition = {
   comparedWith?: BirthDetails;
+  /** How the comparison is shown. Undefined means the bi-wheel. */
+  comparisonStyle?: ComparisonStyle;
   transitsAt?: Date;
 };
 
@@ -111,7 +118,7 @@ const SECOND_PERSON: PersonParams = {
 export function buildShareUrl(
   details: BirthDetails,
   siteUrl: string,
-  { comparedWith, transitsAt }: ShareAddition = {},
+  { comparedWith, comparisonStyle, transitsAt }: ShareAddition = {},
 ): string {
   const url = new URL("/", siteUrl);
   const params = new URLSearchParams();
@@ -121,6 +128,9 @@ export function buildShareUrl(
   writeAspectSettings(params, details.aspectSettings);
   if (comparedWith) {
     writePerson(params, comparedWith, SECOND_PERSON);
+  }
+  if (comparedWith && comparisonStyle === ComparisonStyle.Composite) {
+    params.set(COMPARISON_PARAM, comparisonStyle);
   }
   if (transitsAt) {
     const minute = transitsAt.toISOString().slice(0, MINUTE_ISO_LENGTH);
@@ -155,6 +165,7 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
 
   const aspectSettings = readAspectSettings(params);
   const comparedWith = readPerson(params, SECOND_PERSON);
+  const comparisonStyle = readComparisonStyle(params, comparedWith);
   const transitsAt = readTransitsAt(params);
 
   if (comparedWith && transitsAt) {
@@ -166,8 +177,29 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
     houseSystem: house,
     aspectSettings,
     comparedWith,
+    comparisonStyle,
     transitsAt,
   };
+}
+
+/** Undefined when the link doesn't choose how a comparison is shown. */
+function readComparisonStyle(
+  params: URLSearchParams,
+  comparedWith: SharedPerson | undefined,
+): ComparisonStyle | undefined {
+  const value = params.get(COMPARISON_PARAM);
+  if (value === null) {
+    return undefined;
+  }
+
+  if (!isComparisonStyle(value)) {
+    throw new Error(`The link's comparison isn't known: "${value}".`);
+  }
+  if (!comparedWith) {
+    throw new Error("The link chooses a comparison but has no second chart.");
+  }
+
+  return value;
 }
 
 /** Old links, and links with the default settings, have neither param. */

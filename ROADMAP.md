@@ -18,10 +18,11 @@
 - [x] Lilith and the South Node
 - [x] Minor aspects and tight, standard or wide orbs, carried by share links and the API
 - [x] Works offline as an installed app, using a service worker
+- [x] Composite charts: the midpoints of two charts, with houses cast around the midpoint of their midheavens
 
 ## Charts
 
-- [ ] Composite and solar return charts
+- [ ] Solar return charts
 - [ ] Sidereal zodiac, with a choice of ayanamsa
 - [ ] Optional high-precision ephemeris files, and Chiron with them: the built-in Moshier ephemeris has no asteroids
 

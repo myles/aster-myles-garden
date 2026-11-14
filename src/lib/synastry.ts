@@ -6,6 +6,23 @@ import type { Chart } from "@/lib/chart";
 import { findAspectsBetween, type Aspect } from "@/lib/aspects";
 import { placeInHouses, type HouseOverlay } from "@/lib/houses";
 
+/** How a comparison is shown. */
+export enum ComparisonStyle {
+  /** Both charts, yours inside and theirs outside. */
+  BiWheel = "biWheel",
+  /** One chart made from the midpoints of the two. */
+  Composite = "composite",
+}
+
+export const COMPARISON_STYLE_NAMES: Record<ComparisonStyle, string> = {
+  [ComparisonStyle.BiWheel]: "Bi-wheel",
+  [ComparisonStyle.Composite]: "Composite",
+};
+
+export function isComparisonStyle(value: string): value is ComparisonStyle {
+  return Object.values(ComparisonStyle).includes(value as ComparisonStyle);
+}
+
 export type Synastry = {
   /** "You": the inner chart of the bi-wheel. */
   first: Chart;

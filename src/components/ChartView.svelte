@@ -1,18 +1,15 @@
 <script lang="ts">
+  import AspectTable from "@/components/AspectTable.svelte";
   import ChartDownloads from "@/components/ChartDownloads.svelte";
   import ChartShare from "@/components/ChartShare.svelte";
   import ChartWheel from "@/components/ChartWheel.svelte";
   import PositionsTable from "@/components/PositionsTable.svelte";
-  import { ASPECT_INFO } from "@/lib/aspects";
-  import { BODY_INFO } from "@/lib/bodies";
   import { usesFallbackHouses, type Chart } from "@/lib/chart";
   import { SubjectKind } from "@/lib/export";
   import {
     formatBirthDate,
     formatBirthMoment,
     formatCoordinates,
-    formatDegrees,
-    formatNoAspects,
   } from "@/lib/format";
   import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
@@ -77,43 +74,10 @@
   <div class="grid gap-8 xl:grid-cols-2">
     <PositionsTable {chart} title="Positions" />
 
-    <div>
-      <h3 class="mb-2 font-serif text-lg">Aspects</h3>
-      <table class="w-full text-sm">
-        <thead class="text-ink-muted text-left">
-          <tr class="border-rule border-b">
-            <th scope="col" class="py-1.5 font-normal">Pair</th>
-            <th scope="col" class="py-1.5 font-normal">Aspect</th>
-            <th scope="col" class="py-1.5 text-right font-normal">Orb</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each chart.aspects as aspect (`${aspect.first}-${aspect.second}`)}
-            {@const first = BODY_INFO[aspect.first]}
-            {@const second = BODY_INFO[aspect.second]}
-            {@const info = ASPECT_INFO[aspect.type]}
-            <tr class="border-rule/60 border-b">
-              <td class="py-1.5">
-                {first.glyph}
-                {first.name} – {second.glyph}
-                {second.name}
-              </td>
-              <td class="py-1.5">{info.glyph} {info.name}</td>
-              <td class="py-1.5 text-right tabular-nums">
-                {formatDegrees(aspect.orbDegrees)}
-              </td>
-            </tr>
-          {:else}
-            <tr class="border-rule/60 border-b">
-              <td class="py-1.5">
-                {formatNoAspects(chart.details.aspectSettings)} within orb.
-              </td>
-              <td class="py-1.5"></td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
+    <AspectTable
+      aspects={chart.aspects}
+      settings={chart.details.aspectSettings}
+    />
   </div>
 
   <div class="border-rule mt-10 grid gap-8 border-t pt-5 sm:grid-cols-2">

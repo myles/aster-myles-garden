@@ -3,10 +3,16 @@
 // those are resolved and written onto each element before it leaves the page.
 
 import type { Chart } from "@/lib/chart";
+import type { Composite } from "@/lib/composite";
 import type { Synastry } from "@/lib/synastry";
 import type { Transits } from "@/lib/transits";
 
-import { buildChartCsv, buildComparisonCsv, buildTransitsCsv } from "@/lib/csv";
+import {
+  buildChartCsv,
+  buildComparisonCsv,
+  buildCompositeCsv,
+  buildTransitsCsv,
+} from "@/lib/csv";
 
 export enum ExportFormat {
   Svg = "svg",
@@ -16,6 +22,7 @@ export enum ExportFormat {
 export enum SubjectKind {
   Chart = "chart",
   Comparison = "comparison",
+  Composite = "composite",
   Transits = "transits",
 }
 
@@ -23,6 +30,7 @@ export enum SubjectKind {
 export type ExportSubject =
   | { kind: SubjectKind.Chart; chart: Chart }
   | { kind: SubjectKind.Comparison; synastry: Synastry }
+  | { kind: SubjectKind.Composite; composite: Composite }
   | { kind: SubjectKind.Transits; transits: Transits };
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
@@ -80,6 +88,8 @@ function buildCsv(subject: ExportSubject): string {
       return buildChartCsv(subject.chart);
     case SubjectKind.Comparison:
       return buildComparisonCsv(subject.synastry);
+    case SubjectKind.Composite:
+      return buildCompositeCsv(subject.composite);
     case SubjectKind.Transits:
       return buildTransitsCsv(subject.transits);
   }
@@ -215,6 +225,7 @@ function downloadBlob(blob: Blob, filename: string): void {
  * Examples, for a chart born in London on 1 Jan 2000 at 12:00:
  * - the chart → "aster-london-2000-01-01-1200"
  * - compared → "aster-london-2000-01-01-1200-and-toronto-1990-05-15"
+ * - composite → the comparison's name, then "-composite"
  * - transits → "aster-london-2000-01-01-1200-transits-2026-11-13-2000-utc"
  */
 function buildFilename(subject: ExportSubject, extension: string): string {
@@ -226,9 +237,9 @@ function describeSubject(subject: ExportSubject): string {
     case SubjectKind.Chart:
       return describeChart(subject.chart);
     case SubjectKind.Comparison:
-      return [subject.synastry.first, subject.synastry.second]
-        .map(describeChart)
-        .join("-and-");
+      return describePair(subject.synastry);
+    case SubjectKind.Composite:
+      return `${describePair(subject.composite)}-composite`;
     case SubjectKind.Transits:
       return (
         `${describeChart(subject.transits.natal)}-transits-` +
@@ -251,6 +262,10 @@ function describeInstant(at: Date): string {
  * Example: London on 1 Jan 2000, 12:00 → "london-2000-01-01-1200". A chart
  * without a birth time leaves its time part off.
  */
+function describePair(pair: { first: Chart; second: Chart }): string {
+  return `${describeChart(pair.first)}-and-${describeChart(pair.second)}`;
+}
+
 function describeChart(chart: Chart): string {
   const { date, time, place } = chart.details;
   const pad = (value: number) => String(value).padStart(2, "0");

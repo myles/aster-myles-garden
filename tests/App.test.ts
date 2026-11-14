@@ -6,13 +6,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "@/components/App.svelte";
 import { AspectSet, DEFAULT_ASPECT_SETTINGS, OrbSize } from "@/lib/aspects";
 import { createChart, loadChartEngine } from "@/lib/chart";
+import { createComposite } from "@/lib/composite";
 import { HouseSystem } from "@/lib/houses";
 import { loadPlaceIndex } from "@/lib/places";
 import { addSavedChart, readSavedCharts } from "@/lib/saved-charts";
 import { toUtc } from "@/lib/time";
 import { createTransits } from "@/lib/transits";
 
-import { CHART, CHART_WITHOUT_TIME, TRANSITS } from "./fixtures/chart";
+import {
+  CHART,
+  CHART_WITHOUT_TIME,
+  COMPOSITE,
+  TRANSITS,
+} from "./fixtures/chart";
 import { PLACE_INDEX } from "./fixtures/places";
 
 vi.mock("@/lib/chart", async (importOriginal) => ({
@@ -33,6 +39,11 @@ vi.mock("@/lib/time", async (importOriginal) => ({
 vi.mock("@/lib/transits", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/transits")>()),
   createTransits: vi.fn(),
+}));
+
+vi.mock("@/lib/composite", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/composite")>()),
+  createComposite: vi.fn(),
 }));
 
 vi.mock("@/lib/places", async (importOriginal) => ({
@@ -374,6 +385,7 @@ describe("App comparing two charts", () => {
   beforeEach(() => {
     vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
     vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(createComposite).mockReset().mockReturnValue(COMPOSITE);
     vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
     Element.prototype.scrollIntoView = vi.fn();
   });
@@ -623,6 +635,78 @@ describe("App comparing two charts", () => {
       expect(details.houseSystem).toBe(HouseSystem.Koch);
     }
     expect(within(theirForm()).queryByRole("alert")).toBeNull();
+  });
+
+  async function compareWithThem(): Promise<void> {
+    await drawYourChart();
+    await fireEvent.click(
+      screen.getByRole("button", { name: "Compare with someone else" }),
+    );
+    await fillTheirForm();
+    await pressCompare();
+    await screen.findByRole("heading", { name: "Chart comparison" });
+  }
+
+  it("shows the bi-wheel until the composite is chosen", async () => {
+    render(App);
+    await compareWithThem();
+
+    expect(
+      within(theirForm()).getByLabelText<HTMLInputElement>("Bi-wheel").checked,
+    ).toBe(true);
+    expect(createComposite).not.toHaveBeenCalled();
+  });
+
+  it("switches to the composite and back", async () => {
+    render(App);
+    await compareWithThem();
+
+    await fireEvent.click(within(theirForm()).getByLabelText("Composite"));
+
+    expect(
+      await screen.findByRole("heading", { name: "Composite chart" }),
+    ).toBeTruthy();
+    expect(createComposite).toHaveBeenLastCalledWith(CHART, CHART);
+    expect(
+      screen.getByRole("img", { name: "Composite chart wheel" }),
+    ).toBeTruthy();
+
+    await fireEvent.click(within(theirForm()).getByLabelText("Bi-wheel"));
+
+    expect(
+      await screen.findByRole("heading", { name: "Chart comparison" }),
+    ).toBeTruthy();
+  });
+
+  it("reports a composite that can't be cast", async () => {
+    vi.mocked(createComposite).mockImplementation(() => {
+      throw new Error("The engine gave up.");
+    });
+    render(App);
+    await compareWithThem();
+
+    await fireEvent.click(within(theirForm()).getByLabelText("Composite"));
+
+    expect(within(theirForm()).getByRole("alert").textContent).toContain(
+      "Couldn't draw the composite: The engine gave up.",
+    );
+  });
+
+  it("opens a composite from a share link", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/#date=2000-01-01&time=12:00&place=2643743" +
+        "&date2=1990-05-15&time2=14:30&place2=6167865&comparison=composite",
+    );
+    render(App);
+
+    expect(
+      await screen.findByRole("heading", { name: "Composite chart" }),
+    ).toBeTruthy();
+    expect(
+      within(theirForm()).getByLabelText<HTMLInputElement>("Composite").checked,
+    ).toBe(true);
   });
 
   it("opens a comparison from a share link", async () => {

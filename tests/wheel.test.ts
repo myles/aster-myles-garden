@@ -25,6 +25,23 @@ describe("spreadLongitudes", () => {
     const [a, b] = spreadLongitudes([359, 1]);
     expect(separateDegrees(a, b)).toBeGreaterThanOrEqual(7.99);
   });
+
+  it("keeps a tight pair apart inside a crowded cluster", () => {
+    // Pushing the first pair apart moves the middle body past the last,
+    // which once read as a near-360° gap and left them overlapping.
+    const [mercury, mars, sun, saturn] = spreadLongitudes([
+      334.93, 338.25, 347.52, 347.82,
+    ]);
+
+    expect(sun).toBeLessThan(saturn);
+    for (const [a, b] of [
+      [mercury, mars],
+      [mars, sun],
+      [sun, saturn],
+    ]) {
+      expect(separateDegrees(a, b)).toBeGreaterThanOrEqual(7.99);
+    }
+  });
 });
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
@@ -44,6 +61,15 @@ describe("drawWheel", () => {
     expect(svg.getAttribute("viewBox")).toBe("0 0 600 600");
     expect(svg.querySelector(":scope > title")?.textContent).toBe(
       "Natal chart wheel",
+    );
+  });
+
+  it("takes another name, for a wheel that isn't a natal chart", () => {
+    const { bodies, houses, aspects } = CHART;
+    drawWheel(svg, { bodies, houses, aspects }, "Composite chart wheel");
+
+    expect(svg.querySelector(":scope > title")?.textContent).toBe(
+      "Composite chart wheel",
     );
   });
 

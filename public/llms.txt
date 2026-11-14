@@ -82,6 +82,8 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placi
 
 That link compares someone born in Toronto at 2:30 pm on 15 May 1990 with someone born in London on 2 November 1988 at an unknown time.
 
+Add `comparison=composite` to show a composite chart instead of the bi-wheel: one chart for the pair, with each body at the midpoint of the two people's positions, and houses cast around the midpoint of their midheavens at the latitude halfway between their birthplaces. It has houses only when both birth times are known.
+
 ### Transits
 
 Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact (or less, for a tighter orb), and which natal house each is in. A link can carry `transits` or a second chart, not both.
@@ -121,6 +123,7 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&lat=43.6833&lon=-79.7667&
 - An Aspects table: each aspect between two bodies, with its orb. Major aspects by default; minor ones too when chosen, drawn as dashed lines on the wheel.
 - Downloads of the wheel as SVG or PNG and of both tables as CSV, and a Copy link button that produces a link in the format above.
 - In a comparison: the bi-wheel, an Aspects between you table, and each person's positions with a column for the house it falls in on the other person's chart.
+- In a composite: one wheel, with the composite's positions and aspects.
 - With transits: the bi-wheel, a Transits to your chart table, and the transiting planets' positions with the natal house each is in.
 
 ## More

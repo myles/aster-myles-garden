@@ -1,6 +1,7 @@
 // A small, hand-built chart: two bodies in opposition, Equal houses.
 
 import type { Chart } from "@/lib/chart";
+import type { Composite } from "@/lib/composite";
 import type { Transits } from "@/lib/transits";
 
 import { AspectType } from "@/lib/aspects";
@@ -109,4 +110,17 @@ export const TRANSITS: Transits = {
     },
   ],
   inNatalHouses: { [Body.Sun]: 7 },
+};
+
+/** Your chart with itself: every midpoint is the body's own position. */
+export const COMPOSITE: Composite = {
+  first: CHART,
+  second: CHART,
+  bodies: CHART.bodies.map((placed) => ({
+    ...placed,
+    speed: 0,
+    isRetrograde: false,
+  })),
+  houses: CHART.houses,
+  aspects: CHART.aspects,
 };

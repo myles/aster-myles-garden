@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import { ASPECT_INFO, AspectSet, AspectType, OrbSize } from "@/lib/aspects";
 import { Body, BODY_INFO } from "@/lib/bodies";
-import { buildChartCsv, buildComparisonCsv, buildTransitsCsv } from "@/lib/csv";
+import {
+  buildChartCsv,
+  buildComparisonCsv,
+  buildCompositeCsv,
+  buildTransitsCsv,
+} from "@/lib/csv";
 import { compareCharts } from "@/lib/synastry";
 
 import { CHART, CHART_WITHOUT_TIME } from "./fixtures/chart";
@@ -89,6 +94,24 @@ describe("buildChartCsv without a birth time", () => {
       `${MARS},10° 00′ Cancer ℞ (may be Leo),,,,`,
       "",
     ]);
+  });
+});
+
+describe("buildCompositeCsv", () => {
+  const composite = {
+    first: CHART,
+    second: CHART,
+    bodies: CHART.bodies,
+    houses: CHART.houses,
+    aspects: [],
+  };
+
+  it("lays out the composite's positions and aspects", () => {
+    const lines = parseLines(buildCompositeCsv(composite));
+
+    expect(lines[0]).toBe("Composite positions,,,,Aspects,,");
+    expect(lines[1]).toBe("Body,Position,House,,Pair,Aspect,Orb");
+    expect(lines[2]).toMatch(/,,No major aspects within orb\.,,$/);
   });
 });
 

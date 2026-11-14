@@ -65,6 +65,9 @@ const WHEEL_TITLE_ID = "wheel-title";
 const WHEEL_DESCRIPTION_ID = "wheel-description";
 const WHEEL_TITLE = "Natal chart wheel";
 
+/** What a single wheel draws: a natal chart, or a composite. */
+export type WheelChart = Pick<Chart, "bodies" | "houses" | "aspects">;
+
 /** What a bi-wheel draws. */
 export type BiWheel = {
   /** Drawn inside the zodiac, in its own houses. */
@@ -355,7 +358,13 @@ export function spreadLongitudes(longitudes: number[]): number[] {
 
     for (let i = 0; i < count; i++) {
       const next = (i + 1) % count;
-      const gap = normalizeDegrees(display[next] - display[i]);
+      // Measured directly, so a pair pushed past each other shows a
+      // negative gap rather than one of nearly 360°. Only the last body
+      // and the first are measured round the circle.
+      const gap =
+        next === 0
+          ? display[0] + DEGREES_PER_CIRCLE - display[i]
+          : display[next] - display[i];
 
       if (gap >= MIN_GLYPH_SEPARATION_DEGREES) {
         continue;
@@ -512,9 +521,14 @@ function selectLayer(svg: Parent, layer: Layer): Parent {
 /**
  * Draws the full chart wheel into an <svg>. Safe to call again with a
  * new chart: existing elements are updated rather than duplicated.
+ * `title` is its accessible name.
  */
-export function drawWheel(element: SVGSVGElement, chart: Chart): void {
-  render(element, chart, undefined);
+export function drawWheel(
+  element: SVGSVGElement,
+  chart: WheelChart,
+  title = WHEEL_TITLE,
+): void {
+  render(element, chart, undefined, title);
 }
 
 /**
@@ -523,13 +537,14 @@ export function drawWheel(element: SVGSVGElement, chart: Chart): void {
  * call on an <svg> that held either kind of wheel.
  */
 export function drawBiWheel(element: SVGSVGElement, biWheel: BiWheel): void {
-  render(element, biWheel.inner, biWheel);
+  render(element, biWheel.inner, biWheel, biWheel.title);
 }
 
 function render(
   element: SVGSVGElement,
-  chart: Chart,
+  chart: WheelChart,
   biWheel: BiWheel | undefined,
+  title: string,
 ): void {
   // Without a birth time there's no ascendant, so the wheel starts at
   // 0° Aries instead, as a natural chart does.
@@ -548,7 +563,7 @@ function render(
   // :scope keeps this from matching the bodies' own <title> elements.
   svg
     .selectAll(":scope > title")
-    .data([biWheel?.title ?? WHEEL_TITLE])
+    .data([title])
     .join("title")
     .attr("id", WHEEL_TITLE_ID)
     .text((d) => d);

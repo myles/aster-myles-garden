@@ -4,7 +4,7 @@
 // cluster around it, their balance, and the lines across the centre.
 
 import type { Chart, PlacedBody } from "@/lib/chart";
-import type { BiWheel } from "@/lib/wheel";
+import type { BiWheel, WheelChart } from "@/lib/wheel";
 
 import { ASPECT_INFO, AspectQuality, type Aspect } from "@/lib/aspects";
 import { BODY_INFO, BodyKind } from "@/lib/bodies";
@@ -31,7 +31,7 @@ const LINKS_RINGS: LineVerb = {
 };
 
 /** One sentence per entry, in reading order. */
-export function describeWheel(chart: Chart): string[] {
+export function describeWheel(chart: WheelChart): string[] {
   const ascendant = chart.houses?.ascendant ?? NATURAL_WHEEL_START_DEGREES;
   const ring = describeRing(chart.bodies, ascendant);
   const sentences = [
@@ -71,7 +71,7 @@ export function describeBiWheel(biWheel: BiWheel): string[] {
   ];
 }
 
-function describeOrientation(chart: Chart): string {
+function describeOrientation(chart: Pick<Chart, "houses">): string {
   if (!chart.houses) {
     return (
       "There's no birth time, so no houses or angles; " +

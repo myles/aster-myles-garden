@@ -5,6 +5,7 @@
   import BirthFields from "@/components/BirthFields.svelte";
   import ChartView from "@/components/ChartView.svelte";
   import ComparisonView from "@/components/ComparisonView.svelte";
+  import CompositeView from "@/components/CompositeView.svelte";
   import TransitView from "@/components/TransitView.svelte";
   import { Panel } from "@/components/panel";
   import SaveChartRow from "@/components/SaveChartRow.svelte";
@@ -41,7 +42,12 @@
     type SavedChart,
   } from "@/lib/saved-charts";
   import { parseShareHash, type SharedPerson } from "@/lib/share";
-  import { compareCharts } from "@/lib/synastry";
+  import { createComposite } from "@/lib/composite";
+  import {
+    compareCharts,
+    COMPARISON_STYLE_NAMES,
+    ComparisonStyle,
+  } from "@/lib/synastry";
   import {
     formatDateValue,
     formatTimeValue,
@@ -77,6 +83,7 @@
   const houseSystems = Object.values(HouseSystem);
   const aspectSets = Object.values(AspectSet);
   const orbSizes = Object.values(OrbSize);
+  const comparisonStyles = Object.values(ComparisonStyle);
 
   let yours: BirthForm = $state(createBlankForm());
   let theirs: BirthForm = $state(createBlankForm());
@@ -85,6 +92,7 @@
   let orbSize = $state(DEFAULT_ASPECT_SETTINGS.orbSize);
   let chart: Chart | undefined = $state.raw();
   let comparedChart: Chart | undefined = $state.raw();
+  let comparisonStyle = $state(ComparisonStyle.BiWheel);
   // Cast so TypeScript doesn't narrow panel to its first value, None.
   let panel = $state(Panel.None as Panel);
   // Transit moments are read on the clock where the visitor is.
@@ -108,6 +116,24 @@
       ? compareCharts(chart, comparedChart)
       : undefined,
   );
+
+  // Like transits below, a composite casts houses of its own, which can
+  // throw; the failure is reported in their form, over the bi-wheel.
+  const compositeResult = $derived.by(() => {
+    if (!synastry || comparisonStyle !== ComparisonStyle.Composite) {
+      return undefined;
+    }
+
+    try {
+      return { composite: createComposite(synastry.first, synastry.second) };
+    } catch (cause) {
+      return {
+        failure: `Couldn't draw the composite: ${describeError(cause)}`,
+      };
+    }
+  });
+  const composite = $derived(compositeResult?.composite);
+  const compareAlert = $derived(compareError || compositeResult?.failure || "");
 
   // The engine is loaded whenever a chart exists, and transitsAt is
   // checked against its range, but a calculation can still throw. Caught
@@ -166,6 +192,7 @@
       closePanel();
       if (shared.comparedWith) {
         theirs = await fillForm(shared.comparedWith);
+        comparisonStyle = shared.comparisonStyle ?? ComparisonStyle.BiWheel;
         panel = Panel.Comparison;
       }
       if (shared.transitsAt) {
@@ -423,6 +450,7 @@
   function closePanel(): void {
     panel = Panel.None;
     comparedChart = undefined;
+    comparisonStyle = ComparisonStyle.BiWheel;
     compareError = "";
     transitsAt = undefined;
     transitError = "";
@@ -755,6 +783,23 @@
           onTimeUnknownChange={recompareIfCompared}
         />
 
+        <fieldset class="flex flex-col gap-1.5">
+          <legend class="text-sm font-medium">Show</legend>
+          <div class="flex gap-4">
+            {#each comparisonStyles as style (style)}
+              <label class="flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="comparisonStyle"
+                  value={style}
+                  bind:group={comparisonStyle}
+                />
+                {COMPARISON_STYLE_NAMES[style]}
+              </label>
+            {/each}
+          </div>
+        </fieldset>
+
         <div class="flex flex-wrap gap-2">
           <button
             type="submit"
@@ -775,9 +820,9 @@
         <p
           role="alert"
           class="text-sm text-[var(--challenging)]"
-          hidden={compareError.length === 0}
+          hidden={compareAlert.length === 0}
         >
-          {compareError}
+          {compareAlert}
         </p>
 
         <SaveChartRow
@@ -790,7 +835,9 @@
   </div>
 
   <section aria-live="polite" class="min-w-0" bind:this={result}>
-    {#if synastry}
+    {#if composite}
+      <CompositeView {composite} />
+    {:else if synastry}
       <ComparisonView {synastry} />
     {:else if transits}
       <TransitView {transits} timeZone={transitTimeZone} />

@@ -249,6 +249,23 @@ describe("exportWheel", () => {
     expect(await downloads[0].blob.text()).toContain("Aspects between you");
   });
 
+  it("downloads a composite's tables, named after both charts", async () => {
+    const composite = {
+      first: CHART,
+      second: CHART,
+      bodies: CHART.bodies,
+      houses: CHART.houses,
+      aspects: CHART.aspects,
+    };
+
+    exportTables({ kind: SubjectKind.Composite, composite });
+
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-and-london-2000-01-01-1200-composite.csv",
+    );
+    expect(await downloads[0].blob.text()).toContain("Composite positions");
+  });
+
   it("sizes a bi-wheel's file and backdrop to its wider view", async () => {
     drawBiWheel(svg, {
       inner: CHART,
