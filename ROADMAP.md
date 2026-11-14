@@ -45,6 +45,15 @@ A small API, in the same style as the other myles.garden sites, so the garden's 
 - [x] Privacy: birth details only ever in request bodies, never logged, and the README, `llms.txt` and `ai.txt` updated to say the API runs on a server.
 - [ ] Bring the API up to date once the chart features settle: the new bodies' and settings' documentation, plus composites, solar returns and transits, with matching SDK methods and MCP tools.
 
+## WebMCP
+
+Offer the page's own features as tools to an AI agent working in the browser, through [WebMCP](https://github.com/webmachinelearning/webmcp). Unlike the API, the tools run the calculation in the page, so birth details don't go to Aster's server. WebMCP is still a draft standard, so this is experimental and may need updating as the spec changes.
+
+- [ ] Detect support and register nothing where the browser lacks it, so the page is unchanged for everyone else.
+- [ ] Tools for drawing a chart, searching places, comparing two charts, and showing transits or a solar return, built on the chart service the form already uses.
+- [ ] Draw each tool's result on screen and fill in the form, as if the person had entered it, so they can see and check what the agent asked for.
+- [ ] Privacy: whatever a tool returns goes to the agent and the model behind it. Say so in the README, `llms.txt` and `ai.txt`, and don't let a tool read saved charts unless the person chooses one.
+
 ## AT Protocol
 
 Connect Aster to your AT Protocol account (such as Bluesky) to keep your chart in your own PDS and compare charts with friends. Entirely optional: everything else keeps working without an account.
