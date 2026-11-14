@@ -5,7 +5,7 @@
   import PositionsTable from "@/components/PositionsTable.svelte";
   import { ASPECT_INFO } from "@/lib/aspects";
   import { BODY_INFO } from "@/lib/bodies";
-  import type { Chart } from "@/lib/chart";
+  import { usesFallbackHouses, type Chart } from "@/lib/chart";
   import { SubjectKind } from "@/lib/export";
   import {
     formatBirthDate,
@@ -13,7 +13,7 @@
     formatCoordinates,
     formatDegrees,
   } from "@/lib/format";
-  import { HOUSE_SYSTEM_NAMES } from "@/lib/houses";
+  import { describeHouseFallback, HOUSE_SYSTEM_NAMES } from "@/lib/houses";
   import { formatPlace } from "@/lib/places";
 
   let { chart }: { chart: Chart } = $props();
@@ -33,15 +33,31 @@
       ? [
           formatBirthMoment(chart),
           coordinates,
-          HOUSE_SYSTEM_NAMES[chart.details.houseSystem],
+          HOUSE_SYSTEM_NAMES[chart.houses.houseSystem],
         ].join(" · ")
       : [formatBirthDate(chart), "Time unknown", coordinates].join(" · "),
+  );
+
+  const fallbackNote = $derived(
+    chart.houses && usesFallbackHouses(chart)
+      ? describeHouseFallback(
+          chart.details.houseSystem,
+          chart.houses.houseSystem,
+          "these are",
+        )
+      : undefined,
   );
 </script>
 
 <div>
   <h2 class="font-serif text-2xl">{formatPlace(chart.details.place)}</h2>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
+
+  {#if fallbackNote}
+    <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">
+      {fallbackNote}
+    </p>
+  {/if}
 
   {#if !chart.houses}
     <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">

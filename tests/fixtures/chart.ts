@@ -73,6 +73,28 @@ export const CHART_WITHOUT_TIME: Chart = {
   })),
 };
 
+/**
+ * CHART asking for Placidus houses in Tromsø, inside the Arctic Circle,
+ * where they can't be cast: its houses fell back to Porphyry.
+ */
+export const POLAR_CHART: Chart = {
+  ...CHART,
+  details: {
+    ...CHART.details,
+    place: {
+      id: 3133880,
+      name: "Tromsø",
+      region: "Troms",
+      country: "Norway",
+      latitude: 69.6496,
+      longitude: 18.957,
+      timeZone: "Europe/Oslo",
+    },
+    houseSystem: HouseSystem.Placidus,
+  },
+  houses: { ...CHART.houses!, houseSystem: HouseSystem.Porphyry },
+};
+
 /** The sky against CHART: a transiting Sun at 190°, squaring natal Mars. */
 export const TRANSITS: Transits = {
   natal: CHART,
