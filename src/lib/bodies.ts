@@ -10,6 +10,8 @@ export enum Body {
   Neptune = "neptune",
   Pluto = "pluto",
   NorthNode = "northNode",
+  SouthNode = "southNode",
+  Lilith = "lilith",
 }
 
 export enum BodyKind {
@@ -40,6 +42,12 @@ export const BODY_INFO: Record<Body, BodyInfo> = {
     glyph: "☊︎",
     kind: BodyKind.Point,
   },
+  [Body.SouthNode]: {
+    name: "South Node",
+    glyph: "☋︎",
+    kind: BodyKind.Point,
+  },
+  [Body.Lilith]: { name: "Lilith", glyph: "⚸︎", kind: BodyKind.Point },
 };
 
 export const BODIES = Object.values(Body);

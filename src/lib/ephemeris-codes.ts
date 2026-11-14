@@ -8,8 +8,11 @@ import {
   HouseSystem as SweHouseSystem,
 } from "@swisseph/core";
 
-import { Body } from "@/lib/bodies";
+import type { BodyPosition } from "@/lib/ephemeris";
+
+import { Body, BODIES } from "@/lib/bodies";
 import { HouseSystem } from "@/lib/houses";
+import { normalizeDegrees } from "@/lib/zodiac";
 
 /**
  * The Moshier ephemeris, with speeds. It needs no data files, so the
@@ -35,7 +38,10 @@ export const SWE_POLAR_LIMITED_SYSTEMS: ReadonlySet<HouseSystem> = new Set([
 ]);
 export const SWE_POLAR_FALLBACK_SYSTEM = HouseSystem.Porphyry;
 
-export const SWE_BODIES: Record<Body, Planet | LunarPoint> = {
+/** Bodies the engine is asked for; the rest are derived from them. */
+export type SweBody = Exclude<Body, Body.SouthNode>;
+
+export const SWE_BODIES: Record<SweBody, Planet | LunarPoint> = {
   [Body.Sun]: Planet.Sun,
   [Body.Moon]: Planet.Moon,
   [Body.Mercury]: Planet.Mercury,
@@ -47,7 +53,37 @@ export const SWE_BODIES: Record<Body, Planet | LunarPoint> = {
   [Body.Neptune]: Planet.Neptune,
   [Body.Pluto]: Planet.Pluto,
   [Body.NorthNode]: LunarPoint.TrueNode,
+  // Black Moon Lilith, as most software draws it: the mean apogee.
+  [Body.Lilith]: LunarPoint.MeanApogee,
 };
+
+/**
+ * Every body's position, in Body order, from a driver's way of asking
+ * the engine for one. The South Node isn't asked for: it's always
+ * exactly opposite the North Node, moving with it.
+ */
+export function calculateEveryBody(
+  calculateBody: (body: SweBody) => BodyPosition,
+): BodyPosition[] {
+  const northNode = calculateBody(Body.NorthNode);
+
+  return BODIES.map((body) => {
+    if (body === Body.NorthNode) {
+      return northNode;
+    }
+
+    if (body === Body.SouthNode) {
+      return {
+        body,
+        longitude: normalizeDegrees(northNode.longitude + 180),
+        latitude: -northNode.latitude,
+        speed: northNode.speed,
+      };
+    }
+
+    return calculateBody(body);
+  });
+}
 
 export const SWE_HOUSE_SYSTEMS: Record<HouseSystem, SweHouseSystem> = {
   [HouseSystem.Placidus]: SweHouseSystem.Placidus,

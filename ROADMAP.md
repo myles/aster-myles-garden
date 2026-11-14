@@ -15,14 +15,14 @@
 - [x] Saved charts: named, in the browser only, to fill either form with one press
 - [x] A written description of the wheel, read by screen readers and shown under the wheel
 - [x] Coordinates for unlisted places, with the time zone suggested from the nearest listed place
+- [x] Lilith and the South Node
 
 ## Charts
 
 - [ ] Composite and solar return charts
-- [ ] Chiron, Lilith and the South Node
 - [ ] Minor aspects and adjustable orbs
 - [ ] Sidereal zodiac, with a choice of ayanamsa
-- [ ] Optional high-precision ephemeris files
+- [ ] Optional high-precision ephemeris files, and Chiron with them: the built-in Moshier ephemeris has no asteroids
 
 ## App
 

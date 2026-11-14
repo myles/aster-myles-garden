@@ -9,8 +9,8 @@ import {
 
 import type { Ephemeris, HousePositions } from "@/lib/ephemeris";
 
-import { Body } from "@/lib/bodies";
 import {
+  calculateEveryBody,
   SWE_BODIES,
   SWE_CALCULATION_FLAGS,
   SWE_HOUSE_SYSTEMS,
@@ -43,7 +43,7 @@ function castHouses(
 
 export const nodeEphemeris: Ephemeris = {
   calculateBodies(julianDay) {
-    return Object.values(Body).map((body) => {
+    return calculateEveryBody((body) => {
       const position = calculatePosition(
         julianDay,
         SWE_BODIES[body],

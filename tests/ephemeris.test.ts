@@ -33,6 +33,27 @@ describe("calculateBodies", () => {
     expect(sun?.longitude).toBeCloseTo(280.369, 2);
     expect(sun?.speed).toBeGreaterThan(0);
   });
+
+  it("places the South Node opposite the North Node", () => {
+    const positions = calculateBodies(J2000_JULIAN_DAY);
+    const north = positions.find((p) => p.body === Body.NorthNode);
+    const south = positions.find((p) => p.body === Body.SouthNode);
+
+    expect(north).toBeDefined();
+    expect(south?.longitude).toBeCloseTo((north!.longitude + 180) % 360, 6);
+    expect(south?.latitude).toBeCloseTo(-north!.latitude, 6);
+    expect(south?.speed).toBe(north!.speed);
+  });
+
+  it("places Lilith at the mean lunar apogee", () => {
+    const lilith = calculateBodies(J2000_JULIAN_DAY).find(
+      (position) => position.body === Body.Lilith,
+    );
+    // The mean lunar perigee at J2000.0 is 83.353° (Meeus); the apogee is
+    // opposite. The engine's corrections move it about 0.1°, while the
+    // osculating apogee would be off by degrees.
+    expect(lilith?.longitude).toBeCloseTo(263.35, 0);
+  });
 });
 
 describe("calculateHouses", () => {

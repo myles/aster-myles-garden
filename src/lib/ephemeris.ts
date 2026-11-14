@@ -8,6 +8,7 @@ import DEFAULT_WASM_URL from "@swisseph/browser/dist/swisseph.wasm?url";
 
 import { Body } from "@/lib/bodies";
 import {
+  calculateEveryBody,
   SWE_BODIES,
   SWE_CALCULATION_FLAGS,
   SWE_HOUSE_SYSTEMS,
@@ -86,7 +87,7 @@ function _assertLoaded(): void {
 export function calculateBodies(julianDay: number): BodyPosition[] {
   _assertLoaded();
 
-  return Object.values(Body).map((body) => {
+  return calculateEveryBody((body) => {
     const position = _swe.calculatePosition(
       julianDay,
       SWE_BODIES[body],
