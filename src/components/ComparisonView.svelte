@@ -69,7 +69,7 @@
 </script>
 
 <div>
-  <h2 class="font-serif text-2xl">Chart comparison</h2>
+  <h2 class="font-serif text-2xl" tabindex="-1">Chart comparison</h2>
   <dl class="mt-2 flex flex-col gap-1 text-sm">
     {#each people as person (person.label)}
       <div class="flex gap-2">

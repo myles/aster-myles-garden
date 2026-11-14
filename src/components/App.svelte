@@ -59,6 +59,9 @@
   const COMPARE_DATE_ID = "compare-date";
   const TRANSIT_DATE_ID = "transit-date";
 
+  // Below Tailwind's lg breakpoint the layout stacks: forms, then result.
+  const STACKED_LAYOUT_QUERY = "(width < 64rem)";
+
   // The span the calculation engine covers, as people are told it.
   const CALCULABLE_SPAN = "about 3000 BCE to 3000 CE";
   const BIRTH_OUT_OF_RANGE = `Charts can only be drawn for dates from ${CALCULABLE_SPAN}.`;
@@ -87,6 +90,7 @@
   let isDrawing = $state(false);
   let isHydrated = $state(false);
   let hasRequestedEngine = false;
+  let result: HTMLElement | undefined = $state();
 
   const synastry = $derived(
     panel === Panel.Comparison && chart && comparedChart
@@ -291,15 +295,16 @@
     };
   }
 
-  async function draw(): Promise<void> {
+  /** Draws your chart, and theirs when comparing; true once both show. */
+  async function draw(): Promise<boolean> {
     error = findProblem(yours) ?? "";
     compareError = comparedChart ? (findProblem(theirs) ?? "") : "";
     if (error || compareError) {
-      return;
+      return false;
     }
     if (!isHouseSystem(houseSystem)) {
       error = "Choose a house system.";
-      return;
+      return false;
     }
 
     error = "";
@@ -312,11 +317,11 @@
         : undefined;
       if (!isCalculable(yourDetails)) {
         error = BIRTH_OUT_OF_RANGE;
-        return;
+        return false;
       }
       if (theirDetails && !isCalculable(theirDetails)) {
         compareError = BIRTH_OUT_OF_RANGE;
-        return;
+        return false;
       }
 
       await loadChartEngine();
@@ -328,27 +333,30 @@
       // Publish both results only after every calculation succeeds.
       chart = nextChart;
       comparedChart = nextComparedChart;
+      return true;
     } catch (cause) {
       error = `Couldn't draw the chart: ${describeError(cause)}`;
+      return false;
     } finally {
       isDrawing = false;
     }
   }
 
-  async function compare(): Promise<void> {
+  /** Draws the comparison; true once both charts show. */
+  async function compare(): Promise<boolean> {
     const problem = findProblem(theirs);
     if (problem) {
       compareError = problem;
-      return;
+      return false;
     }
     if (!chart || !isHouseSystem(houseSystem)) {
       compareError = "Draw your own chart first.";
-      return;
+      return false;
     }
 
     error = findProblem(yours) ?? "";
     if (error) {
-      return;
+      return false;
     }
 
     compareError = "";
@@ -359,11 +367,11 @@
       const theirDetails = toDetails(theirs, houseSystem);
       if (!isCalculable(yourDetails)) {
         error = BIRTH_OUT_OF_RANGE;
-        return;
+        return false;
       }
       if (!isCalculable(theirDetails)) {
         compareError = BIRTH_OUT_OF_RANGE;
-        return;
+        return false;
       }
 
       await loadChartEngine();
@@ -373,8 +381,10 @@
       // A retry may follow a failed house-system change: rebuild both.
       chart = nextChart;
       comparedChart = nextComparedChart;
+      return true;
     } catch (cause) {
       compareError = `Couldn't draw their chart: ${describeError(cause)}`;
+      return false;
     } finally {
       isDrawing = false;
     }
@@ -448,14 +458,35 @@
     showTransits();
   }
 
-  function onSubmit(event: SubmitEvent): void {
-    event.preventDefault();
-    void draw();
+  /**
+   * On a stacked layout, the result sits below the forms, often out of
+   * sight after a submission. Moving focus to its heading brings it into
+   * view and tells screen readers where it went. Beside the form, as on a
+   * wide screen, it's already visible, so focus stays put.
+   */
+  async function revealResult(): Promise<void> {
+    if (!window.matchMedia(STACKED_LAYOUT_QUERY).matches) {
+      return;
+    }
+
+    await tick();
+    const heading = result?.querySelector("h2");
+    heading?.focus({ preventScroll: true });
+    heading?.scrollIntoView({ block: "start" });
   }
 
-  function onCompareSubmit(event: SubmitEvent): void {
+  async function onSubmit(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    void compare();
+    if (await draw()) {
+      await revealResult();
+    }
+  }
+
+  async function onCompareSubmit(event: SubmitEvent): Promise<void> {
+    event.preventDefault();
+    if (await compare()) {
+      await revealResult();
+    }
   }
 
   // Changing the house system or whether a time is known redraws what's
@@ -713,7 +744,7 @@
     {/if}
   </div>
 
-  <section aria-live="polite" class="min-w-0">
+  <section aria-live="polite" class="min-w-0" bind:this={result}>
     {#if synastry}
       <ComparisonView {synastry} />
     {:else if transits}

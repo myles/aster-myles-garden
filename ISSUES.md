@@ -112,7 +112,7 @@ At a 375px viewport, the comparison wheel scales its degree labels to roughly 5p
 
 **Resolution:** An **Enlarge wheel** toggle under every wheel (natal, comparison and transits) widens it to 56rem inside a box that scrolls sideways, rather than fitting it to the screen. The page itself doesn't scroll sideways. While enlarged, the box is a labelled, focusable region, so it can also be scrolled from the keyboard. The button keeps one label and reports its state with `aria-pressed`. The size is set on a wrapper, not on the `<svg>` that D3 owns, so downloads are unchanged. At 375px in Chromium, the wheel grows from 343px to 896px wide and its label boxes from 8px to 20px tall. The tables and written description remain the readable alternatives. Component tests for the toggle and the scrollable region failed before the fix and pass afterwards.
 
-### 9. Successful submission leaves the wheel below the viewport
+### 9. Successful submission leaves the wheel below the viewport — fixed
 
 **Location:** `src/components/App.svelte`, successful chart and comparison submission.
 
@@ -121,6 +121,8 @@ On mobile, focus remains on **Draw chart** or **Compare charts** after calculati
 **Suggested fix:** Scroll to and focus the result heading after a successful submission on narrow layouts. Preserve the form position when validation fails.
 
 **Verification:** Reproduced at a 375px by 812px viewport. After drawing a natal chart, the result heading began at 722px and the wheel began at 854px, below the viewport.
+
+**Resolution:** After **Draw chart** or **Compare charts** succeeds on a layout narrower than 64rem, where the result stacks below the forms, focus moves to the result's heading and it scrolls to the top of the viewport. Screen readers are told where the result is, as well as the page showing it. On a wide layout the result is already beside the form, so focus stays put. A failed validation leaves the form where it is. Share links and saved charts draw without moving the page. `draw` and `compare` now report whether they published a result, so only a real result is revealed. At 375px by 812px in Chromium, the heading now starts at 0px with focus on it. At 1280px nothing moves. App tests for the natal and comparison submissions on a narrow layout failed before the fix and pass afterwards. Further tests check that a wide layout and a failed validation leave focus and scroll alone.
 
 ## Review checks and limitations
 
