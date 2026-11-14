@@ -14,6 +14,7 @@ import {
   buildTransitsCsv,
   buildSolarReturnCsv,
 } from "@/lib/csv";
+import { formatCoordinates } from "@/lib/format";
 import { SolarReturnStyle, type SolarReturn } from "@/lib/solar-return";
 
 export enum ExportFormat {
@@ -292,8 +293,10 @@ function describePair(pair: { first: Chart; second: Chart }): string {
 function describeChart(chart: Chart): string {
   const { date, time, place } = chart.details;
 
+  // A name with no Latin letters, such as "東京", slugifies to nothing.
   const parts = [
-    slugify(place.name),
+    slugify(place.name) ||
+      slugify(formatCoordinates(place.latitude, place.longitude)),
     `${date.year}-${pad(date.month)}-${pad(date.day)}`,
   ];
 

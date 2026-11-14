@@ -106,6 +106,26 @@ describe("exportWheel", () => {
     );
   });
 
+  it("names a place with no Latin letters by its coordinates", async () => {
+    const chart = {
+      ...CHART,
+      details: {
+        ...CHART.details,
+        place: { ...CHART.details.place, name: "東京" },
+      },
+    };
+
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: chart },
+      ExportFormat.Svg,
+    );
+
+    expect(downloads[0].filename).toBe(
+      "aster-51-50-n-0-12-w-2000-01-01-1200.svg",
+    );
+  });
+
   it("writes a standalone SVG with styles inlined", async () => {
     await exportWheel(
       svg,

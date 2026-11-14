@@ -49,10 +49,9 @@
         </tr>
       {:else}
         <tr class="border-rule/60 border-b">
-          <td class="py-1.5">
+          <td class="py-1.5" colspan="3">
             {formatNoAspects(settings)} within orb.
           </td>
-          <td class="py-1.5"></td>
         </tr>
       {/each}
     </tbody>
