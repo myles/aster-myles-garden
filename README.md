@@ -122,6 +122,15 @@ Leave out `time` when the birth time isn't known: the chart is cast for local no
 
 `astro preview` doesn't run under the Vercel adapter. Use `npm run dev` to try the API locally.
 
+## Interface
+
+The page's look is built from a few building blocks, each defined once, so a change to one shows everywhere it's used.
+
+- `src/styles/global.css` — the colour tokens, light and dark, and the base classes under `@layer components`: `.ui-panel`, `.ui-field`, `.ui-input`, `.ui-button` and its variants, `.ui-table` and the rest. Plain markup can use them directly.
+- `src/components/ui/` — Svelte components that wrap those classes with their structure and behaviour: `Button` (`primary`, `secondary`, `action`, `tool` or `quiet`, and `size="small"`), `Field`, `Input`, `Select`, `FormPanel`, `ButtonRow`, `Alert` and `Callout`.
+
+To restyle, say, every secondary button, change `.ui-button--secondary` in `global.css`. A component's own classes, such as a margin, still win over these, since they're in the components layer.
+
 ## Releases
 
 Releases are made by [release-please](https://github.com/googleapis/release-please-action) from [conventional commits](https://www.conventionalcommits.org/).

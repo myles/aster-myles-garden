@@ -3,6 +3,13 @@
      a second form compares it with someone else's or shows its transits,
      progressions, solar return or lunar return. -->
 <script lang="ts">
+  import Alert from "@/components/ui/Alert.svelte";
+  import Button from "@/components/ui/Button.svelte";
+  import ButtonRow from "@/components/ui/ButtonRow.svelte";
+  import Field from "@/components/ui/Field.svelte";
+  import FormPanel from "@/components/ui/FormPanel.svelte";
+  import Input from "@/components/ui/Input.svelte";
+  import Select from "@/components/ui/Select.svelte";
   import BirthFields from "@/components/birth-form/BirthFields.svelte";
   import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
   import { Panel } from "@/components/panel";
@@ -867,11 +874,10 @@
 </script>
 
 <main class="grid flex-1 gap-8 lg:grid-cols-[20rem_1fr]">
-  <div class="flex flex-col gap-6 self-start">
-    <form
-      aria-label="Your birth details"
-      class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-      novalidate
+  <div class="flex min-w-0 flex-col gap-6 self-start">
+    <FormPanel
+      title="Your birth details"
+      showTitle={false}
       onfocusin={requestEngine}
       onsubmit={onSubmit}
     >
@@ -903,14 +909,10 @@
           onTimeUnknownChange={redrawIfDrawn}
         />
 
-        <div class="flex flex-col gap-1.5">
-          <label for="house-system" class="text-sm font-medium">
-            House system
-          </label>
-          <select
+        <Field id="house-system" label="House system">
+          <Select
             id="house-system"
             name="houseSystem"
-            class="border-rule bg-paper rounded border px-3 py-2 disabled:opacity-50"
             bind:value={houseSystem}
             disabled={isHouseSystemUnused}
             onchange={onSettingChange}
@@ -918,18 +920,16 @@
             {#each houseSystems as system (system)}
               <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
             {/each}
-          </select>
+          </Select>
           {#if isHouseSystemUnused}
-            <p class="text-ink-muted text-xs">Houses need a birth time.</p>
+            <p class="ui-hint">Houses need a birth time.</p>
           {/if}
-        </div>
+        </Field>
 
-        <div class="flex flex-col gap-1.5">
-          <label for="zodiac" class="text-sm font-medium">Zodiac</label>
-          <select
+        <Field id="zodiac" label="Zodiac">
+          <Select
             id="zodiac"
             name="zodiac"
-            class="border-rule bg-paper rounded border px-3 py-2"
             bind:value={zodiac}
             onchange={onSettingChange}
           >
@@ -941,59 +941,45 @@
                 </option>
               {/each}
             </optgroup>
-          </select>
-        </div>
+          </Select>
+        </Field>
 
         <div class="grid grid-cols-2 gap-3">
-          <div class="flex flex-col gap-1.5">
-            <label for="aspect-set" class="text-sm font-medium">Aspects</label>
-            <select
+          <Field id="aspect-set" label="Aspects">
+            <Select
               id="aspect-set"
               name="aspectSet"
-              class="border-rule bg-paper rounded border px-3 py-2"
               bind:value={aspectSet}
               onchange={onSettingChange}
             >
               {#each aspectSets as set (set)}
                 <option value={set}>{ASPECT_SET_NAMES[set]}</option>
               {/each}
-            </select>
-          </div>
+            </Select>
+          </Field>
 
-          <div class="flex flex-col gap-1.5">
-            <label for="orb-size" class="text-sm font-medium">Orbs</label>
-            <select
+          <Field id="orb-size" label="Orbs">
+            <Select
               id="orb-size"
               name="orbSize"
-              class="border-rule bg-paper rounded border px-3 py-2"
               bind:value={orbSize}
               onchange={onSettingChange}
             >
               {#each orbSizes as size (size)}
                 <option value={size}>{ORB_SIZE_NAMES[size]}</option>
               {/each}
-            </select>
-          </div>
+            </Select>
+          </Field>
         </div>
         {#if settingsNote}
           <p class="text-ink-muted -mt-3 text-xs">{settingsNote}</p>
         {/if}
 
-        <button
-          type="submit"
-          class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
-          disabled={isDrawing}
-        >
+        <Button variant="primary" type="submit" disabled={isDrawing}>
           Draw chart
-        </button>
+        </Button>
 
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={error.length === 0}
-        >
-          {error}
-        </p>
+        <Alert message={error} />
 
         <SaveChartRow
           idPrefix="birth"
@@ -1001,204 +987,113 @@
           onSave={(name) => saveForm(yours, name)}
         />
       </fieldset>
-    </form>
+    </FormPanel>
 
     {#if chart && panel === Panel.None}
       <div class="flex flex-col gap-2">
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startComparing}
-        >
+        <Button variant="action" onclick={startComparing}>
           Compare with someone else
-        </button>
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startTransits}
-        >
-          See transits
-        </button>
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startProgressions}
-        >
+        </Button>
+        <Button variant="action" onclick={startTransits}>See transits</Button>
+        <Button variant="action" onclick={startProgressions}>
           See progressions
-        </button>
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startSolarReturn}
-        >
+        </Button>
+        <Button variant="action" onclick={startSolarReturn}>
           See solar return
-        </button>
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startLunarReturn}
-        >
+        </Button>
+        <Button variant="action" onclick={startLunarReturn}>
           See lunar return
-        </button>
+        </Button>
       </div>
     {/if}
 
     {#if panel === Panel.Transits}
-      <form
-        aria-label="Transit moment"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
-        onsubmit={onTransitSubmit}
-      >
-        <div>
-          <h2 class="font-serif text-lg">Transit moment</h2>
-          <p class="text-ink-muted text-xs">
-            The sky at this moment, against your chart. Times are in your time
-            zone, {transitTimeZone}.
-          </p>
-        </div>
+      <FormPanel title="Transit moment" onsubmit={onTransitSubmit}>
+        {#snippet description()}The sky at this moment, against your chart.
+          Times are in your time zone, {transitTimeZone}.{/snippet}
 
-        <div class="flex flex-col gap-1.5">
-          <label for={TRANSIT_DATE_ID} class="text-sm font-medium">Date</label>
-          <input
+        <Field id={TRANSIT_DATE_ID} label="Date">
+          <Input
             id={TRANSIT_DATE_ID}
             name="transitDate"
             type="date"
             required
             min="0001-01-01"
             max={LAST_CALCULABLE_DATE_VALUE}
-            class="border-rule bg-paper rounded border px-3 py-2"
             bind:value={transitDate}
           />
-        </div>
+        </Field>
 
-        <div class="flex flex-col gap-1.5">
-          <label for="transit-time" class="text-sm font-medium">Time</label>
-          <input
+        <Field id="transit-time" label="Time">
+          <Input
             id="transit-time"
             name="transitTime"
             type="time"
             required
-            class="border-rule bg-paper rounded border px-3 py-2"
             bind:value={transitTime}
           />
-        </div>
+        </Field>
 
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
-          >
-            Show transits
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+        <ButtonRow>
+          <Button variant="primary" type="submit">Show transits</Button>
+          <Button
+            variant="secondary"
             onclick={() => setTransitMoment(new Date())}
           >
             Now
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
+          </Button>
+          <Button variant="secondary" onclick={closePanel}>
             Back to your chart
-          </button>
-        </div>
+          </Button>
+        </ButtonRow>
 
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={transitAlert.length === 0}
-        >
-          {transitAlert}
-        </p>
-      </form>
+        <Alert message={transitAlert} />
+      </FormPanel>
     {/if}
 
     {#if panel === Panel.Progressions}
-      <form
-        aria-label="Progressed date"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
-        onsubmit={onProgressionsSubmit}
-      >
-        <div>
-          <h2 class="font-serif text-lg">Progressed date</h2>
-          <p class="text-ink-muted text-xs">
-            Your chart moved on a day for each year of life, to this date.
-          </p>
-        </div>
+      <FormPanel title="Progressed date" onsubmit={onProgressionsSubmit}>
+        {#snippet description()}Your chart moved on a day for each year of life,
+          to this date.{/snippet}
 
-        <div class="flex flex-col gap-1.5">
-          <label for={PROGRESSIONS_DATE_ID} class="text-sm font-medium">
-            Date
-          </label>
-          <input
+        <Field id={PROGRESSIONS_DATE_ID} label="Date">
+          <Input
             id={PROGRESSIONS_DATE_ID}
             name="progressionsDate"
             type="date"
             required
             min={chart ? formatDateValue(chart.details.date) : undefined}
             max={LAST_CALCULABLE_DATE_VALUE}
-            class="border-rule bg-paper rounded border px-3 py-2"
             bind:value={progressionsDate}
           />
-        </div>
+        </Field>
 
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
-          >
-            Show progressions
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+        <ButtonRow>
+          <Button variant="primary" type="submit">Show progressions</Button>
+          <Button
+            variant="secondary"
             onclick={() =>
               setProgressionsDate(toLocal(new Date(), transitTimeZone))}
           >
             Today
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
+          </Button>
+          <Button variant="secondary" onclick={closePanel}>
             Back to your chart
-          </button>
-        </div>
+          </Button>
+        </ButtonRow>
 
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={progressionsAlert.length === 0}
-        >
-          {progressionsAlert}
-        </p>
-      </form>
+        <Alert message={progressionsAlert} />
+      </FormPanel>
     {/if}
 
     {#if panel === Panel.SolarReturn}
-      <form
-        aria-label="Solar return"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
-        onsubmit={onReturnSubmit}
-      >
-        <div>
-          <h2 class="font-serif text-lg">Solar return</h2>
-          <p class="text-ink-muted text-xs">
-            The chart for the moment the Sun gets back to where it was when you
-            were born, cast for where you are on that birthday.
-          </p>
-        </div>
+      <FormPanel title="Solar return" onsubmit={onReturnSubmit}>
+        {#snippet description()}The chart for the moment the Sun gets back to
+          where it was when you were born, cast for where you are on that
+          birthday.{/snippet}
 
-        <div class="flex flex-col gap-1.5">
-          <label for={RETURN_YEAR_ID} class="text-sm font-medium">Year</label>
-          <input
+        <Field id={RETURN_YEAR_ID} label="Year">
+          <Input
             id={RETURN_YEAR_ID}
             name="returnYear"
             type="number"
@@ -1207,83 +1102,47 @@
             min="1"
             max="3002"
             step="1"
-            class="border-rule bg-paper rounded border px-3 py-2"
             bind:value={returnYear}
           />
-        </div>
+        </Field>
 
         <PlaceFields idPrefix="return" bind:place={returnPlace} />
 
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
-          >
-            Show solar return
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
+        <ButtonRow>
+          <Button variant="primary" type="submit">Show solar return</Button>
+          <Button variant="secondary" onclick={closePanel}>
             Back to your chart
-          </button>
-        </div>
+          </Button>
+        </ButtonRow>
 
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={returnAlert.length === 0}
-        >
-          {returnAlert}
-        </p>
-      </form>
+        <Alert message={returnAlert} />
+      </FormPanel>
     {/if}
 
     {#if panel === Panel.LunarReturn}
-      <form
-        aria-label="Lunar return"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
-        onsubmit={onLunarReturnSubmit}
-      >
-        <div>
-          <h2 class="font-serif text-lg">Lunar return</h2>
-          <p class="text-ink-muted text-xs">
-            The chart for the moment the Moon gets back to where it was when you
-            were born, about every 27 days, cast for where you are then. It
-            shows the return in effect on the date.
-          </p>
-        </div>
+      <FormPanel title="Lunar return" onsubmit={onLunarReturnSubmit}>
+        {#snippet description()}The chart for the moment the Moon gets back to
+          where it was when you were born, about every 27 days, cast for where
+          you are then. It shows the return in effect on the date.{/snippet}
 
-        <div class="flex flex-col gap-1.5">
-          <label for={LUNAR_RETURN_DATE_ID} class="text-sm font-medium">
-            Date
-          </label>
-          <input
+        <Field id={LUNAR_RETURN_DATE_ID} label="Date">
+          <Input
             id={LUNAR_RETURN_DATE_ID}
             name="lunarReturnDate"
             type="date"
             required
             min={chart ? formatDateValue(chart.details.date) : undefined}
             max={LAST_CALCULABLE_DATE_VALUE}
-            class="border-rule bg-paper rounded border px-3 py-2"
             bind:value={lunarReturnDate}
           />
-        </div>
+        </Field>
 
         <PlaceFields idPrefix="lunar-return" bind:place={lunarReturnPlace} />
 
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
-          >
-            Show lunar return
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+        <ButtonRow>
+          <Button variant="primary" type="submit">Show lunar return</Button>
+          <Button
+            variant="secondary"
             onclick={() => {
               lunarReturnDate = formatDateValue(
                 toLocal(new Date(), transitTimeZone),
@@ -1292,39 +1151,26 @@
             }}
           >
             Today
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
+          </Button>
+          <Button variant="secondary" onclick={closePanel}>
             Back to your chart
-          </button>
-        </div>
+          </Button>
+        </ButtonRow>
 
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={lunarReturnAlert.length === 0}
-        >
-          {lunarReturnAlert}
-        </p>
-      </form>
+        <Alert message={lunarReturnAlert} />
+      </FormPanel>
     {/if}
 
     {#if panel === Panel.Comparison}
-      <form
-        aria-label="Their birth details"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
+      <FormPanel
+        title="Their birth details"
+        showTitle={false}
         onfocusin={requestEngine}
         onsubmit={onCompareSubmit}
       >
         <div>
-          <h2 class="font-serif text-lg">Compare with someone else</h2>
-          <p class="text-ink-muted text-xs">
-            Their chart uses your house system.
-          </p>
+          <h2 class="ui-heading-section">Compare with someone else</h2>
+          <p class="ui-hint">Their chart uses your house system.</p>
         </div>
 
         <SavedChartList
@@ -1343,8 +1189,8 @@
           onTimeUnknownChange={recompareIfCompared}
         />
 
-        <fieldset class="flex flex-col gap-1.5">
-          <legend class="text-sm font-medium">Show</legend>
+        <fieldset class="ui-field">
+          <legend class="ui-label">Show</legend>
           <div class="flex gap-4">
             {#each comparisonStyles as style (style)}
               <label class="flex items-center gap-2 text-sm">
@@ -1360,37 +1206,23 @@
           </div>
         </fieldset>
 
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
-            disabled={isDrawing}
-          >
+        <ButtonRow>
+          <Button variant="primary" type="submit" disabled={isDrawing}>
             Compare charts
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
+          </Button>
+          <Button variant="secondary" onclick={closePanel}>
             Stop comparing
-          </button>
-        </div>
+          </Button>
+        </ButtonRow>
 
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={compareAlert.length === 0}
-        >
-          {compareAlert}
-        </p>
+        <Alert message={compareAlert} />
 
         <SaveChartRow
           idPrefix="compare"
           blockedReason={savedChartsError || undefined}
           onSave={(name) => saveForm(theirs, name)}
         />
-      </form>
+      </FormPanel>
     {/if}
   </div>
 

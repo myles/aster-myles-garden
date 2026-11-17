@@ -1,5 +1,7 @@
 <!-- Place search combobox; follows the WAI-ARIA combobox pattern. -->
 <script lang="ts">
+  import Field from "@/components/ui/Field.svelte";
+  import Input from "@/components/ui/Input.svelte";
   import { describeError } from "@/lib/format";
   import {
     formatPlace,
@@ -161,9 +163,8 @@
   }
 </script>
 
-<div class="relative flex flex-col gap-1.5">
-  <label for={id} class="text-sm font-medium">Place</label>
-  <input
+<Field {id} label="Place" class="relative">
+  <Input
     {id}
     name="place"
     type="text"
@@ -177,7 +178,6 @@
     aria-controls={optionsId}
     aria-activedescendant={activeId}
     aria-describedby={statusId}
-    class="border-rule bg-paper rounded border px-3 py-2"
     value={query}
     onfocus={onFocus}
     oninput={onInput}
@@ -203,7 +203,7 @@
       </li>
     {/each}
   </ul>
-  <p id={statusId} class="text-ink-muted text-xs" aria-live="polite">
+  <p id={statusId} class="ui-hint" aria-live="polite">
     {status}
   </p>
-</div>
+</Field>

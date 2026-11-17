@@ -1,6 +1,7 @@
 <!-- Progressions: your natal chart inside a bi-wheel, the progressed
      planets around it, and the aspects they make to yours. -->
 <script lang="ts">
+  import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
@@ -35,7 +36,7 @@
 </script>
 
 <div>
-  <h2 class="font-serif text-2xl" tabindex="-1">Progressions</h2>
+  <h2 class="ui-heading-view" tabindex="-1">Progressions</h2>
   <p class="text-ink-muted mt-1 text-sm">
     Progressed to {formatLocalDate(progressions.forDate)} · against your chart for
     {formatPlace(progressions.natal.details.place)},
@@ -50,24 +51,24 @@
   </p>
 
   {#if !progressions.natal.details.time}
-    <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">
+    <Callout class="mt-4">
       Without a birth time, your chart has no houses, so the progressed planets
       can't be placed in them. The Moon moves about 13° a day, so the progressed
       Moon could be up to 7° from where it's shown.
-    </p>
+    </Callout>
   {/if}
 
   <ChartWheel chart={progressions.natal} {biWheel} bind:svg={wheel} />
 
   <div>
-    <h3 class="mb-2 font-serif text-lg">Progressions to your chart</h3>
-    <table class="w-full text-sm">
-      <thead class="text-ink-muted text-left">
-        <tr class="border-rule border-b">
-          <th scope="col" class="py-1.5 font-normal">Progressed</th>
-          <th scope="col" class="py-1.5 font-normal">Aspect</th>
-          <th scope="col" class="py-1.5 font-normal">Natal</th>
-          <th scope="col" class="py-1.5 text-right font-normal">Orb</th>
+    <h3 class="ui-heading-section mb-2">Progressions to your chart</h3>
+    <table class="ui-table">
+      <thead>
+        <tr>
+          <th scope="col">Progressed</th>
+          <th scope="col">Aspect</th>
+          <th scope="col">Natal</th>
+          <th scope="col" class="text-right">Orb</th>
         </tr>
       </thead>
       <tbody>
@@ -75,17 +76,17 @@
           {@const natal = BODY_INFO[aspect.first]}
           {@const progressed = BODY_INFO[aspect.second]}
           {@const info = ASPECT_INFO[aspect.type]}
-          <tr class="border-rule/60 border-b">
-            <td class="py-1.5">{progressed.glyph} {progressed.name}</td>
-            <td class="py-1.5">{info.glyph} {info.name}</td>
-            <td class="py-1.5">{natal.glyph} {natal.name}</td>
-            <td class="py-1.5 text-right tabular-nums">
+          <tr>
+            <td>{progressed.glyph} {progressed.name}</td>
+            <td>{info.glyph} {info.name}</td>
+            <td>{natal.glyph} {natal.name}</td>
+            <td class="text-right tabular-nums">
               {formatDegrees(aspect.orbDegrees)}
             </td>
           </tr>
         {:else}
-          <tr class="border-rule/60 border-b">
-            <td class="py-1.5" colspan="4">No progressions within orb.</td>
+          <tr>
+            <td colspan="4">No progressions within orb.</td>
           </tr>
         {/each}
       </tbody>

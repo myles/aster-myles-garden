@@ -1,6 +1,8 @@
 <!-- Builds a link that reopens this chart, and copies it. Nothing changes
      until the button is pressed. -->
 <script lang="ts">
+  import Button from "@/components/ui/Button.svelte";
+  import Input from "@/components/ui/Input.svelte";
   import { SITE_URL } from "@/consts";
   import type { BirthDetails } from "@/lib/charts/chart";
   import { describeError } from "@/lib/format";
@@ -41,14 +43,10 @@
 </script>
 
 <div>
-  <h3 class="mb-3 font-serif text-lg">Share</h3>
+  <h3 class="ui-heading-section mb-3">Share</h3>
 
   <div class="flex flex-wrap items-center gap-3">
-    <button
-      type="button"
-      class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium focus-visible:outline-2"
-      onclick={share}
-    >
+    <Button variant="tool" onclick={share}>
       <svg
         aria-hidden="true"
         viewBox="0 0 16 16"
@@ -64,16 +62,17 @@
         />
       </svg>
       Copy link
-    </button>
+    </Button>
     <p class="text-ink-muted text-sm" aria-live="polite">{status}</p>
   </div>
 
   {#if link}
-    <input
+    <Input
+      size="small"
+      class="mt-3 w-full font-mono text-xs"
       type="text"
       readonly
       aria-label="Share link"
-      class="border-rule bg-paper mt-3 w-full rounded border px-3 py-1.5 font-mono text-xs"
       value={link}
       onfocus={selectAll}
     />

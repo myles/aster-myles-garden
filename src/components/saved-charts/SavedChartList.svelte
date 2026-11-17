@@ -1,5 +1,6 @@
 <!-- Charts saved in this browser, to fill a form with one press. -->
 <script lang="ts">
+  import Button from "@/components/ui/Button.svelte";
   import { formatPlace } from "@/lib/places";
   import type { SavedChart } from "@/lib/storage/saved-charts";
 
@@ -31,22 +32,21 @@
             <p class="truncate font-medium">{chart.name}</p>
             <p class="text-ink-muted truncate text-xs">{describe(chart)}</p>
           </div>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-2 py-1"
+          <Button
+            size="small"
             aria-label={`Use ${chart.name}`}
             onclick={() => onUse(chart)}
           >
             Use
-          </button>
-          <button
-            type="button"
-            class="text-ink-muted hover:text-ink px-1 py-1 underline"
+          </Button>
+          <Button
+            variant="quiet"
+            class="px-1 py-1"
             aria-label={`Forget ${chart.name}`}
             onclick={() => onForget(chart)}
           >
             Forget
-          </button>
+          </Button>
         </li>
       {/each}
     </ul>

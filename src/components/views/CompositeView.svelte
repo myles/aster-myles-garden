@@ -1,6 +1,7 @@
 <!-- A composite: one chart for two people, made from the midpoints of
      their positions, with its own houses, positions and aspects. -->
 <script lang="ts">
+  import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import AspectTable from "@/components/chart/AspectTable.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
@@ -34,7 +35,7 @@
 </script>
 
 <div>
-  <h2 class="font-serif text-2xl" tabindex="-1">Composite chart</h2>
+  <h2 class="ui-heading-view" tabindex="-1">Composite chart</h2>
   <ZodiacNote chart={composite.first} />
   <ComparedPeople first={composite.first} second={composite.second} />
   <p class="text-ink-muted mt-2 text-sm">
@@ -47,18 +48,18 @@
   </p>
 
   {#if fallbackNote}
-    <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">
+    <Callout class="mt-4">
       {fallbackNote}
-    </p>
+    </Callout>
   {/if}
 
   {#if !composite.houses}
-    <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">
+    <Callout class="mt-4">
       A composite's houses and angles come from both midheavens, so it needs
       both birth times. Without them it has none. A noon chart's Moon may be up
       to 7° either side of where it's shown, so the composite Moon may be up to
       3½° out for each chart without a time.
-    </p>
+    </Callout>
   {/if}
 
   <ChartWheel

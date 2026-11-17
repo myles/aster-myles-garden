@@ -16,6 +16,7 @@
   --color-panel: var(--panel);
   --color-rule: var(--rule);
   --color-accent: var(--accent);
+  --color-challenging: var(--challenging);
 }
 
 :root {
@@ -90,6 +91,125 @@
 body {
   background: var(--paper);
   color: var(--ink);
+}
+
+/* Interface ------------------------------------------------------------- */
+
+/*
+ * The page's building blocks, each defined once. The Svelte components in
+ * src/components/ui/ wrap these for structure and behaviour; plain markup
+ * can use the classes directly. In the components layer, so a utility
+ * class on the same element, such as a margin, still wins.
+ */
+@layer components {
+  /* A bordered card: forms, and the menu of what to add to a chart. */
+  .ui-panel {
+    @apply flex flex-col gap-5 rounded-lg border border-rule bg-panel p-5;
+  }
+
+  /* A boxed aside, such as a note that houses fell back near the pole. */
+  .ui-callout {
+    @apply rounded-md border border-rule bg-panel p-3 text-sm;
+  }
+
+  .ui-heading-view {
+    @apply font-serif text-2xl;
+  }
+
+  .ui-heading-section {
+    @apply font-serif text-lg;
+  }
+
+  /* A label, its control, and any hint or error under it. */
+  .ui-field {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .ui-label {
+    @apply text-sm font-medium;
+  }
+
+  .ui-hint {
+    @apply text-xs text-ink-muted;
+  }
+
+  .ui-input {
+    @apply rounded border border-rule bg-paper px-3 py-2 disabled:opacity-50;
+  }
+
+  .ui-alert {
+    @apply text-sm text-challenging;
+  }
+
+  .ui-button-row {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .ui-button {
+    @apply disabled:opacity-50;
+  }
+
+  /* The form's one main action. */
+  .ui-button--primary {
+    @apply rounded bg-accent px-4 py-2 font-medium text-paper hover:opacity-90;
+  }
+
+  /* Alongside a primary button: "Today", "Back to your chart". */
+  .ui-button--secondary {
+    @apply rounded border border-rule px-4 py-2 hover:bg-accent/10;
+  }
+
+  /* A large choice standing on its own, such as "See transits". */
+  .ui-button--action {
+    @apply rounded-lg border border-rule bg-panel px-4 py-2.5 font-medium hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent;
+  }
+
+  /* Beside the wheel and its tables: "Copy link", "Enlarge wheel". */
+  .ui-button--tool {
+    @apply inline-flex items-center gap-1.5 rounded-md border border-rule bg-panel px-3 py-1.5 text-sm font-medium hover:bg-accent/10 focus-visible:outline-2 focus-visible:outline-accent;
+  }
+
+  /* A secondary button squeezed into a row, such as "Save" or "Use". */
+  .ui-button--small {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .ui-input--small {
+    @apply py-1.5 text-sm;
+  }
+
+  /* Reads as a link: "Forget", "Enter coordinates instead". */
+  .ui-button--quiet {
+    @apply text-ink-muted underline hover:text-ink;
+  }
+
+  /*
+   * Rows of figures. :where() keeps each rule as weak as a utility, so a
+   * cell's own classes, such as text-right, win.
+   */
+  .ui-table {
+    @apply w-full text-sm;
+  }
+
+  .ui-table :where(thead) {
+    @apply text-left text-ink-muted;
+  }
+
+  .ui-table :where(thead tr) {
+    @apply border-b border-rule;
+  }
+
+  .ui-table :where(tbody tr) {
+    @apply border-b border-rule/60;
+  }
+
+  .ui-table :where(th, td) {
+    @apply py-1.5;
+  }
+
+  .ui-table :where(th) {
+    @apply font-normal;
+  }
 }
 
 /* Chart wheel ----------------------------------------------------------- */

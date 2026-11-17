@@ -2,6 +2,9 @@
      zone is suggested from the nearest listed place until someone picks
      one themselves. -->
 <script lang="ts">
+  import Field from "@/components/ui/Field.svelte";
+  import Input from "@/components/ui/Input.svelte";
+  import Select from "@/components/ui/Select.svelte";
   import { describeError, formatCoordinates } from "@/lib/format";
   import {
     createCoordinatePlace,
@@ -118,11 +121,8 @@
   }
 </script>
 
-<div class="flex flex-col gap-1.5">
-  <label for={`${idPrefix}-coordinates`} class="text-sm font-medium">
-    Coordinates
-  </label>
-  <input
+<Field id={`${idPrefix}-coordinates`} label="Coordinates">
+  <Input
     id={`${idPrefix}-coordinates`}
     name="coordinates"
     type="text"
@@ -132,37 +132,32 @@
     placeholder="e.g. 43.7064, -79.3986"
     aria-describedby={`${idPrefix}-coordinates-hint`}
     aria-invalid={coordinatesError ? "true" : undefined}
-    class="border-rule bg-paper rounded border px-3 py-2"
     bind:value={coordinates}
     oninput={update}
   />
-  <p id={`${idPrefix}-coordinates-hint`} class="text-ink-muted text-xs">
+  <p id={`${idPrefix}-coordinates-hint`} class="ui-hint">
     {#if coordinatesError}
-      <span class="text-[var(--challenging)]">{coordinatesError}</span>
+      <span class="text-challenging">{coordinatesError}</span>
     {:else}
       Latitude, longitude in decimal degrees, as maps copy them. South and west
       are negative.
     {/if}
   </p>
-</div>
+</Field>
 
-<div class="flex flex-col gap-1.5">
-  <label for={`${idPrefix}-time-zone`} class="text-sm font-medium">
-    Time zone
-  </label>
-  <select
+<Field id={`${idPrefix}-time-zone`} label="Time zone">
+  <Select
     id={`${idPrefix}-time-zone`}
     name="timeZone"
     aria-describedby={`${idPrefix}-time-zone-hint`}
-    class="border-rule bg-paper rounded border px-3 py-2"
     bind:value={timeZone}
     onchange={onTimeZoneChange}
   >
     {#each timeZones as zone (zone)}
       <option value={zone}>{zone}</option>
     {/each}
-  </select>
-  <p id={`${idPrefix}-time-zone-hint`} class="text-ink-muted text-xs">
+  </Select>
+  <p id={`${idPrefix}-time-zone-hint`} class="ui-hint">
     {#if indexError}
       {indexError}
     {:else if nearest}
@@ -172,20 +167,16 @@
       Suggested once the coordinates are in.
     {/if}
   </p>
-</div>
+</Field>
 
-<div class="flex flex-col gap-1.5">
-  <label for={`${idPrefix}-place-name`} class="text-sm font-medium">
-    Name <span class="text-ink-muted font-normal">(optional)</span>
-  </label>
-  <input
+<Field id={`${idPrefix}-place-name`} label="Name" optional>
+  <Input
     id={`${idPrefix}-place-name`}
     name="placeName"
     type="text"
     autocomplete="off"
     placeholder="e.g. Smallville"
-    class="border-rule bg-paper rounded border px-3 py-2"
     bind:value={name}
     oninput={update}
   />
-</div>
+</Field>

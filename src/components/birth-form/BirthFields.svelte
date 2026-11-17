@@ -1,6 +1,8 @@
 <!-- Date, time and place fields for one person. Used for your chart and for
      the person you compare it with, so every id takes a prefix. -->
 <script lang="ts">
+  import Field from "@/components/ui/Field.svelte";
+  import Input from "@/components/ui/Input.svelte";
   import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
   import { LAST_CALCULABLE_DATE_VALUE } from "@/lib/charts/chart";
   import type { Place } from "@/lib/places";
@@ -25,32 +27,28 @@
   } = $props();
 </script>
 
-<div class="flex flex-col gap-1.5">
-  <label for={`${idPrefix}-date`} class="text-sm font-medium">Date</label>
-  <input
+<Field id={`${idPrefix}-date`} label="Date">
+  <Input
     id={`${idPrefix}-date`}
     name="date"
     type="date"
     required
     min="0001-01-01"
     max={LAST_CALCULABLE_DATE_VALUE}
-    class="border-rule bg-paper rounded border px-3 py-2"
     bind:value={date}
   />
-</div>
+</Field>
 
-<div class="flex flex-col gap-1.5">
-  <label for={`${idPrefix}-time`} class="text-sm font-medium">Time</label>
-  <input
+<Field id={`${idPrefix}-time`} label="Time">
+  <Input
     id={`${idPrefix}-time`}
     name="time"
     type="time"
     required={!isTimeUnknown}
     disabled={isTimeUnknown}
-    class="border-rule bg-paper rounded border px-3 py-2 disabled:opacity-50"
     bind:value={time}
   />
-  <p class="text-ink-muted text-xs">
+  <p class="ui-hint">
     {isTimeUnknown ? "The chart is cast for noon, without houses." : timeHint}
   </p>
   <label class="mt-1 flex items-center gap-2 text-sm">
@@ -63,6 +61,6 @@
     />
     I don't know the time
   </label>
-</div>
+</Field>
 
 <PlaceFields {idPrefix} bind:place />
