@@ -19,10 +19,7 @@ import {
   HouseSystem,
   isHouseSystem,
 } from "@/lib/astrology/houses";
-import {
-  isSolarReturnStyle,
-  SolarReturnStyle,
-} from "@/lib/charts/solar-return";
+import { isReturnStyle, ReturnStyle } from "@/lib/charts/returns";
 import { ComparisonStyle, isComparisonStyle } from "@/lib/charts/synastry";
 import { formatCoordinates } from "@/lib/format";
 import {
@@ -57,6 +54,8 @@ const TRANSITS_PARAM = "transits";
 // How a comparison is shown, written only when it isn't the bi-wheel.
 const COMPARISON_PARAM = "comparison";
 const RETURN_PARAM = "return";
+const LUNAR_RETURN_PARAM = "lunarReturn";
+// Shared by solar and lunar returns, as their place is.
 const RETURN_STYLE_PARAM = "returnStyle";
 const PROGRESSIONS_PARAM = "progressed";
 
@@ -102,13 +101,22 @@ export type SharedDetails = SharedPerson & {
   solarReturn?: {
     year: number;
     place?: SharedPlace;
-    style?: SolarReturnStyle;
+    style?: ReturnStyle;
+  };
+  /**
+   * When the link is for a lunar return: the one in effect on `date`,
+   * where it's cast. No place means the birthplace.
+   */
+  lunarReturn?: {
+    date: LocalDate;
+    place?: SharedPlace;
+    style?: ReturnStyle;
   };
 };
 
 /**
  * What a link can add to a chart: one of a comparison, transits,
- * progressions or a solar return.
+ * progressions, a solar return or a lunar return.
  */
 export type ShareAddition = {
   comparedWith?: BirthDetails;
@@ -116,7 +124,9 @@ export type ShareAddition = {
   comparisonStyle?: ComparisonStyle;
   transitsAt?: Date;
   progressionsForDate?: LocalDate;
-  solarReturn?: { year: number; place: Place; style?: SolarReturnStyle };
+  solarReturn?: { year: number; place: Place; style?: ReturnStyle };
+  /** The date names the return in effect then, where it's cast. */
+  lunarReturn?: { date: LocalDate; place: Place; style?: ReturnStyle };
 };
 
 /** How a person's fields are named in a link and in its errors. */
@@ -139,11 +149,14 @@ const SECOND_PERSON: PersonParams = {
   possessive: "The second chart's",
 };
 
-/** Where a solar return is cast: "place_return", "lat_return" and so on. */
+/**
+ * Where a solar or lunar return is cast: "place_return", "lat_return" and
+ * so on.
+ */
 const RETURN_PLACE: PersonParams = {
   suffix: "_return",
-  subject: "The link's solar return",
-  possessive: "The solar return's",
+  subject: "The link's return",
+  possessive: "The return's",
 };
 
 /**
@@ -160,6 +173,7 @@ export function buildShareUrl(
     transitsAt,
     progressionsForDate,
     solarReturn,
+    lunarReturn,
   }: ShareAddition = {},
 ): string {
   const url = new URL("/", siteUrl);
@@ -176,12 +190,11 @@ export function buildShareUrl(
   }
   if (solarReturn) {
     params.set(RETURN_PARAM, String(solarReturn.year));
-    if (solarReturn.style === SolarReturnStyle.BiWheel) {
-      params.set(RETURN_STYLE_PARAM, solarReturn.style);
-    }
-    if (!isSamePlace(solarReturn.place, details.place)) {
-      writePlace(params, solarReturn.place, RETURN_PLACE);
-    }
+    writeReturnSettings(params, solarReturn, details.place);
+  }
+  if (lunarReturn) {
+    params.set(LUNAR_RETURN_PARAM, formatDateValue(lunarReturn.date));
+    writeReturnSettings(params, lunarReturn, details.place);
   }
   if (transitsAt) {
     const minute = transitsAt.toISOString().slice(0, MINUTE_ISO_LENGTH);
@@ -223,17 +236,22 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
   const transitsAt = readTransitsAt(params);
   const progressionsForDate = readProgressionsForDate(params);
   const solarReturn = readSolarReturn(params);
+  const lunarReturn = readLunarReturn(params);
+  if (!solarReturn && !lunarReturn) {
+    rejectStrayReturnSettings(params);
+  }
 
   const additions = [
     comparedWith,
     transitsAt,
     progressionsForDate,
     solarReturn,
+    lunarReturn,
   ].filter(Boolean);
   if (additions.length > 1) {
     throw new Error(
-      "The link can show only one of a comparison, transits, progressions " +
-        "or a solar return.",
+      "The link can show only one of a comparison, transits, progressions, " +
+        "a solar return or a lunar return.",
     );
   }
 
@@ -246,6 +264,7 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
     transitsAt,
     progressionsForDate,
     solarReturn,
+    lunarReturn,
   };
 }
 
@@ -254,11 +273,7 @@ function readSolarReturn(
   params: URLSearchParams,
 ): SharedDetails["solarReturn"] {
   const year = params.get(RETURN_PARAM);
-  const style = params.get(RETURN_STYLE_PARAM);
   if (year === null) {
-    if (style !== null) {
-      throw new Error("A solar return style needs a solar return year.");
-    }
     return undefined;
   }
 
@@ -266,16 +281,66 @@ function readSolarReturn(
     throw new Error(`The solar return's year isn't valid: "${year}".`);
   }
 
+  return { year: Number(year), ...readReturnSettings(params) };
+}
+
+/** Undefined when the link isn't for a lunar return. */
+function readLunarReturn(
+  params: URLSearchParams,
+): SharedDetails["lunarReturn"] {
+  const value = params.get(LUNAR_RETURN_PARAM);
+  if (value === null) {
+    return undefined;
+  }
+
+  let date: LocalDate;
+  try {
+    date = parseLocalDate(value);
+  } catch (cause) {
+    throw new Error(`The lunar return's date isn't valid: "${value}".`, {
+      cause,
+    });
+  }
+
+  return { date, ...readReturnSettings(params) };
+}
+
+/** Where a return is cast and how it's shown, both shared by the kinds. */
+function readReturnSettings(params: URLSearchParams): {
+  place?: SharedPlace;
+  style?: ReturnStyle;
+} {
   const place = readPlace(params, RETURN_PLACE);
   if (!place && hasPlaceField(params, RETURN_PLACE)) {
     throw new Error(`${RETURN_PLACE.subject} is missing its place.`);
   }
 
-  if (style !== null && !isSolarReturnStyle(style)) {
-    throw new Error(`The link's solar return style isn't known: "${style}".`);
+  const style = params.get(RETURN_STYLE_PARAM);
+  if (style !== null && !isReturnStyle(style)) {
+    throw new Error(`The link's return style isn't known: "${style}".`);
   }
 
-  return { year: Number(year), place, style: style ?? undefined };
+  return { place, style: style ?? undefined };
+}
+
+/** A return's style, with no return to show, means a broken link. */
+function rejectStrayReturnSettings(params: URLSearchParams): void {
+  if (params.has(RETURN_STYLE_PARAM)) {
+    throw new Error("A return style needs a solar or lunar return.");
+  }
+}
+
+function writeReturnSettings(
+  params: URLSearchParams,
+  { place, style }: { place: Place; style?: ReturnStyle },
+  birthplace: Place,
+): void {
+  if (style === ReturnStyle.BiWheel) {
+    params.set(RETURN_STYLE_PARAM, style);
+  }
+  if (!isSamePlace(place, birthplace)) {
+    writePlace(params, place, RETURN_PLACE);
+  }
 }
 
 /** Listed places match by ID; places entered by coordinates, whole. */

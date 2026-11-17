@@ -6,7 +6,7 @@ import {
   OrbSize,
 } from "@/lib/astrology/aspects";
 import { HouseSystem } from "@/lib/astrology/houses";
-import { SolarReturnStyle } from "@/lib/charts/solar-return";
+import { ReturnStyle } from "@/lib/charts/returns";
 import { ComparisonStyle } from "@/lib/charts/synastry";
 import { buildShareUrl, parseShareHash } from "@/lib/share";
 
@@ -449,7 +449,7 @@ describe("share links for a solar return", () => {
     [
       "a place without its time zone",
       "&return=2026&lat_return=43.68&lon_return=-79.77",
-      "solar return is missing its place",
+      "The link's return is missing its place",
     ],
     [
       "a solar return and transits",
@@ -476,7 +476,7 @@ it("rejects an unknown solar return style", () => {
     parseShareHash(
       "#date=2000-01-01&time=12:00&place=1&return=2026&returnStyle=other",
     ),
-  ).toThrow(`The link's solar return style isn't known: "other".`);
+  ).toThrow(`The link's return style isn't known: "other".`);
 });
 
 it("builds a link for the solar return comparison", () => {
@@ -485,17 +485,88 @@ it("builds a link for the solar return comparison", () => {
       solarReturn: {
         year: 2026,
         place: CHART.details.place,
-        style: SolarReturnStyle.BiWheel,
+        style: ReturnStyle.BiWheel,
       },
     }),
   );
   expect(parseShareHash(url.hash)?.solarReturn?.style).toBe(
-    SolarReturnStyle.BiWheel,
+    ReturnStyle.BiWheel,
   );
 });
 
 it("rejects a solar return style without a return", () => {
   expect(() =>
     parseShareHash("#date=2000-01-01&time=12:00&place=1&returnStyle=biWheel"),
-  ).toThrow("needs a solar return year");
+  ).toThrow("needs a solar or lunar return");
+});
+
+describe("share links for a lunar return", () => {
+  const TOKYO = {
+    id: 1850147,
+    name: "Tokyo",
+    region: "Tokyo",
+    country: "Japan",
+    latitude: 35.6895,
+    longitude: 139.6917,
+    timeZone: "Asia/Tokyo",
+  };
+  const DATE = { year: 2026, month: 12, day: 3 };
+
+  it("adds just the date when it's cast at the birthplace", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, {
+      lunarReturn: { date: DATE, place: CHART.details.place },
+    });
+
+    expect(url).toBe(
+      "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
+        "&place=2643743&house=equal&lunarReturn=2026-12-03",
+    );
+    expect(parseShareHash(new URL(url).hash)?.lunarReturn).toEqual({
+      date: DATE,
+      place: undefined,
+    });
+  });
+
+  it("adds another place and the bi-wheel, as a solar return does", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL, {
+      lunarReturn: { date: DATE, place: TOKYO, style: ReturnStyle.BiWheel },
+    });
+
+    expect(url).toMatch(
+      /&lunarReturn=2026-12-03&returnStyle=biWheel&place_return=1850147$/,
+    );
+    expect(parseShareHash(new URL(url).hash)?.lunarReturn).toEqual({
+      date: DATE,
+      place: { placeId: 1850147 },
+      style: ReturnStyle.BiWheel,
+    });
+  });
+
+  it.each([
+    ["a date that isn't one", "&lunarReturn=soon", "lunar return's date"],
+    ["a month that doesn't exist", "&lunarReturn=2026-13-01", "lunar return"],
+    [
+      "a place without its time zone",
+      "&lunarReturn=2026-12-03&lat_return=43.68&lon_return=-79.77",
+      "The link's return is missing its place",
+    ],
+    [
+      "an unknown style",
+      "&lunarReturn=2026-12-03&returnStyle=other",
+      "return style isn't known",
+    ],
+    [
+      "a solar return as well",
+      "&lunarReturn=2026-12-03&return=2026",
+      "only one of",
+    ],
+    [
+      "progressions as well",
+      "&lunarReturn=2026-12-03&progressed=2026-12-03",
+      "only one of",
+    ],
+  ])("rejects %s", (_, extra, message) => {
+    const hash = "#date=2000-01-01&time=12:00&place=1" + extra;
+    expect(() => parseShareHash(hash)).toThrow(message);
+  });
 });

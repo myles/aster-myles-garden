@@ -10,8 +10,6 @@ import {
   createSolarReturn,
   findCurrentReturnYear,
   findSolarReturn,
-  isSolarReturnStyle,
-  SolarReturnStyle,
 } from "@/lib/charts/solar-return";
 import {
   browserEphemeris,
@@ -200,15 +198,5 @@ describe("findCurrentReturnYear", () => {
     expect(findCurrentReturnYear(natal, new Date("2000-06-01T00:00Z"))).toBe(
       2001,
     );
-  });
-});
-
-describe("isSolarReturnStyle", () => {
-  it.each(Object.values(SolarReturnStyle))("accepts %s", (style) => {
-    expect(isSolarReturnStyle(style)).toBe(true);
-  });
-
-  it("rejects anything else", () => {
-    expect(isSolarReturnStyle("other")).toBe(false);
   });
 });

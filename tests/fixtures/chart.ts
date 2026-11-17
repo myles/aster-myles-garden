@@ -2,6 +2,7 @@
 
 import type { Chart } from "@/lib/charts/chart";
 import type { Composite } from "@/lib/charts/composite";
+import type { LunarReturn } from "@/lib/charts/lunar-return";
 import type { Progressions } from "@/lib/charts/progressions";
 import type { SolarReturn } from "@/lib/charts/solar-return";
 import type { Transits } from "@/lib/charts/transits";
@@ -152,4 +153,21 @@ export const SOLAR_RETURN: SolarReturn = {
   natal: CHART,
   year: 2026,
   chart: CHART,
+};
+
+/**
+ * Your chart standing in for its own lunar return, which only its date,
+ * where it's cast, marks.
+ */
+export const LUNAR_RETURN: LunarReturn = {
+  natal: CHART,
+  chart: {
+    ...CHART,
+    details: {
+      ...CHART.details,
+      date: { year: 2026, month: 12, day: 3 },
+      time: { hour: 9, minute: 41 },
+    },
+    bornAt: new Date("2026-12-03T09:41:00Z"),
+  },
 };

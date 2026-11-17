@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import SolarReturnView from "@/components/views/SolarReturnView.svelte";
 import { HouseSystem } from "@/lib/astrology/houses";
-import { SolarReturnStyle } from "@/lib/charts/solar-return";
+import { ReturnStyle } from "@/lib/charts/returns";
 
 import { CHART, POLAR_CHART, SOLAR_RETURN } from "../../fixtures/chart";
 
@@ -70,7 +70,7 @@ describe("SolarReturnView", () => {
   it("updates the comparison when the return changes", async () => {
     const { rerender } = render(SolarReturnView, {
       solarReturn: SOLAR_RETURN,
-      style: SolarReturnStyle.BiWheel,
+      style: ReturnStyle.BiWheel,
     });
     const wheel = screen.getByRole("img", {
       name: "Solar return comparison wheel",
@@ -119,7 +119,7 @@ describe("SolarReturnView", () => {
   it("names the natal houses the bi-wheel draws", () => {
     render(SolarReturnView, {
       solarReturn: { ...SOLAR_RETURN, natal: POLAR_CHART },
-      style: SolarReturnStyle.BiWheel,
+      style: ReturnStyle.BiWheel,
     });
 
     expect(screen.getByText(/· Porphyry$/)).toBeTruthy();
@@ -129,7 +129,7 @@ describe("SolarReturnView", () => {
   it("drops the return's fallback note in the bi-wheel", () => {
     render(SolarReturnView, {
       solarReturn: { ...SOLAR_RETURN, chart: POLAR_CHART },
-      style: SolarReturnStyle.BiWheel,
+      style: ReturnStyle.BiWheel,
     });
 
     expect(screen.queryByText(/so the return uses/)).toBeNull();

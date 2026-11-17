@@ -4,18 +4,20 @@
 
 import type { Chart } from "@/lib/charts/chart";
 import type { Composite } from "@/lib/charts/composite";
+import type { LunarReturn } from "@/lib/charts/lunar-return";
 import type { Progressions } from "@/lib/charts/progressions";
+import type { SolarReturn } from "@/lib/charts/solar-return";
 import type { Synastry } from "@/lib/charts/synastry";
 import type { Transits } from "@/lib/charts/transits";
 
-import { SolarReturnStyle, type SolarReturn } from "@/lib/charts/solar-return";
+import { ReturnStyle } from "@/lib/charts/returns";
 import {
   buildChartCsv,
   buildComparisonCsv,
   buildCompositeCsv,
   buildProgressionsCsv,
   buildTransitsCsv,
-  buildSolarReturnCsv,
+  buildReturnCsv,
 } from "@/lib/downloads/csv";
 import { formatCoordinates } from "@/lib/format";
 import { formatDateValue } from "@/lib/time";
@@ -32,6 +34,7 @@ export enum SubjectKind {
   Transits = "transits",
   Progressions = "progressions",
   SolarReturn = "solarReturn",
+  LunarReturn = "lunarReturn",
 }
 
 /** What's being exported, which decides the CSV and the file name. */
@@ -44,7 +47,12 @@ export type ExportSubject =
   | {
       kind: SubjectKind.SolarReturn;
       solarReturn: SolarReturn;
-      style?: SolarReturnStyle;
+      style?: ReturnStyle;
+    }
+  | {
+      kind: SubjectKind.LunarReturn;
+      lunarReturn: LunarReturn;
+      style?: ReturnStyle;
     };
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
@@ -109,9 +117,14 @@ function buildCsv(subject: ExportSubject): string {
     case SubjectKind.Progressions:
       return buildProgressionsCsv(subject.progressions);
     case SubjectKind.SolarReturn:
-      return buildSolarReturnCsv(
+      return buildReturnCsv(
         subject.solarReturn,
-        subject.style ?? SolarReturnStyle.Standalone,
+        subject.style ?? ReturnStyle.Standalone,
+      );
+    case SubjectKind.LunarReturn:
+      return buildReturnCsv(
+        subject.lunarReturn,
+        subject.style ?? ReturnStyle.Standalone,
       );
   }
 }
@@ -254,6 +267,9 @@ function downloadBlob(blob: Blob, filename: string): void {
  * - transits → "aster-london-2000-01-01-1200-transits-2026-11-13-2000-utc"
  * - progressions → "aster-london-2000-01-01-1200-progressed-2026-11-14"
  * - solar return → "aster-london-2000-01-01-1200-solar-return-2026"
+ * - lunar return → "aster-london-2000-01-01-1200-lunar-return-2026-12-03",
+ *   dated where it's cast
+ * Either return adds "-bi-wheel" when set against the natal chart.
  */
 function buildFilename(subject: ExportSubject, extension: string): string {
   return `${FILENAME_PREFIX}-${describeSubject(subject)}.${extension}`;
@@ -281,9 +297,19 @@ function describeSubject(subject: ExportSubject): string {
       return (
         `${describeChart(subject.solarReturn.natal)}-solar-return-` +
         subject.solarReturn.year +
-        (subject.style === SolarReturnStyle.BiWheel ? "-bi-wheel" : "")
+        describeReturnStyle(subject.style)
+      );
+    case SubjectKind.LunarReturn:
+      return (
+        `${describeChart(subject.lunarReturn.natal)}-lunar-return-` +
+        formatDateValue(subject.lunarReturn.chart.details.date) +
+        describeReturnStyle(subject.style)
       );
   }
+}
+
+function describeReturnStyle(style: ReturnStyle | undefined): string {
+  return style === ReturnStyle.BiWheel ? "-bi-wheel" : "";
 }
 
 /** In UTC, so the name doesn't depend on where it was saved. */

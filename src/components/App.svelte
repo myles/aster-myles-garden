@@ -1,7 +1,7 @@
 <!-- Birth form and chart view. Talks to the chart service, place search
      and wheel renderer — never to the ephemeris. Once your chart is drawn,
      a second form compares it with someone else's or shows its transits,
-     progressions or solar return. -->
+     progressions, solar return or lunar return. -->
 <script lang="ts">
   import BirthFields from "@/components/birth-form/BirthFields.svelte";
   import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
@@ -11,6 +11,7 @@
   import ChartView from "@/components/views/ChartView.svelte";
   import ComparisonView from "@/components/views/ComparisonView.svelte";
   import CompositeView from "@/components/views/CompositeView.svelte";
+  import LunarReturnView from "@/components/views/LunarReturnView.svelte";
   import ProgressionView from "@/components/views/ProgressionView.svelte";
   import SolarReturnView from "@/components/views/SolarReturnView.svelte";
   import TransitView from "@/components/views/TransitView.svelte";
@@ -54,8 +55,9 @@
   import {
     createSolarReturn,
     findCurrentReturnYear,
-    SolarReturnStyle,
   } from "@/lib/charts/solar-return";
+  import { createLunarReturn } from "@/lib/charts/lunar-return";
+  import { ReturnStyle } from "@/lib/charts/returns";
   import { createComposite } from "@/lib/charts/composite";
   import {
     compareCharts,
@@ -89,9 +91,13 @@
   const TRANSIT_DATE_ID = "transit-date";
   const PROGRESSIONS_DATE_ID = "progressions-date";
   const RETURN_YEAR_ID = "return-year";
+  const LUNAR_RETURN_DATE_ID = "lunar-return-date";
 
   const RETURN_NEEDS_TIME =
     "A solar return needs your birth time. Enter it above and draw your " +
+    "chart again.";
+  const LUNAR_RETURN_NEEDS_TIME =
+    "A lunar return needs your birth time. Enter it above and draw your " +
     "chart again.";
 
   // Below Tailwind's lg breakpoint the layout stacks: forms, then result.
@@ -127,13 +133,20 @@
   let progressionsDate = $state("");
   let progressionsForDate: LocalDate | undefined = $state.raw();
   let progressionsError = $state("");
-  let returnStyle = $state(SolarReturnStyle.Standalone);
+  let returnStyle = $state(ReturnStyle.Standalone);
   // A number input binds a number, or null while it's empty.
   let returnYear: number | null = $state(null);
   let returnPlace: Place | undefined = $state.raw();
   // The year and place shown, set when the form is submitted.
   let shownReturn: { year: number; place: Place } | undefined = $state.raw();
   let returnError = $state("");
+  let lunarReturnStyle = $state(ReturnStyle.Standalone);
+  let lunarReturnDate = $state("");
+  let lunarReturnPlace: Place | undefined = $state.raw();
+  // The date and place shown, set when the form is submitted.
+  let shownLunarReturn: { date: LocalDate; place: Place } | undefined =
+    $state.raw();
+  let lunarReturnError = $state("");
   let savedCharts: SavedChart[] = $state.raw([]);
   // Why saved charts can't be used, e.g. the browser blocks storage.
   let savedChartsError = $state("");
@@ -188,6 +201,27 @@
   });
   const solarReturn = $derived(solarReturnResult?.solarReturn);
   const returnAlert = $derived(returnError || solarReturnResult?.failure || "");
+
+  // As with a solar return: a date before the first return, or one the
+  // engine can't reach, throws, and is reported in the form.
+  const lunarReturnResult = $derived.by(() => {
+    if (panel !== Panel.LunarReturn || !chart || !shownLunarReturn) {
+      return undefined;
+    }
+
+    try {
+      const { date, place } = shownLunarReturn;
+      return { lunarReturn: createLunarReturn(chart, date, place) };
+    } catch (cause) {
+      return {
+        failure: `Couldn't find the lunar return: ${describeError(cause)}`,
+      };
+    }
+  });
+  const lunarReturn = $derived(lunarReturnResult?.lunarReturn);
+  const lunarReturnAlert = $derived(
+    lunarReturnError || lunarReturnResult?.failure || "",
+  );
 
   // The engine is loaded whenever a chart exists, and transitsAt is
   // checked against its range, but a calculation can still throw. Caught
@@ -273,11 +307,21 @@
         const { year, place } = shared.solarReturn;
         // No place in the link means the birthplace.
         const resolved = place ? await resolvePlace(place) : yours.place!;
-        returnStyle = shared.solarReturn.style ?? SolarReturnStyle.Standalone;
+        returnStyle = shared.solarReturn.style ?? ReturnStyle.Standalone;
         returnYear = year;
         returnPlace = resolved;
         shownReturn = { year, place: resolved };
         panel = Panel.SolarReturn;
+      }
+      if (shared.lunarReturn) {
+        const { date, place } = shared.lunarReturn;
+        // No place in the link means the birthplace.
+        const resolved = place ? await resolvePlace(place) : yours.place!;
+        lunarReturnStyle = shared.lunarReturn.style ?? ReturnStyle.Standalone;
+        lunarReturnDate = formatDateValue(date);
+        lunarReturnPlace = resolved;
+        shownLunarReturn = { date, place: resolved };
+        panel = Panel.LunarReturn;
       }
       if (shared.transitsAt) {
         setTransitMoment(shared.transitsAt);
@@ -585,7 +629,7 @@
    * a birth time, it opens on why there isn't one.
    */
   function startSolarReturn(): Promise<void> {
-    returnStyle = SolarReturnStyle.Standalone;
+    returnStyle = ReturnStyle.Standalone;
     returnPlace = chart?.details.place;
     shownReturn = undefined;
     returnError = "";
@@ -629,6 +673,51 @@
     showSolarReturn();
   }
 
+  /**
+   * Opens the lunar return in effect today, on the visitor's clock, cast
+   * at the birthplace. Without a birth time, it opens on why there isn't
+   * one.
+   */
+  function startLunarReturn(): Promise<void> {
+    lunarReturnStyle = ReturnStyle.Standalone;
+    lunarReturnPlace = chart?.details.place;
+    lunarReturnDate = formatDateValue(toLocal(new Date(), transitTimeZone));
+    shownLunarReturn = undefined;
+    lunarReturnError = "";
+
+    showLunarReturn();
+    return openPanel(Panel.LunarReturn, LUNAR_RETURN_DATE_ID);
+  }
+
+  function showLunarReturn(): void {
+    if (!chart?.details.time) {
+      lunarReturnError = LUNAR_RETURN_NEEDS_TIME;
+      return;
+    }
+    if (!lunarReturnDate) {
+      lunarReturnError = "Enter a date.";
+      return;
+    }
+    if (!lunarReturnPlace) {
+      lunarReturnError =
+        "Choose a place from the list, or enter its coordinates.";
+      return;
+    }
+
+    try {
+      const date = parseLocalDate(lunarReturnDate);
+      shownLunarReturn = { date, place: lunarReturnPlace };
+      lunarReturnError = "";
+    } catch (cause) {
+      lunarReturnError = `Couldn't find the lunar return: ${describeError(cause)}`;
+    }
+  }
+
+  function onLunarReturnSubmit(event: SubmitEvent): void {
+    event.preventDefault();
+    showLunarReturn();
+  }
+
   /** Back to your chart alone, forgetting whatever was added to it. */
   function closePanel(): void {
     panel = Panel.None;
@@ -641,6 +730,8 @@
     progressionsError = "";
     shownReturn = undefined;
     returnError = "";
+    shownLunarReturn = undefined;
+    lunarReturnError = "";
   }
 
   /** Shows transits for a moment and puts it in the transit form. */
@@ -906,6 +997,13 @@
         >
           See solar return
         </button>
+        <button
+          type="button"
+          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
+          onclick={startLunarReturn}
+        >
+          See lunar return
+        </button>
       </div>
     {/if}
 
@@ -1106,6 +1204,78 @@
       </form>
     {/if}
 
+    {#if panel === Panel.LunarReturn}
+      <form
+        aria-label="Lunar return"
+        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
+        novalidate
+        onsubmit={onLunarReturnSubmit}
+      >
+        <div>
+          <h2 class="font-serif text-lg">Lunar return</h2>
+          <p class="text-ink-muted text-xs">
+            The chart for the moment the Moon gets back to where it was when you
+            were born, about every 27 days, cast for where you are then. It
+            shows the return in effect on the date.
+          </p>
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label for={LUNAR_RETURN_DATE_ID} class="text-sm font-medium">
+            Date
+          </label>
+          <input
+            id={LUNAR_RETURN_DATE_ID}
+            name="lunarReturnDate"
+            type="date"
+            required
+            min={chart ? formatDateValue(chart.details.date) : undefined}
+            max={LAST_CALCULABLE_DATE_VALUE}
+            class="border-rule bg-paper rounded border px-3 py-2"
+            bind:value={lunarReturnDate}
+          />
+        </div>
+
+        <PlaceFields idPrefix="lunar-return" bind:place={lunarReturnPlace} />
+
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="submit"
+            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
+          >
+            Show lunar return
+          </button>
+          <button
+            type="button"
+            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+            onclick={() => {
+              lunarReturnDate = formatDateValue(
+                toLocal(new Date(), transitTimeZone),
+              );
+              showLunarReturn();
+            }}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
+            onclick={closePanel}
+          >
+            Back to your chart
+          </button>
+        </div>
+
+        <p
+          role="alert"
+          class="text-sm text-[var(--challenging)]"
+          hidden={lunarReturnAlert.length === 0}
+        >
+          {lunarReturnAlert}
+        </p>
+      </form>
+    {/if}
+
     {#if panel === Panel.Comparison}
       <form
         aria-label="Their birth details"
@@ -1199,6 +1369,8 @@
       <ProgressionView {progressions} />
     {:else if solarReturn}
       <SolarReturnView {solarReturn} bind:style={returnStyle} />
+    {:else if lunarReturn}
+      <LunarReturnView {lunarReturn} bind:style={lunarReturnStyle} />
     {:else if chart}
       <ChartView {chart} />
     {:else}

@@ -7,7 +7,7 @@ import {
   OrbSize,
 } from "@/lib/astrology/aspects";
 import { Body, BODY_INFO } from "@/lib/astrology/bodies";
-import { SolarReturnStyle } from "@/lib/charts/solar-return";
+import { ReturnStyle } from "@/lib/charts/returns";
 import { compareCharts } from "@/lib/charts/synastry";
 import {
   buildChartCsv,
@@ -15,7 +15,7 @@ import {
   buildCompositeCsv,
   buildProgressionsCsv,
   buildTransitsCsv,
-  buildSolarReturnCsv,
+  buildReturnCsv,
 } from "@/lib/downloads/csv";
 
 import {
@@ -238,24 +238,22 @@ describe("buildProgressionsCsv", () => {
   });
 });
 
-describe("buildSolarReturnCsv", () => {
+describe("buildReturnCsv", () => {
   it("keeps the standalone return tables", () => {
-    expect(buildSolarReturnCsv(SOLAR_RETURN, SolarReturnStyle.Standalone)).toBe(
+    expect(buildReturnCsv(SOLAR_RETURN, ReturnStyle.Standalone)).toBe(
       buildChartCsv(SOLAR_RETURN.chart),
     );
   });
 
   it("exports return positions with natal houses and cross aspects", () => {
-    const csv = buildSolarReturnCsv(SOLAR_RETURN, SolarReturnStyle.BiWheel);
+    const csv = buildReturnCsv(SOLAR_RETURN, ReturnStyle.BiWheel);
     expect(csv).toContain("Natal house");
     expect(csv).toContain("Aspects to natal chart");
     expect(csv).toContain("Conjunction");
   });
 
   it("lays out cross aspects as the on-screen table does", () => {
-    const lines = parseLines(
-      buildSolarReturnCsv(SOLAR_RETURN, SolarReturnStyle.BiWheel),
-    );
+    const lines = parseLines(buildReturnCsv(SOLAR_RETURN, ReturnStyle.BiWheel));
 
     expect(lines[1]).toMatch(/,,Pair,Aspect,Orb$/);
     expect(lines[2]).toMatch(/,,\S+ Natal \w+ – \S+ Return \w+,[^,]+,[^,]+$/);
@@ -266,9 +264,7 @@ describe("buildSolarReturnCsv", () => {
       ...SOLAR_RETURN,
       chart: { ...SOLAR_RETURN.chart, bodies: [] },
     };
-    const lines = parseLines(
-      buildSolarReturnCsv(solarReturn, SolarReturnStyle.BiWheel),
-    );
+    const lines = parseLines(buildReturnCsv(solarReturn, ReturnStyle.BiWheel));
 
     expect(lines[2]).toMatch(/,,No major aspects within orb\.,,$/);
   });

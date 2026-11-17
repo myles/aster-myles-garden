@@ -5,33 +5,20 @@
 import type { Place } from "@/lib/places";
 
 import { Body } from "@/lib/astrology/bodies";
-import { normalizeDegrees } from "@/lib/astrology/zodiac";
 import {
   canCalculateMoment,
   createChartAt,
   type Chart,
 } from "@/lib/charts/chart";
+import { findBody, findReturnNear } from "@/lib/charts/returns";
 import { browserEphemeris, type Ephemeris } from "@/lib/engine/ephemeris";
 import { fromJulianDay, toJulianDay, toLocal } from "@/lib/time";
 
 /** The mean length of the Sun's year, in days. */
 const TROPICAL_YEAR_DAYS = 365.242_19;
 
-const HALF_CIRCLE_DEGREES = 180;
-
 /** About a hundredth of a second of the Sun's motion. */
 const SUN_TOLERANCE_DEGREES = 1e-7;
-/** Converging takes two or three; more means something's wrong. */
-const MAX_SEARCH_STEPS = 12;
-
-export enum SolarReturnStyle {
-  Standalone = "standalone",
-  BiWheel = "biWheel",
-}
-
-export function isSolarReturnStyle(value: string): value is SolarReturnStyle {
-  return Object.values(SolarReturnStyle).includes(value as SolarReturnStyle);
-}
 
 export type SolarReturn = {
   natal: Chart;
@@ -72,23 +59,20 @@ export function findSolarReturn(
     );
   }
 
-  const natalSun = findSun(natal.bodies);
-
-  // Start from the same point in the tropical year, then step by however
-  // far the Sun is off, at the speed it's moving. Its speed barely
-  // changes over the day or so a step covers, so each lands far closer.
-  let julianDay = toJulianDay(birthday);
-  for (let step = 0; step < MAX_SEARCH_STEPS; step++) {
-    const sun = findSun(ephemeris.calculateBodies(julianDay));
-    const missDegrees = toSignedDegrees(natalSun.longitude - sun.longitude);
-
-    if (Math.abs(missDegrees) < SUN_TOLERANCE_DEGREES) {
-      return fromJulianDay(julianDay);
-    }
-    julianDay += missDegrees / sun.speed;
+  // Start from the same point in the tropical year.
+  const natalSun = findBody(natal.bodies, Body.Sun);
+  const julianDay = findReturnNear(
+    Body.Sun,
+    natalSun.longitude,
+    toJulianDay(birthday),
+    SUN_TOLERANCE_DEGREES,
+    ephemeris,
+  );
+  if (julianDay === undefined) {
+    throw new Error(`Couldn't find the solar return for ${year}.`);
   }
 
-  throw new Error(`Couldn't find the solar return for ${year}.`);
+  return fromJulianDay(julianDay);
 }
 
 /** Requires loadChartEngine() to have resolved, in the browser. */
@@ -130,17 +114,4 @@ export function findCurrentReturnYear(
   }
 
   return firstYear;
-}
-
-function findSun<T extends { body: Body }>(positions: T[]): T {
-  const sun = positions.find((position) => position.body === Body.Sun);
-  if (!sun) {
-    throw new Error("The chart has no Sun.");
-  }
-  return sun;
-}
-
-/** Wraps an angle into [-180, 180), so a miss has the right sign. */
-function toSignedDegrees(degrees: number): number {
-  return normalizeDegrees(degrees + HALF_CIRCLE_DEGREES) - HALF_CIRCLE_DEGREES;
 }
