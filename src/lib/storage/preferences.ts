@@ -1,5 +1,5 @@
 // Chart settings remembered in this browser between visits: the house
-// system and which aspects to find. Like saved charts, they live only in
+// system, which aspects to find, and the zodiac. Like saved charts, they live only in
 // the visitor's own storage, which is passed in so tests can fake it.
 
 import {
@@ -7,11 +7,16 @@ import {
   isOrbSize,
   type AspectSettings,
 } from "@/lib/astrology/aspects";
+import { isAyanamsa, type Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { isHouseSystem, type HouseSystem } from "@/lib/astrology/houses";
 
 export const PREFERENCES_KEY = "aster:preferences";
 
-/** Bumped if the stored shape ever changes, so old data is recognised. */
+/**
+ * Bumped if the stored shape ever changes, so old data is recognised.
+ * Adding the ayanamsa didn't: settings saved before it lack one, which
+ * reads as the tropical zodiac they were made in.
+ */
 const STORAGE_VERSION = 1;
 
 const DAMAGED_MESSAGE = "Your saved chart settings are damaged.";
@@ -19,6 +24,8 @@ const DAMAGED_MESSAGE = "Your saved chart settings are damaged.";
 export type ChartPreferences = {
   houseSystem: HouseSystem;
   aspectSettings: AspectSettings;
+  /** Undefined means the tropical zodiac. */
+  ayanamsa?: Ayanamsa;
 };
 
 /**
@@ -45,7 +52,8 @@ export function readPreferences(
     stored.version !== STORAGE_VERSION ||
     !isString(stored.houseSystem, isHouseSystem) ||
     !isString(stored.aspectSet, isAspectSet) ||
-    !isString(stored.orbSize, isOrbSize)
+    !isString(stored.orbSize, isOrbSize) ||
+    (stored.ayanamsa !== undefined && !isString(stored.ayanamsa, isAyanamsa))
   ) {
     throw new Error(DAMAGED_MESSAGE);
   }
@@ -56,6 +64,7 @@ export function readPreferences(
       aspectSet: stored.aspectSet,
       orbSize: stored.orbSize,
     },
+    ayanamsa: stored.ayanamsa,
   };
 }
 
@@ -67,6 +76,7 @@ export function writePreferences(
     version: STORAGE_VERSION,
     houseSystem: preferences.houseSystem,
     ...preferences.aspectSettings,
+    ayanamsa: preferences.ayanamsa,
   };
 
   try {

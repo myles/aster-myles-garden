@@ -8,6 +8,7 @@ import type { Chart, PlacedBody } from "@/lib/charts/chart";
 import { findAspectsBetween, type Aspect } from "@/lib/astrology/aspects";
 import { placeInHouses, type HouseOverlay } from "@/lib/astrology/houses";
 import { browserEphemeris, type Ephemeris } from "@/lib/engine/ephemeris";
+import { inZodiac } from "@/lib/engine/sidereal";
 import {
   fromJulianDay,
   toJulianDay,
@@ -67,7 +68,7 @@ export function createProgressions(
     (toJulianDay(readAt) - natal.julianDay) / TROPICAL_YEAR_DAYS;
   const skyJulianDay = natal.julianDay + yearsLived;
 
-  const bodies = ephemeris
+  const bodies = inZodiac(ephemeris, natal.details.ayanamsa)
     .calculateBodies(skyJulianDay)
     .map((position) =>
       Object.assign({}, position, { isRetrograde: position.speed < 0 }),

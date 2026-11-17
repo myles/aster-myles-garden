@@ -2,6 +2,7 @@
      outside, the aspects between them, and each person's positions with
      where their planets fall in the other's houses. -->
 <script lang="ts">
+  import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
@@ -61,6 +62,7 @@
 
 <div>
   <h2 class="font-serif text-2xl" tabindex="-1">Chart comparison</h2>
+  <ZodiacNote chart={synastry.first} />
   <ComparedPeople first={synastry.first} second={synastry.second} />
   <p class="text-ink-muted mt-2 text-sm">
     {HOUSE_SYSTEM_NAMES[houseSystem]} houses. Your planets sit inside the zodiac;

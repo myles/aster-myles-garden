@@ -14,6 +14,7 @@ import {
 } from "@/lib/charts/chart";
 import { findBody, findReturnNear } from "@/lib/charts/returns";
 import { browserEphemeris, type Ephemeris } from "@/lib/engine/ephemeris";
+import { inZodiac } from "@/lib/engine/sidereal";
 import {
   fromJulianDay,
   toJulianDay,
@@ -60,6 +61,7 @@ export function findLunarReturn(
     );
   }
 
+  const sky = inZodiac(ephemeris, natal.details.ayanamsa);
   const natalMoon = findBody(natal.bodies, Body.Moon);
   const findNear = (julianDay: number) => {
     const found = findReturnNear(
@@ -67,7 +69,7 @@ export function findLunarReturn(
       natalMoon.longitude,
       julianDay,
       MOON_TOLERANCE_DEGREES,
-      ephemeris,
+      sky,
     );
     if (found === undefined) {
       throw new Error("Couldn't find the lunar return.");
@@ -77,7 +79,7 @@ export function findLunarReturn(
 
   // Start from how far the Moon has come since it last passed its natal
   // position, at the speed it's moving now.
-  const moon = findBody(ephemeris.calculateBodies(byJulianDay), Body.Moon);
+  const moon = findBody(sky.calculateBodies(byJulianDay), Body.Moon);
   const sinceDegrees = normalizeDegrees(moon.longitude - natalMoon.longitude);
   let julianDay = findNear(byJulianDay - sinceDegrees / moon.speed);
 

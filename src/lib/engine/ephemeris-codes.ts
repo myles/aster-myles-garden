@@ -5,11 +5,13 @@ import {
   CommonCalculationFlags,
   LunarPoint,
   Planet,
+  SiderealMode,
   HouseSystem as SweHouseSystem,
 } from "@swisseph/core";
 
 import type { BodyPosition } from "@/lib/engine/ephemeris";
 
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { Body, BODIES } from "@/lib/astrology/bodies";
 import { HouseSystem } from "@/lib/astrology/houses";
 import { normalizeDegrees } from "@/lib/astrology/zodiac";
@@ -103,6 +105,15 @@ function toSouthNode(northNode: BodyPosition): BodyPosition {
     speed: northNode.speed,
   };
 }
+
+export const SWE_SIDEREAL_MODES: Record<Ayanamsa, SiderealMode> = {
+  [Ayanamsa.Lahiri]: SiderealMode.Lahiri,
+  [Ayanamsa.FaganBradley]: SiderealMode.FaganBradley,
+  [Ayanamsa.Krishnamurti]: SiderealMode.Krishnamurti,
+  [Ayanamsa.Raman]: SiderealMode.Raman,
+  [Ayanamsa.Yukteshwar]: SiderealMode.Yukteshwar,
+  [Ayanamsa.TrueChitra]: SiderealMode.TrueCitra,
+};
 
 export const SWE_HOUSE_SYSTEMS: Record<HouseSystem, SweHouseSystem> = {
   [HouseSystem.Placidus]: SweHouseSystem.Placidus,

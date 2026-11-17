@@ -5,6 +5,8 @@
 import {
   calculateHouses as calculateSweHouses,
   calculatePosition,
+  getAyanamsaExUt,
+  setSiderealMode,
 } from "@swisseph/node";
 
 import type {
@@ -23,6 +25,7 @@ import {
   SWE_HOUSE_SYSTEMS,
   SWE_POLAR_FALLBACK_SYSTEM,
   SWE_POLAR_LIMITED_SYSTEMS,
+  SWE_SIDEREAL_MODES,
 } from "@/lib/engine/ephemeris-codes";
 
 function castHouses(
@@ -71,6 +74,12 @@ export const nodeEphemeris: Ephemeris = {
     return calculateOneBody(body, (sweBody) =>
       calculateSweBody(julianDay, sweBody),
     );
+  },
+
+  calculateAyanamsa(julianDay, ayanamsa) {
+    // The engine keeps one sidereal mode at a time, so set it each call.
+    setSiderealMode(SWE_SIDEREAL_MODES[ayanamsa]);
+    return getAyanamsaExUt(julianDay, SWE_CALCULATION_FLAGS);
   },
 
   calculateHouses(julianDay, latitude, longitude, houseSystem) {

@@ -1,6 +1,7 @@
 <!-- Progressions: your natal chart inside a bi-wheel, the progressed
      planets around it, and the aspects they make to yours. -->
 <script lang="ts">
+  import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
@@ -40,6 +41,7 @@
     {formatPlace(progressions.natal.details.place)},
     {formatBirthDate(progressions.natal)}
   </p>
+  <ZodiacNote chart={progressions.natal} />
   <p class="text-ink-muted mt-2 text-sm">
     Your natal planets sit inside the zodiac; the progressed planets, a day
     after birth for each year of life, in

@@ -1,6 +1,7 @@
 <!-- A lunar return: the chart for the moment the Moon gets back to its natal
      position, cast where you are then, with its positions and aspects. -->
 <script lang="ts">
+  import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import AspectTable from "@/components/chart/AspectTable.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
@@ -79,6 +80,7 @@
     Lunar return, {formatLocalDate(chart.details.date)}
   </h2>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
+  <ZodiacNote {chart} />
   {#if natalMoon}
     <p class="text-ink-muted mt-2 text-sm">
       The Moon returns to {formatLongitude(natalMoon.longitude)}, where it was

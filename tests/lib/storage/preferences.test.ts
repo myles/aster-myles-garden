@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { AspectSet, OrbSize } from "@/lib/astrology/aspects";
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { HouseSystem } from "@/lib/astrology/houses";
 import {
   PREFERENCES_KEY,
@@ -28,6 +29,30 @@ describe("readPreferences", () => {
     expect(readPreferences(storage)).toEqual(PREFERENCES);
   });
 
+  it("reads back a sidereal zodiac", () => {
+    const storage = new MemoryStorage();
+    const sidereal = { ...PREFERENCES, ayanamsa: Ayanamsa.Raman };
+
+    writePreferences(storage, sidereal);
+
+    expect(readPreferences(storage)).toEqual(sidereal);
+  });
+
+  it("reads settings saved before the zodiac could be chosen as tropical", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      PREFERENCES_KEY,
+      JSON.stringify({
+        version: 1,
+        houseSystem: "koch",
+        aspectSet: "all",
+        orbSize: "tight",
+      }),
+    );
+
+    expect(readPreferences(storage)?.ayanamsa).toBeUndefined();
+  });
+
   it.each([
     ["isn't JSON", "{"],
     ["is from another version", JSON.stringify({ version: 99 })],
@@ -47,6 +72,16 @@ describe("readPreferences", () => {
         houseSystem: "koch",
         aspectSet: "all",
         orbSize: "huge",
+      }),
+    ],
+    [
+      "names an unknown ayanamsa",
+      JSON.stringify({
+        version: 1,
+        houseSystem: "koch",
+        aspectSet: "all",
+        orbSize: "tight",
+        ayanamsa: "moon",
       }),
     ],
   ])("throws when what's stored %s", (_, raw) => {

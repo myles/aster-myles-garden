@@ -23,6 +23,11 @@
     OrbSize,
   } from "@/lib/astrology/aspects";
   import {
+    AYANAMSA_NAMES,
+    Ayanamsa,
+    isAyanamsa,
+  } from "@/lib/astrology/ayanamsa";
+  import {
     canCalculateDate,
     canCalculateMoment,
     createChart,
@@ -108,7 +113,11 @@
   const BIRTH_OUT_OF_RANGE = `Charts can only be drawn for dates from ${CALCULABLE_SPAN}.`;
   const TRANSITS_OUT_OF_RANGE = `Transits can only be shown from ${CALCULABLE_SPAN}.`;
 
+  /** The zodiac select's value for the tropical zodiac. */
+  const TROPICAL = "tropical";
+
   const houseSystems = Object.values(HouseSystem);
+  const ayanamsas = Object.values(Ayanamsa);
   const aspectSets = Object.values(AspectSet);
   const orbSizes = Object.values(OrbSize);
   const comparisonStyles = Object.values(ComparisonStyle);
@@ -118,6 +127,9 @@
   let houseSystem: string = $state(DEFAULT_HOUSE_SYSTEM);
   let aspectSet = $state(DEFAULT_ASPECT_SETTINGS.aspectSet);
   let orbSize = $state(DEFAULT_ASPECT_SETTINGS.orbSize);
+  // TROPICAL, or the ayanamsa of a sidereal zodiac.
+  let zodiac: string = $state(TROPICAL);
+  const ayanamsa = $derived(isAyanamsa(zodiac) ? zodiac : undefined);
   let chart: Chart | undefined = $state.raw();
   let comparedChart: Chart | undefined = $state.raw();
   let comparisonStyle = $state(ComparisonStyle.BiWheel);
@@ -295,6 +307,7 @@
       requestEngine();
       houseSystem = shared.houseSystem;
       ({ aspectSet, orbSize } = shared.aspectSettings);
+      zodiac = shared.ayanamsa ?? TROPICAL;
       yours = await fillForm(shared);
 
       closePanel();
@@ -374,6 +387,7 @@
 
       houseSystem = saved.houseSystem;
       ({ aspectSet, orbSize } = saved.aspectSettings);
+      zodiac = saved.ayanamsa ?? TROPICAL;
     } catch (cause) {
       settingsNote =
         "Couldn't read your saved settings, so the defaults are in use: " +
@@ -392,6 +406,7 @@
       writePreferences(getBrowserStorage(), {
         houseSystem,
         aspectSettings: { aspectSet, orbSize },
+        ayanamsa,
       });
       settingsNote = "";
     } catch (cause) {
@@ -504,6 +519,7 @@
       place: form.place!,
       houseSystem: system,
       aspectSettings: { aspectSet, orbSize },
+      ayanamsa,
     };
   }
 
@@ -906,6 +922,26 @@
           {#if isHouseSystemUnused}
             <p class="text-ink-muted text-xs">Houses need a birth time.</p>
           {/if}
+        </div>
+
+        <div class="flex flex-col gap-1.5">
+          <label for="zodiac" class="text-sm font-medium">Zodiac</label>
+          <select
+            id="zodiac"
+            name="zodiac"
+            class="border-rule bg-paper rounded border px-3 py-2"
+            bind:value={zodiac}
+            onchange={onSettingChange}
+          >
+            <option value={TROPICAL}>Tropical</option>
+            <optgroup label="Sidereal">
+              {#each ayanamsas as option (option)}
+                <option value={option}>
+                  Sidereal, {AYANAMSA_NAMES[option]}
+                </option>
+              {/each}
+            </optgroup>
+          </select>
         </div>
 
         <div class="grid grid-cols-2 gap-3">

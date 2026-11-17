@@ -17,6 +17,7 @@ import {
   type TransitTiming,
 } from "@/lib/charts/transit-timing";
 import { browserEphemeris, type Ephemeris } from "@/lib/engine/ephemeris";
+import { inZodiac } from "@/lib/engine/sidereal";
 import { toJulianDay } from "@/lib/time";
 
 /**
@@ -45,7 +46,8 @@ export function createTransits(
   at: Date,
   ephemeris: Ephemeris = browserEphemeris,
 ): Transits {
-  const bodies = ephemeris
+  const sky = inZodiac(ephemeris, natal.details.ayanamsa);
+  const bodies = sky
     .calculateBodies(toJulianDay(at))
     .map((position) =>
       Object.assign({}, position, { isRetrograde: position.speed < 0 }),
@@ -64,7 +66,7 @@ export function createTransits(
         findBody(natal.bodies, aspect.first).longitude,
         at,
         findOrbLimit(aspect.type, settings, TRANSIT_MAX_ORB_DEGREES),
-        ephemeris,
+        sky,
       ),
     }),
   );

@@ -2,10 +2,16 @@ import { readFileSync } from "node:fs";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { AspectSet, DEFAULT_ASPECT_SETTINGS } from "@/lib/astrology/aspects";
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { Body } from "@/lib/astrology/bodies";
 import { HouseSystem } from "@/lib/astrology/houses";
 import { separateDegrees } from "@/lib/astrology/zodiac";
-import { createChart, type BirthDetails, type Chart } from "@/lib/charts/chart";
+import {
+  createChart,
+  createChartAt,
+  type BirthDetails,
+  type Chart,
+} from "@/lib/charts/chart";
 import {
   createSolarReturn,
   findCurrentReturnYear,
@@ -115,6 +121,30 @@ describe("findSolarReturn", () => {
 
   it("refuses years the engine can't calculate", () => {
     expect(() => findSolarReturn(natal, 3500)).toThrow("3000");
+  });
+});
+
+describe("findSolarReturn in the sidereal zodiac", () => {
+  beforeAll(() => loadEphemeris(WASM_DATA_URL));
+
+  it("finds the Sun back at its sidereal position, a little later", () => {
+    const sidereal = createChart({ ...BIRTH, ayanamsa: Ayanamsa.Lahiri });
+    const tropicalAt = findSolarReturn(createChart(BIRTH), 2026);
+    const siderealAt = findSolarReturn(sidereal, 2026);
+
+    // The ayanamsa grows about 50″ a year: 26 years' worth is about 22′
+    // of the Sun's motion, or some nine hours.
+    const hoursLater = (siderealAt.getTime() - tropicalAt.getTime()) / 3.6e6;
+    expect(hoursLater).toBeGreaterThan(8);
+    expect(hoursLater).toBeLessThan(10);
+
+    const siderealSunAt = createChartAt(
+      { ...BIRTH, ayanamsa: Ayanamsa.Lahiri },
+      siderealAt,
+    );
+    expect(separateDegrees(sunOf(siderealSunAt), sunOf(sidereal))).toBeLessThan(
+      1e-6,
+    );
   });
 });
 
