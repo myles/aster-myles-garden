@@ -135,6 +135,8 @@ The page is put together from those blocks:
 - `src/components/panels/` — the forms in the left column, one per file: `YourChartForm` with `ChartSettingsFields`, `AddToChartMenu`, and a panel for each thing that can be added to your chart (`ComparePanel`, `TransitsPanel`, `ProgressionsPanel`, `SolarReturnPanel`, `LunarReturnPanel`).
 - `src/components/views/` — what's drawn beside them, one view per kind of chart, chosen by `ChartResult`. Solar and lunar returns share `ReturnView`, and transits and progressions share `chart/CrossAspectTable`, so a change to one shows in both.
 
+To see every building block in each of its states, in light and dark, run `npm run dev` and open [`/dev/components`](http://localhost:4321/dev/components). The page lives in `src/dev/` and is added by the `devPages` integration only under `npm run dev`, so a production build never includes it. Add a specimen to `src/dev/ComponentGallery.svelte` when you add a building block.
+
 To restyle, say, every secondary button, change `.ui-button--secondary` in `global.css`. A component's own classes, such as a margin, still win over these, since they're in the components layer.
 
 ## Releases
