@@ -42,12 +42,53 @@ describe("TransitView", () => {
 
     const [, row] = within(table("Transits to your chart")).getAllByRole("row");
     const cells = within(row).getAllByRole("cell");
-    expect(cells.map((cell) => cell.textContent?.trim())).toEqual([
+    expect(cells.slice(0, 5).map((cell) => cell.textContent?.trim())).toEqual([
       "☉︎ Sun",
       "□︎ Square",
       "♂︎ Mars",
       "1° 30′",
+      "15 Nov 2026, 04:30",
     ]);
+    expect(cells[5].textContent?.trim()).toMatch(/^11\s*–\s*16 Nov 2026$/);
+  });
+
+  it("lists each exact moment of a transit that's exact more than once", () => {
+    const [aspect] = TRANSITS.aspects;
+    const transits = {
+      ...TRANSITS,
+      aspects: [
+        {
+          ...aspect,
+          timing: {
+            ...aspect.timing,
+            exact: [
+              new Date("2026-03-01T17:00:00Z"),
+              new Date("2026-07-20T16:00:00Z"),
+              new Date("2026-12-05T17:00:00Z"),
+            ],
+          },
+        },
+      ],
+    };
+
+    render(TransitView, { transits, timeZone: TIME_ZONE });
+
+    const [, row] = within(table("Transits to your chart")).getAllByRole("row");
+    expect(within(row).getAllByRole("cell")[4].textContent).toMatch(
+      /1 Mar 2026, 12:00.*20 Jul 2026, 12:00.*5 Dec 2026, 12:00/,
+    );
+  });
+
+  it("says when a transit turns back before reaching exact", () => {
+    const [aspect] = TRANSITS.aspects;
+    const transits = {
+      ...TRANSITS,
+      aspects: [{ ...aspect, timing: { ...aspect.timing, exact: [] } }],
+    };
+
+    render(TransitView, { transits, timeZone: TIME_ZONE });
+
+    expect(screen.getByText("Not this pass")).toBeTruthy();
   });
 
   it("places the transiting planets in your houses", () => {

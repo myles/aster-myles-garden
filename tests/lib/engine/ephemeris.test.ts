@@ -5,6 +5,7 @@ import { Body } from "@/lib/astrology/bodies";
 import { HouseSystem } from "@/lib/astrology/houses";
 import {
   calculateBodies,
+  calculateBody,
   calculateHouses,
   loadEphemeris,
 } from "@/lib/engine/ephemeris";
@@ -53,6 +54,16 @@ describe("calculateBodies", () => {
     // opposite. The engine's corrections move it about 0.1°, while the
     // osculating apogee would be off by degrees.
     expect(lilith?.longitude).toBeCloseTo(263.35, 0);
+  });
+});
+
+describe("calculateBody", () => {
+  it.each(Object.values(Body))("matches calculateBodies for %s", (body) => {
+    const all = calculateBodies(J2000_JULIAN_DAY);
+
+    expect(calculateBody(J2000_JULIAN_DAY, body)).toEqual(
+      all.find((position) => position.body === body),
+    );
   });
 });
 

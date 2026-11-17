@@ -1,4 +1,5 @@
 import type { Chart, PlacedBody } from "@/lib/charts/chart";
+import type { TransitTiming } from "@/lib/charts/transit-timing";
 import type { LocalDate } from "@/lib/time";
 
 import {
@@ -7,9 +8,20 @@ import {
   type AspectSettings,
 } from "@/lib/astrology/aspects";
 import { formatLongitude, getSign } from "@/lib/astrology/zodiac";
+import { TRANSIT_SEARCH_YEARS } from "@/lib/charts/transit-timing";
 
 const MINUTES_PER_DEGREE = 60;
 const COORDINATE_DECIMALS = 2;
+
+const SHORT_DATE = {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+} as const;
+const SHORT_TIME = { hour: "2-digit", minute: "2-digit" } as const;
+
+/** A pass shorter than this, such as the Moon's, is given to the minute. */
+const TIMED_SPAN_MS = 2 * 86_400_000;
 
 /**
  * The start of an empty aspect table's message: "No major aspects", or
@@ -117,4 +129,42 @@ export function formatInstant(at: Date, timeZone: string): string {
 /** Turns anything thrown into a message fit to show a person. */
 export function describeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+/** Example: "3 Dec 2026, 14:05", on `timeZone`'s clock. */
+export function formatShortMoment(at: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    ...SHORT_DATE,
+    ...SHORT_TIME,
+  }).format(at);
+}
+
+/**
+ * When a transit is in orb, on `timeZone`'s clock. Examples: "12 Nov – 9
+ * Dec 2026"; for a pass of hours, "13 Nov 2026, 10:05 – 14:20"; with an
+ * end beyond the search, "Until 9 Dec 2026" or "From 12 Nov 2026".
+ */
+export function formatOrbSpan(
+  { entersOrb, leavesOrb }: TransitTiming,
+  timeZone: string,
+): string {
+  if (entersOrb && leavesOrb) {
+    const isShort = leavesOrb.getTime() - entersOrb.getTime() < TIMED_SPAN_MS;
+    return new Intl.DateTimeFormat("en-GB", {
+      timeZone,
+      ...SHORT_DATE,
+      ...(isShort ? SHORT_TIME : {}),
+    }).formatRange(entersOrb, leavesOrb);
+  }
+
+  const formatDate = (at: Date) =>
+    new Intl.DateTimeFormat("en-GB", { timeZone, ...SHORT_DATE }).format(at);
+  if (leavesOrb) {
+    return `Until ${formatDate(leavesOrb)}`;
+  }
+  if (entersOrb) {
+    return `From ${formatDate(entersOrb)}`;
+  }
+  return `More than ${TRANSIT_SEARCH_YEARS} years either way`;
 }

@@ -68,6 +68,16 @@ describe("nodeEphemeris.calculateBodies", () => {
   });
 });
 
+describe("nodeEphemeris.calculateBody", () => {
+  it.each(Object.values(Body))("matches calculateBodies for %s", (body) => {
+    const all = nodeEphemeris.calculateBodies(LATER_JULIAN_DAY);
+
+    expect(nodeEphemeris.calculateBody(LATER_JULIAN_DAY, body)).toEqual(
+      all.find((position) => position.body === body),
+    );
+  });
+});
+
 describe("nodeEphemeris.calculateHouses", () => {
   it("matches the browser driver for every house system", () => {
     for (const houseSystem of Object.values(HouseSystem)) {

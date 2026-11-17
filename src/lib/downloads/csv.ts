@@ -5,7 +5,7 @@ import type { HouseOverlay } from "@/lib/astrology/houses";
 import type { Chart } from "@/lib/charts/chart";
 import type { Composite } from "@/lib/charts/composite";
 import type { Progressions } from "@/lib/charts/progressions";
-import type { Transits } from "@/lib/charts/transits";
+import type { TimedAspect, Transits } from "@/lib/charts/transits";
 
 import {
   ASPECT_INFO,
@@ -16,6 +16,7 @@ import { BODY_INFO, type Body } from "@/lib/astrology/bodies";
 import { formatLongitude } from "@/lib/astrology/zodiac";
 import { ReturnStyle } from "@/lib/charts/returns";
 import { compareCharts, type Synastry } from "@/lib/charts/synastry";
+import { TRANSIT_SEARCH_YEARS } from "@/lib/charts/transit-timing";
 import { formatDegrees, formatNoAspects, formatPlacement } from "@/lib/format";
 
 type Row = string[];
@@ -37,6 +38,16 @@ const HOUSE_HEADING = "House";
 const ASPECT_HEADINGS: Row = ["Pair", "Aspect", "Orb"];
 const CROSS_ASPECT_HEADINGS: Row = ["Yours", "Aspect", "Theirs", "Orb"];
 const TRANSIT_ASPECT_HEADINGS: Row = ["Transiting", "Aspect", "Natal", "Orb"];
+/** In UTC, so a file reads the same wherever it's opened. */
+const TRANSIT_TIMING_HEADINGS: Row = [
+  "Exact (UTC)",
+  "Enters orb (UTC)",
+  "Leaves orb (UTC)",
+];
+const BEYOND_SEARCH_TEXT = `More than ${TRANSIT_SEARCH_YEARS} years away`;
+const NOT_THIS_PASS_TEXT = "Not this pass";
+/** "2026-11-13T20:05" of an ISO string. */
+const ISO_MINUTE_LENGTH = 16;
 const PROGRESSED_ASPECT_HEADINGS: Row = [
   "Progressed",
   "Aspect",
@@ -112,8 +123,8 @@ export function buildTransitsCsv(transits: Transits): string {
     ),
     {
       title: "Transits to your chart",
-      headings: TRANSIT_ASPECT_HEADINGS,
-      rows: buildTransitRows(transits.aspects),
+      headings: [...TRANSIT_ASPECT_HEADINGS, ...TRANSIT_TIMING_HEADINGS],
+      rows: buildTimedTransitRows(transits.aspects),
     },
   ]);
 }
@@ -303,6 +314,30 @@ function buildTransitRows(
       formatDegrees(aspect.orbDegrees),
     ];
   });
+}
+
+/** Transit rows, each followed by when it's exact and in orb. */
+function buildTimedTransitRows(aspects: TimedAspect[]): Row[] {
+  const rows = buildTransitRows(aspects);
+  if (aspects.length === 0) {
+    return rows.map((row) => row.concat(["", "", ""]));
+  }
+
+  return rows.map((row, i) => {
+    const { entersOrb, exact, leavesOrb } = aspects[i].timing;
+    return row.concat([
+      exact.length > 0
+        ? exact.map(formatUtcMinute).join("; ")
+        : NOT_THIS_PASS_TEXT,
+      entersOrb ? formatUtcMinute(entersOrb) : BEYOND_SEARCH_TEXT,
+      leavesOrb ? formatUtcMinute(leavesOrb) : BEYOND_SEARCH_TEXT,
+    ]);
+  });
+}
+
+/** Example: "2026-11-13 20:05". */
+function formatUtcMinute(at: Date): string {
+  return at.toISOString().slice(0, ISO_MINUTE_LENGTH).replace("T", " ");
 }
 
 function formatRow(row: Row): string {

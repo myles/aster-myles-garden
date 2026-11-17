@@ -110,6 +110,11 @@ export const TRANSITS: Transits = {
       second: Body.Sun,
       type: AspectType.Square,
       orbDegrees: 1.5,
+      timing: {
+        entersOrb: new Date("2026-11-11T16:00:00Z"),
+        exact: [new Date("2026-11-15T09:30:00Z")],
+        leavesOrb: new Date("2026-11-17T04:00:00Z"),
+      },
     },
   ],
   inNatalHouses: { [Body.Sun]: 7 },
