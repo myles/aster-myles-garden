@@ -7,8 +7,10 @@ import {
   AspectSet,
   DEFAULT_ASPECT_SETTINGS,
 } from "@/lib/astrology/aspects";
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { Body } from "@/lib/astrology/bodies";
 import { HOUSE_COUNT, HouseSystem } from "@/lib/astrology/houses";
+import { getSign } from "@/lib/astrology/zodiac";
 import {
   canCalculateDate,
   canCalculateMoment,
@@ -104,6 +106,57 @@ describe("createChart", () => {
     for (const body of chart.bodies) {
       expect(body.isRetrograde).toBe(body.speed < 0);
     }
+  });
+});
+
+describe("createChart in the sidereal zodiac", () => {
+  const DETAILS = {
+    date: { year: 2000, month: 1, day: 1 },
+    time: { hour: 7, minute: 0 },
+    place: TORONTO,
+    houseSystem: HouseSystem.Placidus,
+  };
+
+  beforeAll(() => loadEphemeris(WASM_DATA_URL));
+
+  it("moves every body back by the ayanamsa", () => {
+    const tropical = createChart(DETAILS);
+    const sidereal = createChart({ ...DETAILS, ayanamsa: Ayanamsa.Lahiri });
+
+    expect(sidereal.ayanamsaDegrees).toBeCloseTo(23.86, 1);
+    // The Sun at 10° Capricorn tropical is in Sagittarius sidereally.
+    expect(sunAt(tropical) - sunAt(sidereal)).toBeCloseTo(
+      sidereal.ayanamsaDegrees!,
+      6,
+    );
+    expect(getSign(sunAt(sidereal)).name).toBe("Sagittarius");
+  });
+
+  it("has no ayanamsa in the tropical zodiac", () => {
+    expect(createChart(DETAILS).ayanamsaDegrees).toBeUndefined();
+  });
+
+  it("places bodies in the sidereal houses", () => {
+    const sidereal = createChart({ ...DETAILS, ayanamsa: Ayanamsa.Lahiri });
+    const tropical = createChart(DETAILS);
+
+    // Houses and bodies move together, so each stays in its house.
+    expect(sidereal.bodies.map((b) => b.house)).toEqual(
+      tropical.bodies.map((b) => b.house),
+    );
+  });
+
+  it("names the signs a body may be in without a birth time", () => {
+    const sidereal = createChart({
+      ...DETAILS,
+      time: undefined,
+      ayanamsa: Ayanamsa.Lahiri,
+    });
+    const sun = sidereal.bodies.find((b) => b.body === Body.Sun)!;
+
+    expect(sun.possibleSigns?.map((sign) => sign.name)).toEqual([
+      "Sagittarius",
+    ]);
   });
 });
 

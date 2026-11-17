@@ -13,6 +13,7 @@ import {
   type Ephemeris,
   type HousePositions,
 } from "@/lib/engine/ephemeris";
+import { inZodiac } from "@/lib/engine/sidereal";
 
 const HALF_CIRCLE_DEGREES = 180;
 
@@ -55,7 +56,12 @@ export function createComposite(
   second: Chart,
   ephemeris: Ephemeris = browserEphemeris,
 ): Composite {
-  const houses = castHouses(first, second, ephemeris);
+  // Both charts share a zodiac, so either's ayanamsa will do.
+  const houses = castHouses(
+    first,
+    second,
+    inZodiac(ephemeris, first.details.ayanamsa),
+  );
   const bodies = first.bodies.map((placed, index) => {
     const other = second.bodies[index];
     const longitude = findMidpoint(placed.longitude, other.longitude);

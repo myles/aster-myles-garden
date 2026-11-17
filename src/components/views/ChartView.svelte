@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import AspectTable from "@/components/chart/AspectTable.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
@@ -55,6 +56,7 @@
     {formatPlace(chart.details.place)}
   </h2>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
+  <ZodiacNote {chart} />
 
   {#if fallbackNote}
     <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">

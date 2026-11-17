@@ -9,6 +9,7 @@ import {
   DEFAULT_ASPECT_SETTINGS,
   OrbSize,
 } from "@/lib/astrology/aspects";
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { HouseSystem } from "@/lib/astrology/houses";
 import { createChart, loadChartEngine } from "@/lib/charts/chart";
 import { createComposite } from "@/lib/charts/composite";
@@ -284,6 +285,35 @@ describe("App", () => {
     );
   });
 
+  it("redraws in the sidereal zodiac when it's chosen", async () => {
+    render(App);
+
+    await fillDateTime();
+    await choosePlace();
+    await submit();
+    await screen.findByRole("heading", { name: CHART_HEADING });
+
+    await fireEvent.change(screen.getByLabelText("Zodiac"), {
+      target: { value: Ayanamsa.FaganBradley },
+    });
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenLastCalledWith(
+        expect.objectContaining({ ayanamsa: Ayanamsa.FaganBradley }),
+      ),
+    );
+
+    await fireEvent.change(screen.getByLabelText("Zodiac"), {
+      target: { value: "tropical" },
+    });
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenLastCalledWith(
+        expect.objectContaining({ ayanamsa: undefined }),
+      ),
+    );
+  });
+
   it("reports a calculator that fails to load", async () => {
     vi.mocked(loadChartEngine).mockRejectedValue(new Error("No WASM"));
     render(App);
@@ -332,12 +362,16 @@ describe("App remembering chart settings", () => {
     await fireEvent.change(screen.getByLabelText("Orbs"), {
       target: { value: OrbSize.Wide },
     });
+    await fireEvent.change(screen.getByLabelText("Zodiac"), {
+      target: { value: Ayanamsa.Raman },
+    });
     unmount();
     render(App);
 
     expect(selectValue("House system")).toBe(HouseSystem.Koch);
     expect(selectValue("Aspects")).toBe(AspectSet.All);
     expect(selectValue("Orbs")).toBe(OrbSize.Wide);
+    expect(selectValue("Zodiac")).toBe(Ayanamsa.Raman);
   });
 
   it("draws with the remembered settings", async () => {
@@ -439,6 +473,19 @@ describe("App opened from a share link", () => {
     );
     expect(screen.getByLabelText<HTMLSelectElement>("Orbs").value).toBe(
       OrbSize.Wide,
+    );
+  });
+
+  it("takes the link's zodiac", async () => {
+    openLink(`${SHARE_HASH}&ayanamsa=lahiri`);
+
+    await vi.waitFor(() =>
+      expect(createChart).toHaveBeenCalledWith(
+        expect.objectContaining({ ayanamsa: Ayanamsa.Lahiri }),
+      ),
+    );
+    expect(screen.getByLabelText<HTMLSelectElement>("Zodiac").value).toBe(
+      Ayanamsa.Lahiri,
     );
   });
 

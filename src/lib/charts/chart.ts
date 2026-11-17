@@ -1,6 +1,7 @@
 // Chart service: turns birth details into a complete natal chart. Sits
 // between the UI and the ephemeris driver.
 
+import type { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import type { Body } from "@/lib/astrology/bodies";
 import type { Place } from "@/lib/places";
 
@@ -22,6 +23,7 @@ import {
   SWE_MAX_JULIAN_DAY,
   SWE_MIN_JULIAN_DAY,
 } from "@/lib/engine/ephemeris-codes";
+import { inZodiac } from "@/lib/engine/sidereal";
 import { toJulianDay, toUtc, type LocalDate, type LocalTime } from "@/lib/time";
 
 export type BirthDetails = {
@@ -32,6 +34,8 @@ export type BirthDetails = {
   houseSystem: HouseSystem;
   /** Which aspects to find, and how wide. Undefined means the default. */
   aspectSettings?: AspectSettings;
+  /** For the sidereal zodiac. Undefined means the tropical zodiac. */
+  ayanamsa?: Ayanamsa;
 };
 
 export type PlacedBody = BodyPosition & {
@@ -53,6 +57,8 @@ export type Chart = {
   /** Undefined when the birth time isn't known. */
   houses?: HousePositions;
   aspects: Aspect[];
+  /** In a sidereal chart: how far behind the tropical zodiac it is. */
+  ayanamsaDegrees?: number;
 };
 
 /**
@@ -124,10 +130,11 @@ export function createChartAt(
   ephemeris: Ephemeris = browserEphemeris,
 ): Chart {
   const julianDay = toJulianDay(bornAt);
+  const sky = inZodiac(ephemeris, details.ayanamsa);
 
-  const positions = ephemeris.calculateBodies(julianDay);
+  const positions = sky.calculateBodies(julianDay);
   const houses = details.time
-    ? ephemeris.calculateHouses(
+    ? sky.calculateHouses(
         julianDay,
         details.place.latitude,
         details.place.longitude,
@@ -136,7 +143,7 @@ export function createChartAt(
     : undefined;
   const possibleSigns = details.time
     ? undefined
-    : findPossibleSigns(details, ephemeris);
+    : findPossibleSigns(details, sky);
 
   const bodies = positions.map((position) => ({
     ...position,
@@ -152,6 +159,9 @@ export function createChartAt(
     bodies,
     houses,
     aspects: findAspects(positions, details.aspectSettings),
+    ayanamsaDegrees:
+      details.ayanamsa &&
+      ephemeris.calculateAyanamsa(julianDay, details.ayanamsa),
   };
 }
 

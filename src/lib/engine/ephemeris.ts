@@ -6,6 +6,8 @@ import { SwissEphemeris } from "@swisseph/browser";
 // Resolved by Vite to the hashed asset URL, so dev and build agree.
 import DEFAULT_WASM_URL from "@swisseph/browser/dist/swisseph.wasm?url";
 
+import type { Ayanamsa } from "@/lib/astrology/ayanamsa";
+
 import { Body } from "@/lib/astrology/bodies";
 import { HOUSE_COUNT, type HouseSystem } from "@/lib/astrology/houses";
 import {
@@ -17,6 +19,7 @@ import {
   SWE_HOUSE_SYSTEMS,
   SWE_POLAR_FALLBACK_SYSTEM,
   SWE_POLAR_LIMITED_SYSTEMS,
+  SWE_SIDEREAL_MODES,
 } from "@/lib/engine/ephemeris-codes";
 
 export type BodyPosition = {
@@ -49,6 +52,11 @@ export type Ephemeris = {
   calculateBodies(julianDay: number): BodyPosition[];
   /** One body's position: the same as its entry in calculateBodies. */
   calculateBody(julianDay: number, body: Body): BodyPosition;
+  /**
+   * How far the sidereal zodiac lags the tropical at a Julian day (UT),
+   * in degrees, by an ayanamsa's reckoning.
+   */
+  calculateAyanamsa(julianDay: number, ayanamsa: Ayanamsa): number;
   calculateHouses(
     julianDay: number,
     latitude: number,
@@ -105,6 +113,18 @@ export function calculateBody(julianDay: number, body: Body): BodyPosition {
   return calculateOneBody(body, (sweBody) =>
     calculateSweBody(julianDay, sweBody),
   );
+}
+
+/** The ayanamsa at a Julian day (UT), in degrees. */
+export function calculateAyanamsa(
+  julianDay: number,
+  ayanamsa: Ayanamsa,
+): number {
+  _assertLoaded();
+
+  // The engine keeps one sidereal mode at a time, so set it each call.
+  _swe.setSiderealMode(SWE_SIDEREAL_MODES[ayanamsa]);
+  return _swe.getAyanamsaExUt(julianDay, SWE_CALCULATION_FLAGS);
 }
 
 function calculateSweBody(julianDay: number, body: SweBody): BodyPosition {
@@ -182,5 +202,6 @@ function _castHouses(
 export const browserEphemeris: Ephemeris = {
   calculateBodies,
   calculateBody,
+  calculateAyanamsa,
   calculateHouses,
 };

@@ -38,6 +38,7 @@ function fakeEphemeris(longitudeAt: (days: number) => number): Ephemeris {
   return {
     calculateBodies: (julianDay) => [saturnAt(julianDay)],
     calculateBody: saturnAt,
+    calculateAyanamsa: () => 0,
     calculateHouses: () => {
       throw new Error("Not used.");
     },

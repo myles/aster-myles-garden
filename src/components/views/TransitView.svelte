@@ -2,6 +2,7 @@
      moment around it, and the aspects the transiting planets make to
      yours, with when each is exact and in orb. -->
 <script lang="ts">
+  import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
@@ -44,6 +45,7 @@
     {formatPlace(transits.natal.details.place)},
     {formatBirthDate(transits.natal)}
   </p>
+  <ZodiacNote chart={transits.natal} />
   <p class="text-ink-muted mt-2 text-sm">
     Your natal planets sit inside the zodiac; the planets at this moment, in
     <span class="text-accent font-medium">this colour</span>, sit outside it.

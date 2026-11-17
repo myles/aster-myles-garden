@@ -10,6 +10,7 @@ import type { SolarReturn } from "@/lib/charts/solar-return";
 import type { Synastry } from "@/lib/charts/synastry";
 import type { Transits } from "@/lib/charts/transits";
 
+import { AYANAMSA_NAMES } from "@/lib/astrology/ayanamsa";
 import { ReturnStyle } from "@/lib/charts/returns";
 import {
   buildChartCsv,
@@ -260,7 +261,8 @@ function downloadBlob(blob: Blob, filename: string): void {
 }
 
 /**
- * Examples, for a chart born in London on 1 Jan 2000 at 12:00:
+ * Examples, for a chart born in London on 1 Jan 2000 at 12:00, which a
+ * sidereal chart follows with its zodiac, as "-sidereal-lahiri":
  * - the chart → "aster-london-2000-01-01-1200"
  * - compared → "aster-london-2000-01-01-1200-and-toronto-1990-05-15"
  * - composite → the comparison's name, then "-composite"
@@ -341,6 +343,10 @@ function describeChart(chart: Chart): string {
 
   if (time) {
     parts.push(`${pad(time.hour)}${pad(time.minute)}`);
+  }
+  // Positions in a sidereal chart's files mean nothing without it.
+  if (chart.details.ayanamsa) {
+    parts.push("sidereal", slugify(AYANAMSA_NAMES[chart.details.ayanamsa]));
   }
 
   return parts.join("-");

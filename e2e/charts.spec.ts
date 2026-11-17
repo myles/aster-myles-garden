@@ -225,6 +225,27 @@ test("dates each transit's exact moment and time in orb", async ({ page }) => {
   }
 });
 
+test("redraws the chart in the sidereal zodiac", async ({ page }) => {
+  await drawChart(page);
+  const positions = page
+    .getByRole("table")
+    .filter({ has: page.getByRole("columnheader", { name: "Position" }) })
+    .first();
+  // 1 January 2000: the Sun is in Capricorn, tropically.
+  await expect(positions.getByRole("row", { name: /Sun/ })).toContainText(
+    "Capricorn",
+  );
+
+  await page.getByLabel("Zodiac").selectOption({ label: "Sidereal, Lahiri" });
+
+  await expect(
+    page.getByText(/^Sidereal zodiac, Lahiri ayanamsa: 23° 5\d′ behind/),
+  ).toBeVisible();
+  await expect(positions.getByRole("row", { name: /Sun/ })).toContainText(
+    "Sagittarius",
+  );
+});
+
 test("shows progressions for a date", async ({ page }) => {
   await drawChart(page);
   await page.getByRole("button", { name: "See progressions" }).click();

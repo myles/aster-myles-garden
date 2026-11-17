@@ -61,6 +61,7 @@ That link draws a chart for 15 May 1990 at 2:30 pm in Toronto, Ontario, Canada, 
 | `house` | No | House system | One of `placidus`, `koch`, `wholeSign`, `equal`, `porphyry`, `regiomontanus` or `campanus`. Defaults to `placidus`. |
 | `aspects` | No | `major` or `all` | `all` adds the minor aspects: semi-sextile, semi-square, sesquiquadrate and quincunx. Defaults to `major`. |
 | `orbs` | No | `tight`, `standard` or `wide` | Scales every aspect's orb: tight is three quarters of standard, wide a quarter more. Defaults to `standard`. |
+| `ayanamsa` | No | Ayanamsa | Draws the chart in the sidereal zodiac, by one of `lahiri`, `faganBradley`, `krishnamurti`, `raman`, `yukteshwar` or `trueChitra`. Leave it out for the tropical zodiac, the default. Every position, cusp and angle moves back by the ayanamsa; whole sign houses start on the sidereal sign of the ascendant. Comparisons, transits, progressions and returns follow the chart's zodiac. |
 
 If a parameter is missing or malformed, or the place isn't in Aster's index, the page shows an error instead of a chart.
 

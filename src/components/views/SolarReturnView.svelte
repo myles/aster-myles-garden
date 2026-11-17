@@ -1,6 +1,7 @@
 <!-- A solar return: the chart for the moment the Sun gets back to its natal
      position, cast where you are that year, with its positions and aspects. -->
 <script lang="ts">
+  import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import AspectTable from "@/components/chart/AspectTable.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
@@ -79,6 +80,7 @@
     Solar return {solarReturn.year}
   </h2>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
+  <ZodiacNote {chart} />
   {#if natalSun}
     <p class="text-ink-muted mt-2 text-sm">
       The Sun returns to {formatLongitude(natalSun.longitude)}, where it was

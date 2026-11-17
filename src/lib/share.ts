@@ -14,6 +14,7 @@ import {
   isOrbSize,
   type AspectSettings,
 } from "@/lib/astrology/aspects";
+import { isAyanamsa, type Ayanamsa } from "@/lib/astrology/ayanamsa";
 import {
   DEFAULT_HOUSE_SYSTEM,
   HouseSystem,
@@ -50,6 +51,8 @@ const HOUSE_PARAM = "house";
 // Aspect settings, written only when they aren't the default.
 const ASPECTS_PARAM = "aspects";
 const ORBS_PARAM = "orbs";
+// Written only for the sidereal zodiac: its absence means tropical.
+const AYANAMSA_PARAM = "ayanamsa";
 const TRANSITS_PARAM = "transits";
 // How a comparison is shown, written only when it isn't the bi-wheel.
 const COMPARISON_PARAM = "comparison";
@@ -89,6 +92,8 @@ export type SharedPerson = {
 export type SharedDetails = SharedPerson & {
   houseSystem: HouseSystem;
   aspectSettings: AspectSettings;
+  /** For the sidereal zodiac. Undefined means the tropical zodiac. */
+  ayanamsa?: Ayanamsa;
   /** The second person, when the link is for a comparison. */
   comparedWith?: SharedPerson;
   /** Only when the link shows a comparison other than the bi-wheel. */
@@ -182,6 +187,9 @@ export function buildShareUrl(
   writePerson(params, details, FIRST_PERSON);
   params.set(HOUSE_PARAM, details.houseSystem);
   writeAspectSettings(params, details.aspectSettings);
+  if (details.ayanamsa) {
+    params.set(AYANAMSA_PARAM, details.ayanamsa);
+  }
   if (comparedWith) {
     writePerson(params, comparedWith, SECOND_PERSON);
   }
@@ -231,6 +239,7 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
   }
 
   const aspectSettings = readAspectSettings(params);
+  const ayanamsa = readAyanamsa(params);
   const comparedWith = readPerson(params, SECOND_PERSON);
   const comparisonStyle = readComparisonStyle(params, comparedWith);
   const transitsAt = readTransitsAt(params);
@@ -259,6 +268,7 @@ export function parseShareHash(hash: string): SharedDetails | undefined {
     ...person,
     houseSystem: house,
     aspectSettings,
+    ayanamsa,
     comparedWith,
     comparisonStyle,
     transitsAt,
@@ -405,6 +415,18 @@ function readAspectSettings(params: URLSearchParams): AspectSettings {
   }
 
   return { aspectSet, orbSize };
+}
+
+/** Undefined for the tropical zodiac. */
+function readAyanamsa(params: URLSearchParams): Ayanamsa | undefined {
+  const value = params.get(AYANAMSA_PARAM);
+  if (value === null) {
+    return undefined;
+  }
+  if (!isAyanamsa(value)) {
+    throw new Error(`The link's ayanamsa isn't known: "${value}".`);
+  }
+  return value;
 }
 
 /** Undefined when the link isn't for transits. */

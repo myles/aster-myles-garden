@@ -5,6 +5,7 @@ import {
   DEFAULT_ASPECT_SETTINGS,
   OrbSize,
 } from "@/lib/astrology/aspects";
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { HouseSystem } from "@/lib/astrology/houses";
 import { ReturnStyle } from "@/lib/charts/returns";
 import { ComparisonStyle } from "@/lib/charts/synastry";
@@ -158,6 +159,36 @@ describe("share links with aspect settings", () => {
       aspectSet: AspectSet.Major,
       orbSize: OrbSize.Tight,
     });
+  });
+});
+
+describe("share links in the sidereal zodiac", () => {
+  it("adds the ayanamsa, and reads it back", () => {
+    const url = buildShareUrl(
+      { ...CHART.details, ayanamsa: Ayanamsa.FaganBradley },
+      SITE_URL,
+    );
+
+    expect(url).toBe(
+      "https://aster.myles.garden/#date=2000-01-01&time=12:00" +
+        "&place=2643743&house=equal&ayanamsa=faganBradley",
+    );
+    expect(parseShareHash(new URL(url).hash)?.ayanamsa).toBe(
+      Ayanamsa.FaganBradley,
+    );
+  });
+
+  it("leaves it out for the tropical zodiac", () => {
+    const url = buildShareUrl(CHART.details, SITE_URL);
+
+    expect(url).not.toContain("ayanamsa");
+    expect(parseShareHash(new URL(url).hash)?.ayanamsa).toBeUndefined();
+  });
+
+  it("rejects an ayanamsa it doesn't know", () => {
+    expect(() =>
+      parseShareHash("#date=2000-01-01&time=12:00&place=1&ayanamsa=moon"),
+    ).toThrow(`The link's ayanamsa isn't known: "moon".`);
   });
 });
 

@@ -12,6 +12,7 @@ import {
 } from "@/lib/charts/chart";
 import { findBody, findReturnNear } from "@/lib/charts/returns";
 import { browserEphemeris, type Ephemeris } from "@/lib/engine/ephemeris";
+import { inZodiac } from "@/lib/engine/sidereal";
 import { fromJulianDay, toJulianDay, toLocal } from "@/lib/time";
 
 /** The mean length of the Sun's year, in days. */
@@ -66,7 +67,7 @@ export function findSolarReturn(
     natalSun.longitude,
     toJulianDay(birthday),
     SUN_TOLERANCE_DEGREES,
-    ephemeris,
+    inZodiac(ephemeris, natal.details.ayanamsa),
   );
   if (julianDay === undefined) {
     throw new Error(`Couldn't find the solar return for ${year}.`);

@@ -1,6 +1,7 @@
 <!-- A composite: one chart for two people, made from the midpoints of
      their positions, with its own houses, positions and aspects. -->
 <script lang="ts">
+  import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import AspectTable from "@/components/chart/AspectTable.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
@@ -34,6 +35,7 @@
 
 <div>
   <h2 class="font-serif text-2xl" tabindex="-1">Composite chart</h2>
+  <ZodiacNote chart={composite.first} />
   <ComparedPeople first={composite.first} second={composite.second} />
   <p class="text-ink-muted mt-2 text-sm">
     One chart for the two of you: each planet sits at the midpoint of yours and

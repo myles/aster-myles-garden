@@ -2,6 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { ReturnStyle } from "@/lib/charts/returns";
 import { compareCharts } from "@/lib/charts/synastry";
 import {
@@ -335,6 +336,19 @@ describe("exportWheel", () => {
       "aster-london-2000-01-01-1200-solar-return-2026-bi-wheel.csv",
     );
     expect(await downloads[0].blob.text()).toContain("Natal house");
+  });
+
+  it("names a sidereal chart's files after its zodiac", async () => {
+    const chart = {
+      ...CHART,
+      details: { ...CHART.details, ayanamsa: Ayanamsa.FaganBradley },
+    };
+
+    exportTables({ kind: SubjectKind.Chart, chart });
+
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-sidereal-fagan-bradley.csv",
+    );
   });
 
   it("names a lunar return after the natal chart and its date", async () => {

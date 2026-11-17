@@ -28,10 +28,10 @@
 - [x] Secondary progressions: the chart moved on a day for each year of life, set against the natal chart as transits are
 - [x] Lunar returns: the month's chart for the moment the Moon returns to its natal position, found the way solar returns are, on its own or against the natal chart
 - [x] Exact transit dates: when each transit is exact, and when it comes into and leaves orb, found the way solar returns are
+- [x] Sidereal zodiac, with a choice of ayanamsa
 
 ## Charts
 
-- [ ] Sidereal zodiac, with a choice of ayanamsa
 - [ ] Optional high-precision ephemeris files, and Chiron with them: the built-in Moshier ephemeris has no asteroids
 
 ## Polish
