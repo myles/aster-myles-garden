@@ -1,44 +1,35 @@
-<!-- Birth form and chart view. Talks to the chart service, place search
-     and wheel renderer — never to the ephemeris. Once your chart is drawn,
-     a second form compares it with someone else's or shows its transits,
-     progressions, solar return or lunar return. -->
+<!-- The page's state and how its parts fit together: your birth form,
+     whatever panel is open beside it, and the result. Talks to the chart
+     service, place search and storage — never to the ephemeris. The
+     forms and views themselves live in panels/ and views/. -->
 <script lang="ts">
-  import Alert from "@/components/ui/Alert.svelte";
-  import Button from "@/components/ui/Button.svelte";
-  import ButtonRow from "@/components/ui/ButtonRow.svelte";
-  import Field from "@/components/ui/Field.svelte";
-  import FormPanel from "@/components/ui/FormPanel.svelte";
-  import Input from "@/components/ui/Input.svelte";
-  import Select from "@/components/ui/Select.svelte";
-  import BirthFields from "@/components/birth-form/BirthFields.svelte";
-  import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
+  import {
+    createBlankForm,
+    type BirthForm,
+  } from "@/components/birth-form/birth-form";
   import { Panel } from "@/components/panel";
-  import SaveChartRow from "@/components/saved-charts/SaveChartRow.svelte";
-  import SavedChartList from "@/components/saved-charts/SavedChartList.svelte";
-  import ChartView from "@/components/views/ChartView.svelte";
-  import ComparisonView from "@/components/views/ComparisonView.svelte";
-  import CompositeView from "@/components/views/CompositeView.svelte";
-  import LunarReturnView from "@/components/views/LunarReturnView.svelte";
-  import ProgressionView from "@/components/views/ProgressionView.svelte";
-  import SolarReturnView from "@/components/views/SolarReturnView.svelte";
-  import TransitView from "@/components/views/TransitView.svelte";
+  import AddToChartMenu from "@/components/panels/AddToChartMenu.svelte";
+  import ChartSettingsFields from "@/components/panels/ChartSettingsFields.svelte";
+  import ComparePanel from "@/components/panels/ComparePanel.svelte";
   import {
-    ASPECT_SET_NAMES,
-    AspectSet,
-    DEFAULT_ASPECT_SETTINGS,
-    ORB_SIZE_NAMES,
-    OrbSize,
-  } from "@/lib/astrology/aspects";
-  import {
-    AYANAMSA_NAMES,
-    Ayanamsa,
-    isAyanamsa,
-  } from "@/lib/astrology/ayanamsa";
+    COMPARE_DATE_ID,
+    LUNAR_RETURN_DATE_ID,
+    PROGRESSIONS_DATE_ID,
+    RETURN_YEAR_ID,
+    TRANSIT_DATE_ID,
+  } from "@/components/panels/ids";
+  import LunarReturnPanel from "@/components/panels/LunarReturnPanel.svelte";
+  import ProgressionsPanel from "@/components/panels/ProgressionsPanel.svelte";
+  import SolarReturnPanel from "@/components/panels/SolarReturnPanel.svelte";
+  import TransitsPanel from "@/components/panels/TransitsPanel.svelte";
+  import YourChartForm from "@/components/panels/YourChartForm.svelte";
+  import { toAyanamsa, TROPICAL } from "@/components/panels/zodiac";
+  import ChartResult from "@/components/views/ChartResult.svelte";
+  import { DEFAULT_ASPECT_SETTINGS } from "@/lib/astrology/aspects";
   import {
     canCalculateDate,
     canCalculateMoment,
     createChart,
-    LAST_CALCULABLE_DATE_VALUE,
     loadChartEngine,
     type BirthDetails,
     type Chart,
@@ -46,8 +37,7 @@
   import { describeError } from "@/lib/format";
   import {
     DEFAULT_HOUSE_SYSTEM,
-    HOUSE_SYSTEM_NAMES,
-    HouseSystem,
+    type HouseSystem,
     isHouseSystem,
   } from "@/lib/astrology/houses";
   import { findPlace, loadPlaceIndex, type Place } from "@/lib/places";
@@ -71,11 +61,7 @@
   import { createLunarReturn } from "@/lib/charts/lunar-return";
   import { ReturnStyle } from "@/lib/charts/returns";
   import { createComposite } from "@/lib/charts/composite";
-  import {
-    compareCharts,
-    COMPARISON_STYLE_NAMES,
-    ComparisonStyle,
-  } from "@/lib/charts/synastry";
+  import { compareCharts, ComparisonStyle } from "@/lib/charts/synastry";
   import {
     formatDateValue,
     formatTimeValue,
@@ -90,20 +76,6 @@
   import { createProgressions } from "@/lib/charts/progressions";
   import { createTransits } from "@/lib/charts/transits";
   import { onMount, tick } from "svelte";
-
-  /** One person's form fields. */
-  type BirthForm = {
-    date: string;
-    time: string;
-    isTimeUnknown: boolean;
-    place?: Place;
-  };
-
-  const COMPARE_DATE_ID = "compare-date";
-  const TRANSIT_DATE_ID = "transit-date";
-  const PROGRESSIONS_DATE_ID = "progressions-date";
-  const RETURN_YEAR_ID = "return-year";
-  const LUNAR_RETURN_DATE_ID = "lunar-return-date";
 
   const RETURN_NEEDS_TIME =
     "A solar return needs your birth time. Enter it above and draw your " +
@@ -120,15 +92,6 @@
   const BIRTH_OUT_OF_RANGE = `Charts can only be drawn for dates from ${CALCULABLE_SPAN}.`;
   const TRANSITS_OUT_OF_RANGE = `Transits can only be shown from ${CALCULABLE_SPAN}.`;
 
-  /** The zodiac select's value for the tropical zodiac. */
-  const TROPICAL = "tropical";
-
-  const houseSystems = Object.values(HouseSystem);
-  const ayanamsas = Object.values(Ayanamsa);
-  const aspectSets = Object.values(AspectSet);
-  const orbSizes = Object.values(OrbSize);
-  const comparisonStyles = Object.values(ComparisonStyle);
-
   let yours: BirthForm = $state(createBlankForm());
   let theirs: BirthForm = $state(createBlankForm());
   let houseSystem: string = $state(DEFAULT_HOUSE_SYSTEM);
@@ -136,7 +99,7 @@
   let orbSize = $state(DEFAULT_ASPECT_SETTINGS.orbSize);
   // TROPICAL, or the ayanamsa of a sidereal zodiac.
   let zodiac: string = $state(TROPICAL);
-  const ayanamsa = $derived(isAyanamsa(zodiac) ? zodiac : undefined);
+  const ayanamsa = $derived(toAyanamsa(zodiac));
   let chart: Chart | undefined = $state.raw();
   let comparedChart: Chart | undefined = $state.raw();
   let comparisonStyle = $state(ComparisonStyle.BiWheel);
@@ -297,10 +260,6 @@
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   });
-
-  function createBlankForm(): BirthForm {
-    return { date: "", time: "", isTimeUnknown: false, place: undefined };
-  }
 
   // Fills in the forms from a share link, then draws its chart, and the
   // comparison when the link carries a second chart.
@@ -875,378 +834,125 @@
 
 <main class="grid flex-1 gap-8 lg:grid-cols-[20rem_1fr]">
   <div class="flex min-w-0 flex-col gap-6 self-start">
-    <FormPanel
-      title="Your birth details"
-      showTitle={false}
-      onfocusin={requestEngine}
+    <YourChartForm
+      bind:form={yours}
+      {isHydrated}
+      {isDrawing}
+      {error}
+      {savedCharts}
+      {savedChartsError}
       onsubmit={onSubmit}
+      onfocusin={requestEngine}
+      onTimeUnknownChange={redrawIfDrawn}
+      onUseSaved={useSavedForYou}
+      onForgetSaved={forgetSavedChart}
+      onSave={(name) => saveForm(yours, name)}
     >
-      {#if !isHydrated}
-        <p class="text-ink-muted text-sm">
-          JavaScript is required to calculate your chart in your browser. Enable
-          it to enter your birth details.
-        </p>
-      {/if}
-      <!-- Disable inputs and submit buttons together so native clicks and
-           Enter cannot submit birth details before hydration. -->
-      <fieldset
-        class="m-0 flex min-w-0 flex-col gap-5 border-0 p-0"
-        disabled={!isHydrated}
-      >
-        <SavedChartList
-          charts={savedCharts}
-          onUse={useSavedForYou}
-          onForget={forgetSavedChart}
+      {#snippet settings()}
+        <ChartSettingsFields
+          bind:houseSystem
+          bind:zodiac
+          bind:aspectSet
+          bind:orbSize
+          {isHouseSystemUnused}
+          note={settingsNote}
+          onchange={onSettingChange}
         />
-
-        <BirthFields
-          idPrefix="birth"
-          timeHint="Local clock time where you were born."
-          bind:date={yours.date}
-          bind:time={yours.time}
-          bind:isTimeUnknown={yours.isTimeUnknown}
-          bind:place={yours.place}
-          onTimeUnknownChange={redrawIfDrawn}
-        />
-
-        <Field id="house-system" label="House system">
-          <Select
-            id="house-system"
-            name="houseSystem"
-            bind:value={houseSystem}
-            disabled={isHouseSystemUnused}
-            onchange={onSettingChange}
-          >
-            {#each houseSystems as system (system)}
-              <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
-            {/each}
-          </Select>
-          {#if isHouseSystemUnused}
-            <p class="ui-hint">Houses need a birth time.</p>
-          {/if}
-        </Field>
-
-        <Field id="zodiac" label="Zodiac">
-          <Select
-            id="zodiac"
-            name="zodiac"
-            bind:value={zodiac}
-            onchange={onSettingChange}
-          >
-            <option value={TROPICAL}>Tropical</option>
-            <optgroup label="Sidereal">
-              {#each ayanamsas as option (option)}
-                <option value={option}>
-                  Sidereal, {AYANAMSA_NAMES[option]}
-                </option>
-              {/each}
-            </optgroup>
-          </Select>
-        </Field>
-
-        <div class="grid grid-cols-2 gap-3">
-          <Field id="aspect-set" label="Aspects">
-            <Select
-              id="aspect-set"
-              name="aspectSet"
-              bind:value={aspectSet}
-              onchange={onSettingChange}
-            >
-              {#each aspectSets as set (set)}
-                <option value={set}>{ASPECT_SET_NAMES[set]}</option>
-              {/each}
-            </Select>
-          </Field>
-
-          <Field id="orb-size" label="Orbs">
-            <Select
-              id="orb-size"
-              name="orbSize"
-              bind:value={orbSize}
-              onchange={onSettingChange}
-            >
-              {#each orbSizes as size (size)}
-                <option value={size}>{ORB_SIZE_NAMES[size]}</option>
-              {/each}
-            </Select>
-          </Field>
-        </div>
-        {#if settingsNote}
-          <p class="text-ink-muted -mt-3 text-xs">{settingsNote}</p>
-        {/if}
-
-        <Button variant="primary" type="submit" disabled={isDrawing}>
-          Draw chart
-        </Button>
-
-        <Alert message={error} />
-
-        <SaveChartRow
-          idPrefix="birth"
-          blockedReason={savedChartsError || undefined}
-          onSave={(name) => saveForm(yours, name)}
-        />
-      </fieldset>
-    </FormPanel>
+      {/snippet}
+    </YourChartForm>
 
     {#if chart && panel === Panel.None}
-      <div class="flex flex-col gap-2">
-        <Button variant="action" onclick={startComparing}>
-          Compare with someone else
-        </Button>
-        <Button variant="action" onclick={startTransits}>See transits</Button>
-        <Button variant="action" onclick={startProgressions}>
-          See progressions
-        </Button>
-        <Button variant="action" onclick={startSolarReturn}>
-          See solar return
-        </Button>
-        <Button variant="action" onclick={startLunarReturn}>
-          See lunar return
-        </Button>
-      </div>
+      <AddToChartMenu
+        onCompare={startComparing}
+        onTransits={startTransits}
+        onProgressions={startProgressions}
+        onSolarReturn={startSolarReturn}
+        onLunarReturn={startLunarReturn}
+      />
     {/if}
 
     {#if panel === Panel.Transits}
-      <FormPanel title="Transit moment" onsubmit={onTransitSubmit}>
-        {#snippet description()}The sky at this moment, against your chart.
-          Times are in your time zone, {transitTimeZone}.{/snippet}
-
-        <Field id={TRANSIT_DATE_ID} label="Date">
-          <Input
-            id={TRANSIT_DATE_ID}
-            name="transitDate"
-            type="date"
-            required
-            min="0001-01-01"
-            max={LAST_CALCULABLE_DATE_VALUE}
-            bind:value={transitDate}
-          />
-        </Field>
-
-        <Field id="transit-time" label="Time">
-          <Input
-            id="transit-time"
-            name="transitTime"
-            type="time"
-            required
-            bind:value={transitTime}
-          />
-        </Field>
-
-        <ButtonRow>
-          <Button variant="primary" type="submit">Show transits</Button>
-          <Button
-            variant="secondary"
-            onclick={() => setTransitMoment(new Date())}
-          >
-            Now
-          </Button>
-          <Button variant="secondary" onclick={closePanel}>
-            Back to your chart
-          </Button>
-        </ButtonRow>
-
-        <Alert message={transitAlert} />
-      </FormPanel>
+      <TransitsPanel
+        bind:date={transitDate}
+        bind:time={transitTime}
+        timeZone={transitTimeZone}
+        alert={transitAlert}
+        onsubmit={onTransitSubmit}
+        onNow={() => setTransitMoment(new Date())}
+        onBack={closePanel}
+      />
     {/if}
 
     {#if panel === Panel.Progressions}
-      <FormPanel title="Progressed date" onsubmit={onProgressionsSubmit}>
-        {#snippet description()}Your chart moved on a day for each year of life,
-          to this date.{/snippet}
-
-        <Field id={PROGRESSIONS_DATE_ID} label="Date">
-          <Input
-            id={PROGRESSIONS_DATE_ID}
-            name="progressionsDate"
-            type="date"
-            required
-            min={chart ? formatDateValue(chart.details.date) : undefined}
-            max={LAST_CALCULABLE_DATE_VALUE}
-            bind:value={progressionsDate}
-          />
-        </Field>
-
-        <ButtonRow>
-          <Button variant="primary" type="submit">Show progressions</Button>
-          <Button
-            variant="secondary"
-            onclick={() =>
-              setProgressionsDate(toLocal(new Date(), transitTimeZone))}
-          >
-            Today
-          </Button>
-          <Button variant="secondary" onclick={closePanel}>
-            Back to your chart
-          </Button>
-        </ButtonRow>
-
-        <Alert message={progressionsAlert} />
-      </FormPanel>
+      <ProgressionsPanel
+        bind:date={progressionsDate}
+        minDate={chart ? formatDateValue(chart.details.date) : undefined}
+        alert={progressionsAlert}
+        onsubmit={onProgressionsSubmit}
+        onToday={() =>
+          setProgressionsDate(toLocal(new Date(), transitTimeZone))}
+        onBack={closePanel}
+      />
     {/if}
 
     {#if panel === Panel.SolarReturn}
-      <FormPanel title="Solar return" onsubmit={onReturnSubmit}>
-        {#snippet description()}The chart for the moment the Sun gets back to
-          where it was when you were born, cast for where you are on that
-          birthday.{/snippet}
-
-        <Field id={RETURN_YEAR_ID} label="Year">
-          <Input
-            id={RETURN_YEAR_ID}
-            name="returnYear"
-            type="number"
-            inputmode="numeric"
-            required
-            min="1"
-            max="3002"
-            step="1"
-            bind:value={returnYear}
-          />
-        </Field>
-
-        <PlaceFields idPrefix="return" bind:place={returnPlace} />
-
-        <ButtonRow>
-          <Button variant="primary" type="submit">Show solar return</Button>
-          <Button variant="secondary" onclick={closePanel}>
-            Back to your chart
-          </Button>
-        </ButtonRow>
-
-        <Alert message={returnAlert} />
-      </FormPanel>
+      <SolarReturnPanel
+        bind:year={returnYear}
+        bind:place={returnPlace}
+        alert={returnAlert}
+        onsubmit={onReturnSubmit}
+        onBack={closePanel}
+      />
     {/if}
 
     {#if panel === Panel.LunarReturn}
-      <FormPanel title="Lunar return" onsubmit={onLunarReturnSubmit}>
-        {#snippet description()}The chart for the moment the Moon gets back to
-          where it was when you were born, about every 27 days, cast for where
-          you are then. It shows the return in effect on the date.{/snippet}
-
-        <Field id={LUNAR_RETURN_DATE_ID} label="Date">
-          <Input
-            id={LUNAR_RETURN_DATE_ID}
-            name="lunarReturnDate"
-            type="date"
-            required
-            min={chart ? formatDateValue(chart.details.date) : undefined}
-            max={LAST_CALCULABLE_DATE_VALUE}
-            bind:value={lunarReturnDate}
-          />
-        </Field>
-
-        <PlaceFields idPrefix="lunar-return" bind:place={lunarReturnPlace} />
-
-        <ButtonRow>
-          <Button variant="primary" type="submit">Show lunar return</Button>
-          <Button
-            variant="secondary"
-            onclick={() => {
-              lunarReturnDate = formatDateValue(
-                toLocal(new Date(), transitTimeZone),
-              );
-              showLunarReturn();
-            }}
-          >
-            Today
-          </Button>
-          <Button variant="secondary" onclick={closePanel}>
-            Back to your chart
-          </Button>
-        </ButtonRow>
-
-        <Alert message={lunarReturnAlert} />
-      </FormPanel>
+      <LunarReturnPanel
+        bind:date={lunarReturnDate}
+        bind:place={lunarReturnPlace}
+        minDate={chart ? formatDateValue(chart.details.date) : undefined}
+        alert={lunarReturnAlert}
+        onsubmit={onLunarReturnSubmit}
+        onToday={() => {
+          lunarReturnDate = formatDateValue(
+            toLocal(new Date(), transitTimeZone),
+          );
+          showLunarReturn();
+        }}
+        onBack={closePanel}
+      />
     {/if}
 
     {#if panel === Panel.Comparison}
-      <FormPanel
-        title="Their birth details"
-        showTitle={false}
-        onfocusin={requestEngine}
+      <ComparePanel
+        bind:form={theirs}
+        bind:style={comparisonStyle}
+        {isDrawing}
+        alert={compareAlert}
+        {savedCharts}
+        {savedChartsError}
         onsubmit={onCompareSubmit}
-      >
-        <div>
-          <h2 class="ui-heading-section">Compare with someone else</h2>
-          <p class="ui-hint">Their chart uses your house system.</p>
-        </div>
-
-        <SavedChartList
-          charts={savedCharts}
-          onUse={useSavedForThem}
-          onForget={forgetSavedChart}
-        />
-
-        <BirthFields
-          idPrefix="compare"
-          timeHint="Local clock time where they were born."
-          bind:date={theirs.date}
-          bind:time={theirs.time}
-          bind:isTimeUnknown={theirs.isTimeUnknown}
-          bind:place={theirs.place}
-          onTimeUnknownChange={recompareIfCompared}
-        />
-
-        <fieldset class="ui-field">
-          <legend class="ui-label">Show</legend>
-          <div class="flex gap-4">
-            {#each comparisonStyles as style (style)}
-              <label class="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="comparisonStyle"
-                  value={style}
-                  bind:group={comparisonStyle}
-                />
-                {COMPARISON_STYLE_NAMES[style]}
-              </label>
-            {/each}
-          </div>
-        </fieldset>
-
-        <ButtonRow>
-          <Button variant="primary" type="submit" disabled={isDrawing}>
-            Compare charts
-          </Button>
-          <Button variant="secondary" onclick={closePanel}>
-            Stop comparing
-          </Button>
-        </ButtonRow>
-
-        <Alert message={compareAlert} />
-
-        <SaveChartRow
-          idPrefix="compare"
-          blockedReason={savedChartsError || undefined}
-          onSave={(name) => saveForm(theirs, name)}
-        />
-      </FormPanel>
+        onfocusin={requestEngine}
+        onTimeUnknownChange={recompareIfCompared}
+        onUseSaved={useSavedForThem}
+        onForgetSaved={forgetSavedChart}
+        onSave={(name) => saveForm(theirs, name)}
+        onStop={closePanel}
+      />
     {/if}
   </div>
 
   <section aria-live="polite" class="min-w-0" bind:this={result}>
-    {#if composite}
-      <CompositeView {composite} />
-    {:else if synastry}
-      <ComparisonView {synastry} />
-    {:else if transits}
-      <TransitView {transits} timeZone={transitTimeZone} />
-    {:else if progressions}
-      <ProgressionView {progressions} />
-    {:else if solarReturn}
-      <SolarReturnView {solarReturn} bind:style={returnStyle} />
-    {:else if lunarReturn}
-      <LunarReturnView {lunarReturn} bind:style={lunarReturnStyle} />
-    {:else if chart}
-      <ChartView {chart} />
-    {:else}
-      <div
-        class="border-rule text-ink-muted flex h-full min-h-80 items-center justify-center rounded-lg border border-dashed p-8 text-center"
-      >
-        Enter a date, time and place to draw a chart.
-      </div>
-    {/if}
+    <ChartResult
+      {chart}
+      {composite}
+      {synastry}
+      {transits}
+      {progressions}
+      {solarReturn}
+      {lunarReturn}
+      bind:solarReturnStyle={returnStyle}
+      bind:lunarReturnStyle
+      timeZone={transitTimeZone}
+    />
   </section>
 </main>
