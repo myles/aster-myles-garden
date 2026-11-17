@@ -2,6 +2,9 @@
      inside the birth form, so it can't be a form itself; Enter in the name
      field saves rather than drawing the chart. -->
 <script lang="ts">
+  import Button from "@/components/ui/Button.svelte";
+  import Input from "@/components/ui/Input.svelte";
+  import Field from "@/components/ui/Field.svelte";
   import { MAX_NAME_CHARS } from "@/lib/storage/saved-charts";
 
   let {
@@ -40,43 +43,36 @@
   }
 </script>
 
-<div class="border-rule flex flex-col gap-1.5 border-t pt-4">
-  <label for={`${idPrefix}-save-name`} class="text-sm font-medium">
-    Save as
-  </label>
+<Field
+  id={`${idPrefix}-save-name`}
+  label="Save as"
+  class="border-rule border-t pt-4"
+>
   <div class="flex gap-2">
-    <input
+    <Input
+      size="small"
+      class="min-w-0 flex-1"
       id={`${idPrefix}-save-name`}
       type="text"
       maxlength={MAX_NAME_CHARS}
       placeholder="e.g. Me"
       autocomplete="off"
-      class="border-rule bg-paper min-w-0 flex-1 rounded border px-3 py-1.5 text-sm disabled:opacity-50"
       disabled={Boolean(blockedReason)}
       bind:value={name}
       onkeydown={onKeyDown}
     />
-    <button
-      type="button"
-      class="border-rule hover:bg-accent/10 rounded border px-3 py-1.5 text-sm disabled:opacity-50"
-      disabled={Boolean(blockedReason)}
-      onclick={save}
-    >
+    <Button size="small" disabled={Boolean(blockedReason)} onclick={save}>
       Save
-    </button>
+    </Button>
   </div>
   {#if blockedReason}
-    <p class="text-xs text-[var(--challenging)]">{blockedReason}</p>
+    <p class="text-challenging text-xs">{blockedReason}</p>
   {:else}
-    <p class="text-ink-muted text-xs" aria-live="polite">
+    <p class="ui-hint" aria-live="polite">
       {status || "Saved in this browser only."}
     </p>
   {/if}
-  <p
-    role="alert"
-    class="text-xs text-[var(--challenging)]"
-    hidden={error.length === 0}
-  >
+  <p role="alert" class="text-challenging text-xs" hidden={error.length === 0}>
     {error}
   </p>
-</div>
+</Field>

@@ -58,7 +58,7 @@
 {/snippet}
 
 <div>
-  <h3 class="mb-3 font-serif text-lg">Download</h3>
+  <h3 class="ui-heading-section mb-3">Download</h3>
 
   <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
     <div class="flex items-center gap-2">
@@ -111,7 +111,7 @@
 
   <p
     role="alert"
-    class="mt-3 text-sm text-[var(--challenging)]"
+    class="text-challenging mt-3 text-sm"
     hidden={error.length === 0}
   >
     {error}

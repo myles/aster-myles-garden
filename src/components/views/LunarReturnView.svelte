@@ -1,6 +1,7 @@
 <!-- A lunar return: the chart for the moment the Moon gets back to its natal
      position, cast where you are then, with its positions and aspects. -->
 <script lang="ts">
+  import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import AspectTable from "@/components/chart/AspectTable.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
@@ -76,7 +77,7 @@
 </script>
 
 <div>
-  <h2 class="font-serif text-2xl" tabindex="-1">
+  <h2 class="ui-heading-view" tabindex="-1">
     Lunar return, {formatLocalDate(chart.details.date)}
   </h2>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
@@ -90,13 +91,13 @@
   {/if}
 
   {#if fallbackNote}
-    <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">
+    <Callout class="mt-4">
       {fallbackNote}
-    </p>
+    </Callout>
   {/if}
 
   <fieldset class="mt-4 flex flex-wrap gap-4 text-sm">
-    <legend class="mb-2 font-medium">Show lunar return</legend>
+    <legend class="ui-label mb-2">Show lunar return</legend>
     <label class="flex items-center gap-2">
       <input
         type="radio"
