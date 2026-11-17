@@ -24,13 +24,13 @@
 </script>
 
 <div>
-  <h3 class="mb-2 font-serif text-lg">{title}</h3>
-  <table class="w-full text-sm">
-    <thead class="text-ink-muted text-left">
-      <tr class="border-rule border-b">
-        <th scope="col" class="py-1.5 font-normal">Pair</th>
-        <th scope="col" class="py-1.5 font-normal">Aspect</th>
-        <th scope="col" class="py-1.5 text-right font-normal">Orb</th>
+  <h3 class="ui-heading-section mb-2">{title}</h3>
+  <table class="ui-table">
+    <thead>
+      <tr>
+        <th scope="col">Pair</th>
+        <th scope="col">Aspect</th>
+        <th scope="col" class="text-right">Orb</th>
       </tr>
     </thead>
     <tbody>
@@ -38,22 +38,22 @@
         {@const first = BODY_INFO[aspect.first]}
         {@const second = BODY_INFO[aspect.second]}
         {@const info = ASPECT_INFO[aspect.type]}
-        <tr class="border-rule/60 border-b">
-          <td class="py-1.5">
+        <tr>
+          <td>
             {first.glyph}
             {firstLabel}
             {first.name} – {second.glyph}
             {secondLabel}
             {second.name}
           </td>
-          <td class="py-1.5">{info.glyph} {info.name}</td>
-          <td class="py-1.5 text-right tabular-nums">
+          <td>{info.glyph} {info.name}</td>
+          <td class="text-right tabular-nums">
             {formatDegrees(aspect.orbDegrees)}
           </td>
         </tr>
       {:else}
-        <tr class="border-rule/60 border-b">
-          <td class="py-1.5" colspan="3">
+        <tr>
+          <td colspan="3">
             {formatNoAspects(settings)} within orb.
           </td>
         </tr>

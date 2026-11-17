@@ -32,17 +32,17 @@
 </script>
 
 <div>
-  <h3 class="mb-2 font-serif text-lg">{title}</h3>
-  <table class="w-full text-sm">
-    <thead class="text-ink-muted text-left">
-      <tr class="border-rule border-b">
-        <th scope="col" class="py-1.5 font-normal">Body</th>
-        <th scope="col" class="py-1.5 font-normal">Position</th>
+  <h3 class="ui-heading-section mb-2">{title}</h3>
+  <table class="ui-table">
+    <thead>
+      <tr>
+        <th scope="col">Body</th>
+        <th scope="col">Position</th>
         {#if chart.houses}
-          <th scope="col" class="py-1.5 text-right font-normal">House</th>
+          <th scope="col" class="text-right">House</th>
         {/if}
         {#if overlay && overlayHouses}
-          <th scope="col" class="py-1.5 text-right font-normal">
+          <th scope="col" class="text-right">
             {overlay.heading}
           </th>
         {/if}
@@ -51,26 +51,26 @@
     <tbody>
       {#each chart.bodies as placed (placed.body)}
         {@const info = BODY_INFO[placed.body]}
-        <tr class="border-rule/60 border-b">
-          <td class="py-1.5">{info.glyph} {info.name}</td>
-          <td class="py-1.5">{formatPlacement(placed)}</td>
+        <tr>
+          <td>{info.glyph} {info.name}</td>
+          <td>{formatPlacement(placed)}</td>
           {#if chart.houses}
-            <td class="py-1.5 text-right tabular-nums">{placed.house}</td>
+            <td class="text-right tabular-nums">{placed.house}</td>
           {/if}
           {#if overlayHouses}
-            <td class="py-1.5 text-right tabular-nums">
+            <td class="text-right tabular-nums">
               {overlayHouses[placed.body]}
             </td>
           {/if}
         </tr>
       {/each}
       {#each angles as angle (angle.name)}
-        <tr class="border-rule/60 border-b">
-          <td class="py-1.5">{angle.name}</td>
-          <td class="py-1.5">{formatLongitude(angle.longitude)}</td>
-          <td class="py-1.5"></td>
+        <tr>
+          <td>{angle.name}</td>
+          <td>{formatLongitude(angle.longitude)}</td>
+          <td></td>
           {#if overlayHouses}
-            <td class="py-1.5"></td>
+            <td></td>
           {/if}
         </tr>
       {/each}

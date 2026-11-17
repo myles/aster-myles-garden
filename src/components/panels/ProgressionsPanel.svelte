@@ -1,0 +1,54 @@
+<!-- The date to progress your chart to. -->
+<script lang="ts">
+  import { PROGRESSIONS_DATE_ID } from "@/components/panels/ids";
+  import Alert from "@/components/ui/Alert.svelte";
+  import Button from "@/components/ui/Button.svelte";
+  import ButtonRow from "@/components/ui/ButtonRow.svelte";
+  import Field from "@/components/ui/Field.svelte";
+  import FormPanel from "@/components/ui/FormPanel.svelte";
+  import Input from "@/components/ui/Input.svelte";
+  import { LAST_CALCULABLE_DATE_VALUE } from "@/lib/charts/chart";
+
+  let {
+    date = $bindable(),
+    minDate,
+    alert,
+    onsubmit,
+    onToday,
+    onBack,
+  }: {
+    /** As <input type="date"> holds it. */
+    date: string;
+    /** The birth date, as <input type="date"> holds it. */
+    minDate?: string;
+    alert: string;
+    onsubmit: (event: SubmitEvent) => void;
+    onToday: () => void;
+    onBack: () => void;
+  } = $props();
+</script>
+
+<FormPanel title="Progressed date" {onsubmit}>
+  {#snippet description()}Your chart moved on a day for each year of life, to
+    this date.{/snippet}
+
+  <Field id={PROGRESSIONS_DATE_ID} label="Date">
+    <Input
+      id={PROGRESSIONS_DATE_ID}
+      name="progressionsDate"
+      type="date"
+      required
+      min={minDate}
+      max={LAST_CALCULABLE_DATE_VALUE}
+      bind:value={date}
+    />
+  </Field>
+
+  <ButtonRow>
+    <Button variant="primary" type="submit">Show progressions</Button>
+    <Button onclick={onToday}>Today</Button>
+    <Button onclick={onBack}>Back to your chart</Button>
+  </ButtonRow>
+
+  <Alert message={alert} />
+</FormPanel>

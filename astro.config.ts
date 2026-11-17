@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 
 import { SITE_URL } from "./src/consts";
+import { devPages } from "./src/integrations/dev-pages";
 import { serviceWorker } from "./src/integrations/service-worker";
 
 /**
@@ -48,6 +49,6 @@ export default defineConfig({
     },
   },
 
-  integrations: [svelte(), serviceWorker()],
+  integrations: [svelte(), serviceWorker(), devPages()],
   adapter: vercel({ includeFiles: [SWISSEPH_NODE_VERCEL_PREBUILD] }),
 });

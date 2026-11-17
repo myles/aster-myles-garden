@@ -122,6 +122,23 @@ Leave out `time` when the birth time isn't known: the chart is cast for local no
 
 `astro preview` doesn't run under the Vercel adapter. Use `npm run dev` to try the API locally.
 
+## Interface
+
+The page's look is built from a few building blocks, each defined once, so a change to one shows everywhere it's used.
+
+- `src/styles/global.css` — the colour tokens, light and dark, and the base classes under `@layer components`: `.ui-panel`, `.ui-field`, `.ui-input`, `.ui-button` and its variants, `.ui-table` and the rest. Plain markup can use them directly.
+- `src/components/ui/` — Svelte components that wrap those classes with their structure and behaviour: `Button` (`primary`, `secondary`, `action`, `tool` or `quiet`, and `size="small"`), `Field`, `Input`, `Select`, `FormPanel`, `ButtonRow`, `Alert` and `Callout`.
+
+The page is put together from those blocks:
+
+- `src/components/App.svelte` — the page's state, and how its parts fit together. It holds no markup of its own beyond the layout.
+- `src/components/panels/` — the forms in the left column, one per file: `YourChartForm` with `ChartSettingsFields`, `AddToChartMenu`, and a panel for each thing that can be added to your chart (`ComparePanel`, `TransitsPanel`, `ProgressionsPanel`, `SolarReturnPanel`, `LunarReturnPanel`).
+- `src/components/views/` — what's drawn beside them, one view per kind of chart, chosen by `ChartResult`. Solar and lunar returns share `ReturnView`, and transits and progressions share `chart/CrossAspectTable`, so a change to one shows in both.
+
+To see every building block in each of its states, in light and dark, run `npm run dev` and open [`/dev/components`](http://localhost:4321/dev/components). The page lives in `src/dev/` and is added by the `devPages` integration only under `npm run dev`, so a production build never includes it. Add a specimen to `src/dev/ComponentGallery.svelte` when you add a building block.
+
+To restyle, say, every secondary button, change `.ui-button--secondary` in `global.css`. A component's own classes, such as a margin, still win over these, since they're in the components layer.
+
 ## Releases
 
 Releases are made by [release-please](https://github.com/googleapis/release-please-action) from [conventional commits](https://www.conventionalcommits.org/).

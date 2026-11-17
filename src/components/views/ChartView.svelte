@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import AspectTable from "@/components/chart/AspectTable.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
@@ -52,26 +53,26 @@
 </script>
 
 <div>
-  <h2 class="font-serif text-2xl" tabindex="-1">
+  <h2 class="ui-heading-view" tabindex="-1">
     {formatPlace(chart.details.place)}
   </h2>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
   <ZodiacNote {chart} />
 
   {#if fallbackNote}
-    <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">
+    <Callout class="mt-4">
       {fallbackNote}
-    </p>
+    </Callout>
   {/if}
 
   {#if !chart.houses}
-    <p class="border-rule bg-panel mt-4 rounded-md border p-3 text-sm">
+    <Callout class="mt-4">
       Without a birth time, this chart is cast for noon. Houses, the ascendant
       and the midheaven depend on the exact time, so they're left out. The Moon
       moves about 13° a day, so it may be up to 7° either side of where it's
       shown, and any body that changed sign that day says which other sign it
       may be in.
-    </p>
+    </Callout>
   {/if}
 
   <ChartWheel {chart} bind:svg={wheel} />

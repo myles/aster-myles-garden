@@ -1,5 +1,6 @@
 <!-- Hosts the D3 wheel. Svelte owns the <svg>; D3 owns everything in it. -->
 <script lang="ts">
+  import Button from "@/components/ui/Button.svelte";
   import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
   import {
     drawBiWheel,
@@ -59,14 +60,14 @@
     </div>
   </div>
 
-  <button
-    type="button"
+  <Button
+    variant="tool"
+    class="aria-pressed:bg-accent/15 mt-3"
     aria-pressed={String(isEnlarged)}
-    class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent aria-pressed:bg-accent/15 mt-3 rounded-md border px-3 py-1.5 text-sm font-medium focus-visible:outline-2"
     onclick={() => (isEnlarged = !isEnlarged)}
   >
     Enlarge wheel
-  </button>
+  </Button>
 
   <details class="mt-3 text-sm">
     <summary class="text-ink-muted cursor-pointer">Describe the wheel</summary>

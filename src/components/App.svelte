@@ -1,37 +1,35 @@
-<!-- Birth form and chart view. Talks to the chart service, place search
-     and wheel renderer — never to the ephemeris. Once your chart is drawn,
-     a second form compares it with someone else's or shows its transits,
-     progressions, solar return or lunar return. -->
+<!-- The page's state and how its parts fit together: your birth form,
+     whatever panel is open beside it, and the result. Talks to the chart
+     service, place search and storage — never to the ephemeris. The
+     forms and views themselves live in panels/ and views/. -->
 <script lang="ts">
-  import BirthFields from "@/components/birth-form/BirthFields.svelte";
-  import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
+  import {
+    createBlankForm,
+    type BirthForm,
+  } from "@/components/birth-form/birth-form";
   import { Panel } from "@/components/panel";
-  import SaveChartRow from "@/components/saved-charts/SaveChartRow.svelte";
-  import SavedChartList from "@/components/saved-charts/SavedChartList.svelte";
-  import ChartView from "@/components/views/ChartView.svelte";
-  import ComparisonView from "@/components/views/ComparisonView.svelte";
-  import CompositeView from "@/components/views/CompositeView.svelte";
-  import LunarReturnView from "@/components/views/LunarReturnView.svelte";
-  import ProgressionView from "@/components/views/ProgressionView.svelte";
-  import SolarReturnView from "@/components/views/SolarReturnView.svelte";
-  import TransitView from "@/components/views/TransitView.svelte";
+  import AddToChartMenu from "@/components/panels/AddToChartMenu.svelte";
+  import ChartSettingsFields from "@/components/panels/ChartSettingsFields.svelte";
+  import ComparePanel from "@/components/panels/ComparePanel.svelte";
   import {
-    ASPECT_SET_NAMES,
-    AspectSet,
-    DEFAULT_ASPECT_SETTINGS,
-    ORB_SIZE_NAMES,
-    OrbSize,
-  } from "@/lib/astrology/aspects";
-  import {
-    AYANAMSA_NAMES,
-    Ayanamsa,
-    isAyanamsa,
-  } from "@/lib/astrology/ayanamsa";
+    COMPARE_DATE_ID,
+    LUNAR_RETURN_DATE_ID,
+    PROGRESSIONS_DATE_ID,
+    RETURN_YEAR_ID,
+    TRANSIT_DATE_ID,
+  } from "@/components/panels/ids";
+  import LunarReturnPanel from "@/components/panels/LunarReturnPanel.svelte";
+  import ProgressionsPanel from "@/components/panels/ProgressionsPanel.svelte";
+  import SolarReturnPanel from "@/components/panels/SolarReturnPanel.svelte";
+  import TransitsPanel from "@/components/panels/TransitsPanel.svelte";
+  import YourChartForm from "@/components/panels/YourChartForm.svelte";
+  import { toAyanamsa, TROPICAL } from "@/components/panels/zodiac";
+  import ChartResult from "@/components/views/ChartResult.svelte";
+  import { DEFAULT_ASPECT_SETTINGS } from "@/lib/astrology/aspects";
   import {
     canCalculateDate,
     canCalculateMoment,
     createChart,
-    LAST_CALCULABLE_DATE_VALUE,
     loadChartEngine,
     type BirthDetails,
     type Chart,
@@ -39,8 +37,7 @@
   import { describeError } from "@/lib/format";
   import {
     DEFAULT_HOUSE_SYSTEM,
-    HOUSE_SYSTEM_NAMES,
-    HouseSystem,
+    type HouseSystem,
     isHouseSystem,
   } from "@/lib/astrology/houses";
   import { findPlace, loadPlaceIndex, type Place } from "@/lib/places";
@@ -64,11 +61,7 @@
   import { createLunarReturn } from "@/lib/charts/lunar-return";
   import { ReturnStyle } from "@/lib/charts/returns";
   import { createComposite } from "@/lib/charts/composite";
-  import {
-    compareCharts,
-    COMPARISON_STYLE_NAMES,
-    ComparisonStyle,
-  } from "@/lib/charts/synastry";
+  import { compareCharts, ComparisonStyle } from "@/lib/charts/synastry";
   import {
     formatDateValue,
     formatTimeValue,
@@ -83,20 +76,6 @@
   import { createProgressions } from "@/lib/charts/progressions";
   import { createTransits } from "@/lib/charts/transits";
   import { onMount, tick } from "svelte";
-
-  /** One person's form fields. */
-  type BirthForm = {
-    date: string;
-    time: string;
-    isTimeUnknown: boolean;
-    place?: Place;
-  };
-
-  const COMPARE_DATE_ID = "compare-date";
-  const TRANSIT_DATE_ID = "transit-date";
-  const PROGRESSIONS_DATE_ID = "progressions-date";
-  const RETURN_YEAR_ID = "return-year";
-  const LUNAR_RETURN_DATE_ID = "lunar-return-date";
 
   const RETURN_NEEDS_TIME =
     "A solar return needs your birth time. Enter it above and draw your " +
@@ -113,15 +92,6 @@
   const BIRTH_OUT_OF_RANGE = `Charts can only be drawn for dates from ${CALCULABLE_SPAN}.`;
   const TRANSITS_OUT_OF_RANGE = `Transits can only be shown from ${CALCULABLE_SPAN}.`;
 
-  /** The zodiac select's value for the tropical zodiac. */
-  const TROPICAL = "tropical";
-
-  const houseSystems = Object.values(HouseSystem);
-  const ayanamsas = Object.values(Ayanamsa);
-  const aspectSets = Object.values(AspectSet);
-  const orbSizes = Object.values(OrbSize);
-  const comparisonStyles = Object.values(ComparisonStyle);
-
   let yours: BirthForm = $state(createBlankForm());
   let theirs: BirthForm = $state(createBlankForm());
   let houseSystem: string = $state(DEFAULT_HOUSE_SYSTEM);
@@ -129,7 +99,7 @@
   let orbSize = $state(DEFAULT_ASPECT_SETTINGS.orbSize);
   // TROPICAL, or the ayanamsa of a sidereal zodiac.
   let zodiac: string = $state(TROPICAL);
-  const ayanamsa = $derived(isAyanamsa(zodiac) ? zodiac : undefined);
+  const ayanamsa = $derived(toAyanamsa(zodiac));
   let chart: Chart | undefined = $state.raw();
   let comparedChart: Chart | undefined = $state.raw();
   let comparisonStyle = $state(ComparisonStyle.BiWheel);
@@ -290,10 +260,6 @@
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   });
-
-  function createBlankForm(): BirthForm {
-    return { date: "", time: "", isTimeUnknown: false, place: undefined };
-  }
 
   // Fills in the forms from a share link, then draws its chart, and the
   // comparison when the link carries a second chart.
@@ -867,554 +833,126 @@
 </script>
 
 <main class="grid flex-1 gap-8 lg:grid-cols-[20rem_1fr]">
-  <div class="flex flex-col gap-6 self-start">
-    <form
-      aria-label="Your birth details"
-      class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-      novalidate
-      onfocusin={requestEngine}
+  <div class="flex min-w-0 flex-col gap-6 self-start">
+    <YourChartForm
+      bind:form={yours}
+      {isHydrated}
+      {isDrawing}
+      {error}
+      {savedCharts}
+      {savedChartsError}
       onsubmit={onSubmit}
+      onfocusin={requestEngine}
+      onTimeUnknownChange={redrawIfDrawn}
+      onUseSaved={useSavedForYou}
+      onForgetSaved={forgetSavedChart}
+      onSave={(name) => saveForm(yours, name)}
     >
-      {#if !isHydrated}
-        <p class="text-ink-muted text-sm">
-          JavaScript is required to calculate your chart in your browser. Enable
-          it to enter your birth details.
-        </p>
-      {/if}
-      <!-- Disable inputs and submit buttons together so native clicks and
-           Enter cannot submit birth details before hydration. -->
-      <fieldset
-        class="m-0 flex min-w-0 flex-col gap-5 border-0 p-0"
-        disabled={!isHydrated}
-      >
-        <SavedChartList
-          charts={savedCharts}
-          onUse={useSavedForYou}
-          onForget={forgetSavedChart}
+      {#snippet settings()}
+        <ChartSettingsFields
+          bind:houseSystem
+          bind:zodiac
+          bind:aspectSet
+          bind:orbSize
+          {isHouseSystemUnused}
+          note={settingsNote}
+          onchange={onSettingChange}
         />
-
-        <BirthFields
-          idPrefix="birth"
-          timeHint="Local clock time where you were born."
-          bind:date={yours.date}
-          bind:time={yours.time}
-          bind:isTimeUnknown={yours.isTimeUnknown}
-          bind:place={yours.place}
-          onTimeUnknownChange={redrawIfDrawn}
-        />
-
-        <div class="flex flex-col gap-1.5">
-          <label for="house-system" class="text-sm font-medium">
-            House system
-          </label>
-          <select
-            id="house-system"
-            name="houseSystem"
-            class="border-rule bg-paper rounded border px-3 py-2 disabled:opacity-50"
-            bind:value={houseSystem}
-            disabled={isHouseSystemUnused}
-            onchange={onSettingChange}
-          >
-            {#each houseSystems as system (system)}
-              <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
-            {/each}
-          </select>
-          {#if isHouseSystemUnused}
-            <p class="text-ink-muted text-xs">Houses need a birth time.</p>
-          {/if}
-        </div>
-
-        <div class="flex flex-col gap-1.5">
-          <label for="zodiac" class="text-sm font-medium">Zodiac</label>
-          <select
-            id="zodiac"
-            name="zodiac"
-            class="border-rule bg-paper rounded border px-3 py-2"
-            bind:value={zodiac}
-            onchange={onSettingChange}
-          >
-            <option value={TROPICAL}>Tropical</option>
-            <optgroup label="Sidereal">
-              {#each ayanamsas as option (option)}
-                <option value={option}>
-                  Sidereal, {AYANAMSA_NAMES[option]}
-                </option>
-              {/each}
-            </optgroup>
-          </select>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div class="flex flex-col gap-1.5">
-            <label for="aspect-set" class="text-sm font-medium">Aspects</label>
-            <select
-              id="aspect-set"
-              name="aspectSet"
-              class="border-rule bg-paper rounded border px-3 py-2"
-              bind:value={aspectSet}
-              onchange={onSettingChange}
-            >
-              {#each aspectSets as set (set)}
-                <option value={set}>{ASPECT_SET_NAMES[set]}</option>
-              {/each}
-            </select>
-          </div>
-
-          <div class="flex flex-col gap-1.5">
-            <label for="orb-size" class="text-sm font-medium">Orbs</label>
-            <select
-              id="orb-size"
-              name="orbSize"
-              class="border-rule bg-paper rounded border px-3 py-2"
-              bind:value={orbSize}
-              onchange={onSettingChange}
-            >
-              {#each orbSizes as size (size)}
-                <option value={size}>{ORB_SIZE_NAMES[size]}</option>
-              {/each}
-            </select>
-          </div>
-        </div>
-        {#if settingsNote}
-          <p class="text-ink-muted -mt-3 text-xs">{settingsNote}</p>
-        {/if}
-
-        <button
-          type="submit"
-          class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
-          disabled={isDrawing}
-        >
-          Draw chart
-        </button>
-
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={error.length === 0}
-        >
-          {error}
-        </p>
-
-        <SaveChartRow
-          idPrefix="birth"
-          blockedReason={savedChartsError || undefined}
-          onSave={(name) => saveForm(yours, name)}
-        />
-      </fieldset>
-    </form>
+      {/snippet}
+    </YourChartForm>
 
     {#if chart && panel === Panel.None}
-      <div class="flex flex-col gap-2">
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startComparing}
-        >
-          Compare with someone else
-        </button>
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startTransits}
-        >
-          See transits
-        </button>
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startProgressions}
-        >
-          See progressions
-        </button>
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startSolarReturn}
-        >
-          See solar return
-        </button>
-        <button
-          type="button"
-          class="border-rule bg-panel hover:bg-accent/10 focus-visible:outline-accent rounded-lg border px-4 py-2.5 font-medium focus-visible:outline-2"
-          onclick={startLunarReturn}
-        >
-          See lunar return
-        </button>
-      </div>
+      <AddToChartMenu
+        onCompare={startComparing}
+        onTransits={startTransits}
+        onProgressions={startProgressions}
+        onSolarReturn={startSolarReturn}
+        onLunarReturn={startLunarReturn}
+      />
     {/if}
 
     {#if panel === Panel.Transits}
-      <form
-        aria-label="Transit moment"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
+      <TransitsPanel
+        bind:date={transitDate}
+        bind:time={transitTime}
+        timeZone={transitTimeZone}
+        alert={transitAlert}
         onsubmit={onTransitSubmit}
-      >
-        <div>
-          <h2 class="font-serif text-lg">Transit moment</h2>
-          <p class="text-ink-muted text-xs">
-            The sky at this moment, against your chart. Times are in your time
-            zone, {transitTimeZone}.
-          </p>
-        </div>
-
-        <div class="flex flex-col gap-1.5">
-          <label for={TRANSIT_DATE_ID} class="text-sm font-medium">Date</label>
-          <input
-            id={TRANSIT_DATE_ID}
-            name="transitDate"
-            type="date"
-            required
-            min="0001-01-01"
-            max={LAST_CALCULABLE_DATE_VALUE}
-            class="border-rule bg-paper rounded border px-3 py-2"
-            bind:value={transitDate}
-          />
-        </div>
-
-        <div class="flex flex-col gap-1.5">
-          <label for="transit-time" class="text-sm font-medium">Time</label>
-          <input
-            id="transit-time"
-            name="transitTime"
-            type="time"
-            required
-            class="border-rule bg-paper rounded border px-3 py-2"
-            bind:value={transitTime}
-          />
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
-          >
-            Show transits
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={() => setTransitMoment(new Date())}
-          >
-            Now
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
-            Back to your chart
-          </button>
-        </div>
-
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={transitAlert.length === 0}
-        >
-          {transitAlert}
-        </p>
-      </form>
+        onNow={() => setTransitMoment(new Date())}
+        onBack={closePanel}
+      />
     {/if}
 
     {#if panel === Panel.Progressions}
-      <form
-        aria-label="Progressed date"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
+      <ProgressionsPanel
+        bind:date={progressionsDate}
+        minDate={chart ? formatDateValue(chart.details.date) : undefined}
+        alert={progressionsAlert}
         onsubmit={onProgressionsSubmit}
-      >
-        <div>
-          <h2 class="font-serif text-lg">Progressed date</h2>
-          <p class="text-ink-muted text-xs">
-            Your chart moved on a day for each year of life, to this date.
-          </p>
-        </div>
-
-        <div class="flex flex-col gap-1.5">
-          <label for={PROGRESSIONS_DATE_ID} class="text-sm font-medium">
-            Date
-          </label>
-          <input
-            id={PROGRESSIONS_DATE_ID}
-            name="progressionsDate"
-            type="date"
-            required
-            min={chart ? formatDateValue(chart.details.date) : undefined}
-            max={LAST_CALCULABLE_DATE_VALUE}
-            class="border-rule bg-paper rounded border px-3 py-2"
-            bind:value={progressionsDate}
-          />
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
-          >
-            Show progressions
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={() =>
-              setProgressionsDate(toLocal(new Date(), transitTimeZone))}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
-            Back to your chart
-          </button>
-        </div>
-
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={progressionsAlert.length === 0}
-        >
-          {progressionsAlert}
-        </p>
-      </form>
+        onToday={() =>
+          setProgressionsDate(toLocal(new Date(), transitTimeZone))}
+        onBack={closePanel}
+      />
     {/if}
 
     {#if panel === Panel.SolarReturn}
-      <form
-        aria-label="Solar return"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
+      <SolarReturnPanel
+        bind:year={returnYear}
+        bind:place={returnPlace}
+        alert={returnAlert}
         onsubmit={onReturnSubmit}
-      >
-        <div>
-          <h2 class="font-serif text-lg">Solar return</h2>
-          <p class="text-ink-muted text-xs">
-            The chart for the moment the Sun gets back to where it was when you
-            were born, cast for where you are on that birthday.
-          </p>
-        </div>
-
-        <div class="flex flex-col gap-1.5">
-          <label for={RETURN_YEAR_ID} class="text-sm font-medium">Year</label>
-          <input
-            id={RETURN_YEAR_ID}
-            name="returnYear"
-            type="number"
-            inputmode="numeric"
-            required
-            min="1"
-            max="3002"
-            step="1"
-            class="border-rule bg-paper rounded border px-3 py-2"
-            bind:value={returnYear}
-          />
-        </div>
-
-        <PlaceFields idPrefix="return" bind:place={returnPlace} />
-
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
-          >
-            Show solar return
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
-            Back to your chart
-          </button>
-        </div>
-
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={returnAlert.length === 0}
-        >
-          {returnAlert}
-        </p>
-      </form>
+        onBack={closePanel}
+      />
     {/if}
 
     {#if panel === Panel.LunarReturn}
-      <form
-        aria-label="Lunar return"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
+      <LunarReturnPanel
+        bind:date={lunarReturnDate}
+        bind:place={lunarReturnPlace}
+        minDate={chart ? formatDateValue(chart.details.date) : undefined}
+        alert={lunarReturnAlert}
         onsubmit={onLunarReturnSubmit}
-      >
-        <div>
-          <h2 class="font-serif text-lg">Lunar return</h2>
-          <p class="text-ink-muted text-xs">
-            The chart for the moment the Moon gets back to where it was when you
-            were born, about every 27 days, cast for where you are then. It
-            shows the return in effect on the date.
-          </p>
-        </div>
-
-        <div class="flex flex-col gap-1.5">
-          <label for={LUNAR_RETURN_DATE_ID} class="text-sm font-medium">
-            Date
-          </label>
-          <input
-            id={LUNAR_RETURN_DATE_ID}
-            name="lunarReturnDate"
-            type="date"
-            required
-            min={chart ? formatDateValue(chart.details.date) : undefined}
-            max={LAST_CALCULABLE_DATE_VALUE}
-            class="border-rule bg-paper rounded border px-3 py-2"
-            bind:value={lunarReturnDate}
-          />
-        </div>
-
-        <PlaceFields idPrefix="lunar-return" bind:place={lunarReturnPlace} />
-
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90"
-          >
-            Show lunar return
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={() => {
-              lunarReturnDate = formatDateValue(
-                toLocal(new Date(), transitTimeZone),
-              );
-              showLunarReturn();
-            }}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
-            Back to your chart
-          </button>
-        </div>
-
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={lunarReturnAlert.length === 0}
-        >
-          {lunarReturnAlert}
-        </p>
-      </form>
+        onToday={() => {
+          lunarReturnDate = formatDateValue(
+            toLocal(new Date(), transitTimeZone),
+          );
+          showLunarReturn();
+        }}
+        onBack={closePanel}
+      />
     {/if}
 
     {#if panel === Panel.Comparison}
-      <form
-        aria-label="Their birth details"
-        class="border-rule bg-panel flex flex-col gap-5 rounded-lg border p-5"
-        novalidate
-        onfocusin={requestEngine}
+      <ComparePanel
+        bind:form={theirs}
+        bind:style={comparisonStyle}
+        {isDrawing}
+        alert={compareAlert}
+        {savedCharts}
+        {savedChartsError}
         onsubmit={onCompareSubmit}
-      >
-        <div>
-          <h2 class="font-serif text-lg">Compare with someone else</h2>
-          <p class="text-ink-muted text-xs">
-            Their chart uses your house system.
-          </p>
-        </div>
-
-        <SavedChartList
-          charts={savedCharts}
-          onUse={useSavedForThem}
-          onForget={forgetSavedChart}
-        />
-
-        <BirthFields
-          idPrefix="compare"
-          timeHint="Local clock time where they were born."
-          bind:date={theirs.date}
-          bind:time={theirs.time}
-          bind:isTimeUnknown={theirs.isTimeUnknown}
-          bind:place={theirs.place}
-          onTimeUnknownChange={recompareIfCompared}
-        />
-
-        <fieldset class="flex flex-col gap-1.5">
-          <legend class="text-sm font-medium">Show</legend>
-          <div class="flex gap-4">
-            {#each comparisonStyles as style (style)}
-              <label class="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="comparisonStyle"
-                  value={style}
-                  bind:group={comparisonStyle}
-                />
-                {COMPARISON_STYLE_NAMES[style]}
-              </label>
-            {/each}
-          </div>
-        </fieldset>
-
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="submit"
-            class="bg-accent text-paper rounded px-4 py-2 font-medium hover:opacity-90 disabled:opacity-50"
-            disabled={isDrawing}
-          >
-            Compare charts
-          </button>
-          <button
-            type="button"
-            class="border-rule hover:bg-accent/10 rounded border px-4 py-2"
-            onclick={closePanel}
-          >
-            Stop comparing
-          </button>
-        </div>
-
-        <p
-          role="alert"
-          class="text-sm text-[var(--challenging)]"
-          hidden={compareAlert.length === 0}
-        >
-          {compareAlert}
-        </p>
-
-        <SaveChartRow
-          idPrefix="compare"
-          blockedReason={savedChartsError || undefined}
-          onSave={(name) => saveForm(theirs, name)}
-        />
-      </form>
+        onfocusin={requestEngine}
+        onTimeUnknownChange={recompareIfCompared}
+        onUseSaved={useSavedForThem}
+        onForgetSaved={forgetSavedChart}
+        onSave={(name) => saveForm(theirs, name)}
+        onStop={closePanel}
+      />
     {/if}
   </div>
 
   <section aria-live="polite" class="min-w-0" bind:this={result}>
-    {#if composite}
-      <CompositeView {composite} />
-    {:else if synastry}
-      <ComparisonView {synastry} />
-    {:else if transits}
-      <TransitView {transits} timeZone={transitTimeZone} />
-    {:else if progressions}
-      <ProgressionView {progressions} />
-    {:else if solarReturn}
-      <SolarReturnView {solarReturn} bind:style={returnStyle} />
-    {:else if lunarReturn}
-      <LunarReturnView {lunarReturn} bind:style={lunarReturnStyle} />
-    {:else if chart}
-      <ChartView {chart} />
-    {:else}
-      <div
-        class="border-rule text-ink-muted flex h-full min-h-80 items-center justify-center rounded-lg border border-dashed p-8 text-center"
-      >
-        Enter a date, time and place to draw a chart.
-      </div>
-    {/if}
+    <ChartResult
+      {chart}
+      {composite}
+      {synastry}
+      {transits}
+      {progressions}
+      {solarReturn}
+      {lunarReturn}
+      bind:solarReturnStyle={returnStyle}
+      bind:lunarReturnStyle
+      timeZone={transitTimeZone}
+    />
   </section>
 </main>
