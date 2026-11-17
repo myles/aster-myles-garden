@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { AspectSet, DEFAULT_ASPECT_SETTINGS } from "@/lib/astrology/aspects";
 import {
+  formatOrbSpan,
+  formatShortMoment,
   describeError,
   formatBirthDate,
   formatBirthMoment,
@@ -110,5 +112,57 @@ describe("formatNoAspects", () => {
   it("says aspects once minor ones are looked for too", () => {
     const settings = { ...DEFAULT_ASPECT_SETTINGS, aspectSet: AspectSet.All };
     expect(formatNoAspects(settings)).toBe("No aspects");
+  });
+});
+
+describe("formatShortMoment", () => {
+  it("gives the date and time on the clock asked for", () => {
+    expect(
+      formatShortMoment(new Date("2026-12-03T19:05:00Z"), "America/Toronto"),
+    ).toBe("3 Dec 2026, 14:05");
+  });
+});
+
+describe("formatOrbSpan", () => {
+  const ZONE = "America/Toronto";
+
+  it("gives a long pass as dates", () => {
+    expect(
+      formatOrbSpan(
+        {
+          entersOrb: new Date("2026-11-12T17:00:00Z"),
+          exact: [],
+          leavesOrb: new Date("2026-12-09T17:00:00Z"),
+        },
+        ZONE,
+      ),
+    ).toMatch(/^12 Nov\s*–\s*9 Dec 2026$/);
+  });
+
+  it("gives a pass of hours to the minute", () => {
+    expect(
+      formatOrbSpan(
+        {
+          entersOrb: new Date("2026-11-13T15:05:00Z"),
+          exact: [],
+          leavesOrb: new Date("2026-11-13T19:20:00Z"),
+        },
+        ZONE,
+      ),
+    ).toMatch(/^13 Nov 2026, 10:05\s*–\s*14:20$/);
+  });
+
+  it("says which end is beyond the search", () => {
+    const at = new Date("2026-12-09T17:00:00Z");
+
+    expect(formatOrbSpan({ exact: [], leavesOrb: at }, ZONE)).toBe(
+      "Until 9 Dec 2026",
+    );
+    expect(formatOrbSpan({ entersOrb: at, exact: [] }, ZONE)).toBe(
+      "From 9 Dec 2026",
+    );
+    expect(formatOrbSpan({ exact: [] }, ZONE)).toBe(
+      "More than 5 years either way",
+    );
   });
 });

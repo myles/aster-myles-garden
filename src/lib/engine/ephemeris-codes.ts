@@ -58,6 +58,21 @@ export const SWE_BODIES: Record<SweBody, Planet | LunarPoint> = {
 };
 
 /**
+ * One body's position, from a driver's way of asking the engine for one.
+ * The South Node is found from the North Node, as calculateEveryBody does.
+ */
+export function calculateOneBody(
+  body: Body,
+  calculateBody: (body: SweBody) => BodyPosition,
+): BodyPosition {
+  if (body !== Body.SouthNode) {
+    return calculateBody(body);
+  }
+
+  return toSouthNode(calculateBody(Body.NorthNode));
+}
+
+/**
  * Every body's position, in Body order, from a driver's way of asking
  * the engine for one. The South Node isn't asked for: it's always
  * exactly opposite the North Node, moving with it.
@@ -73,16 +88,20 @@ export function calculateEveryBody(
     }
 
     if (body === Body.SouthNode) {
-      return {
-        body,
-        longitude: normalizeDegrees(northNode.longitude + 180),
-        latitude: -northNode.latitude,
-        speed: northNode.speed,
-      };
+      return toSouthNode(northNode);
     }
 
     return calculateBody(body);
   });
+}
+
+function toSouthNode(northNode: BodyPosition): BodyPosition {
+  return {
+    body: Body.SouthNode,
+    longitude: normalizeDegrees(northNode.longitude + 180),
+    latitude: -northNode.latitude,
+    speed: northNode.speed,
+  };
 }
 
 export const SWE_HOUSE_SYSTEMS: Record<HouseSystem, SweHouseSystem> = {

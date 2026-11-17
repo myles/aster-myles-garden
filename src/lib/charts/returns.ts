@@ -60,6 +60,6 @@ export function findBody<T extends { body: Body }>(
 }
 
 /** Wraps an angle into [-180, 180), so a miss has the right sign. */
-function toSignedDegrees(degrees: number): number {
+export function toSignedDegrees(degrees: number): number {
   return normalizeDegrees(degrees + HALF_CIRCLE_DEGREES) - HALF_CIRCLE_DEGREES;
 }

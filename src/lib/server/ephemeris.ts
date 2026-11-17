@@ -7,12 +7,18 @@ import {
   calculatePosition,
 } from "@swisseph/node";
 
-import type { Ephemeris, HousePositions } from "@/lib/engine/ephemeris";
+import type {
+  BodyPosition,
+  Ephemeris,
+  HousePositions,
+} from "@/lib/engine/ephemeris";
 
 import { HOUSE_COUNT, type HouseSystem } from "@/lib/astrology/houses";
 import {
   calculateEveryBody,
+  calculateOneBody,
   SWE_BODIES,
+  type SweBody,
   SWE_CALCULATION_FLAGS,
   SWE_HOUSE_SYSTEMS,
   SWE_POLAR_FALLBACK_SYSTEM,
@@ -41,22 +47,30 @@ function castHouses(
   };
 }
 
+function calculateSweBody(julianDay: number, body: SweBody): BodyPosition {
+  const position = calculatePosition(
+    julianDay,
+    SWE_BODIES[body],
+    SWE_CALCULATION_FLAGS,
+  );
+
+  return {
+    body,
+    longitude: position.longitude,
+    latitude: position.latitude,
+    speed: position.longitudeSpeed,
+  };
+}
+
 export const nodeEphemeris: Ephemeris = {
   calculateBodies(julianDay) {
-    return calculateEveryBody((body) => {
-      const position = calculatePosition(
-        julianDay,
-        SWE_BODIES[body],
-        SWE_CALCULATION_FLAGS,
-      );
+    return calculateEveryBody((body) => calculateSweBody(julianDay, body));
+  },
 
-      return {
-        body,
-        longitude: position.longitude,
-        latitude: position.latitude,
-        speed: position.longitudeSpeed,
-      };
-    });
+  calculateBody(julianDay, body) {
+    return calculateOneBody(body, (sweBody) =>
+      calculateSweBody(julianDay, sweBody),
+    );
   },
 
   calculateHouses(julianDay, latitude, longitude, houseSystem) {

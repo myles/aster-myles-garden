@@ -187,6 +187,11 @@ describe("buildTransitsCsv", () => {
         second: Body.Sun,
         type: AspectType.Square,
         orbDegrees: 1.5,
+        timing: {
+          entersOrb: new Date("2026-11-11T16:00:00Z"),
+          exact: [new Date("2026-11-15T09:30:00Z")],
+          leavesOrb: new Date("2026-11-17T04:00:00Z"),
+        },
       },
     ],
     inNatalHouses: { [Body.Sun]: 7 },
@@ -195,11 +200,40 @@ describe("buildTransitsCsv", () => {
 
   it("lists the transiting planets and their aspects to your chart", () => {
     expect(parseLines(buildTransitsCsv(transits))).toEqual([
-      "Transiting positions,,,,Transits to your chart,,,",
-      "Body,Position,Your house,,Transiting,Aspect,Natal,Orb",
-      `${SUN},10° 00′ Libra,7,,${SUN},${SQUARE},${MARS},1° 30′`,
+      "Transiting positions,,,,Transits to your chart,,,,,,",
+      "Body,Position,Your house,,Transiting,Aspect,Natal,Orb," +
+        "Exact (UTC),Enters orb (UTC),Leaves orb (UTC)",
+      `${SUN},10° 00′ Libra,7,,${SUN},${SQUARE},${MARS},1° 30′,` +
+        "2026-11-15 09:30,2026-11-11 16:00,2026-11-17 04:00",
       "",
     ]);
+  });
+
+  it("lists every exact moment, and says when an end is beyond reach", () => {
+    const [aspect] = transits.aspects;
+    const timing = {
+      exact: [
+        new Date("2026-03-01T17:00:00Z"),
+        new Date("2026-07-20T16:00:00Z"),
+      ],
+    };
+    const lines = parseLines(
+      buildTransitsCsv({ ...transits, aspects: [{ ...aspect, timing }] }),
+    );
+
+    expect(lines[2]).toMatch(
+      /,2026-03-01 17:00; 2026-07-20 16:00,More than 5 years away,More than 5 years away$/,
+    );
+  });
+
+  it("says when a transit isn't exact this pass", () => {
+    const [aspect] = transits.aspects;
+    const timing = { ...aspect.timing, exact: [] };
+    const lines = parseLines(
+      buildTransitsCsv({ ...transits, aspects: [{ ...aspect, timing }] }),
+    );
+
+    expect(lines[2]).toContain(",Not this pass,");
   });
 
   it("leaves out your houses without a birth time", () => {
@@ -207,13 +241,16 @@ describe("buildTransitsCsv", () => {
       buildTransitsCsv({ ...transits, inNatalHouses: undefined }),
     );
 
-    expect(lines[1]).toBe("Body,Position,,Transiting,Aspect,Natal,Orb");
+    expect(lines[1]).toBe(
+      "Body,Position,,Transiting,Aspect,Natal,Orb," +
+        "Exact (UTC),Enters orb (UTC),Leaves orb (UTC)",
+    );
   });
 
   it("says so when nothing is transiting your chart", () => {
     const lines = parseLines(buildTransitsCsv({ ...transits, aspects: [] }));
 
-    expect(lines[2]).toMatch(/,,No transits within orb\.,,,$/);
+    expect(lines[2]).toMatch(/,,No transits within orb\.,,,,,,$/);
   });
 });
 

@@ -154,7 +154,7 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&lat=43.6833&lon=-79.7667&
 - In a composite: one wheel, with the composite's positions and aspects.
 - In a solar return: the return's wheel, positions and aspects, and the moment the Sun returns, on the clock where it's cast.
 - In a lunar return: the same, for the moment the Moon returns.
-- With transits: the bi-wheel, a Transits to your chart table, and the transiting planets' positions with the natal house each is in.
+- With transits: the bi-wheel, a Transits to your chart table, and the transiting planets' positions with the natal house each is in. Each transit has the moments it's exact (more than one when the planet turns retrograde, or none if it turns back first) and when it comes into and leaves orb, on the visitor's clock. The CSV download gives these in UTC.
 - With progressions: the bi-wheel, a Progressions to your chart table, and the progressed planets' positions with the natal house each is in.
 
 ## More

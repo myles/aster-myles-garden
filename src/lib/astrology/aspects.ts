@@ -172,13 +172,24 @@ export type Aspect = {
 
 type AspectMatch = Pick<Aspect, "type" | "orbDegrees">;
 
+/**
+ * How far from exact an aspect still counts: its standard orb, scaled by
+ * the settings, and capped at `maxOrbDegrees` when given.
+ */
+export function findOrbLimit(
+  type: AspectType,
+  settings: AspectSettings,
+  maxOrbDegrees = Infinity,
+): number {
+  const scaled = ASPECT_INFO[type].orbDegrees * ORB_SCALES[settings.orbSize];
+  return Math.min(scaled, maxOrbDegrees);
+}
+
 function matchAspect(
   separation: number,
   settings: AspectSettings,
   maxOrbDegrees = Infinity,
 ): AspectMatch | undefined {
-  const scale = ORB_SCALES[settings.orbSize];
-
   for (const type of Object.values(AspectType)) {
     const info = ASPECT_INFO[type];
     if (
@@ -189,7 +200,7 @@ function matchAspect(
     }
 
     const orbDegrees = Math.abs(separation - info.angleDegrees);
-    if (orbDegrees <= Math.min(info.orbDegrees * scale, maxOrbDegrees)) {
+    if (orbDegrees <= findOrbLimit(type, settings, maxOrbDegrees)) {
       return { type, orbDegrees };
     }
   }

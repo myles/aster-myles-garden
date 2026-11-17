@@ -10,7 +10,9 @@ import { Body } from "@/lib/astrology/bodies";
 import { HOUSE_COUNT, type HouseSystem } from "@/lib/astrology/houses";
 import {
   calculateEveryBody,
+  calculateOneBody,
   SWE_BODIES,
+  type SweBody,
   SWE_CALCULATION_FLAGS,
   SWE_HOUSE_SYSTEMS,
   SWE_POLAR_FALLBACK_SYSTEM,
@@ -45,6 +47,8 @@ export type HousePositions = {
  */
 export type Ephemeris = {
   calculateBodies(julianDay: number): BodyPosition[];
+  /** One body's position: the same as its entry in calculateBodies. */
+  calculateBody(julianDay: number, body: Body): BodyPosition;
   calculateHouses(
     julianDay: number,
     latitude: number,
@@ -88,20 +92,34 @@ function _assertLoaded(): void {
 export function calculateBodies(julianDay: number): BodyPosition[] {
   _assertLoaded();
 
-  return calculateEveryBody((body) => {
-    const position = _swe.calculatePosition(
-      julianDay,
-      SWE_BODIES[body],
-      SWE_CALCULATION_FLAGS,
-    );
+  return calculateEveryBody((body) => calculateSweBody(julianDay, body));
+}
 
-    return {
-      body,
-      longitude: position.longitude,
-      latitude: position.latitude,
-      speed: position.longitudeSpeed,
-    };
-  });
+/**
+ * One body's position, for searches that follow a single body through
+ * many moments and would waste the rest of calculateBodies' work.
+ */
+export function calculateBody(julianDay: number, body: Body): BodyPosition {
+  _assertLoaded();
+
+  return calculateOneBody(body, (sweBody) =>
+    calculateSweBody(julianDay, sweBody),
+  );
+}
+
+function calculateSweBody(julianDay: number, body: SweBody): BodyPosition {
+  const position = _swe.calculatePosition(
+    julianDay,
+    SWE_BODIES[body],
+    SWE_CALCULATION_FLAGS,
+  );
+
+  return {
+    body,
+    longitude: position.longitude,
+    latitude: position.latitude,
+    speed: position.longitudeSpeed,
+  };
 }
 
 /**
@@ -161,4 +179,8 @@ function _castHouses(
 }
 
 /** The WASM driver. Requires loadEphemeris() to have resolved. */
-export const browserEphemeris: Ephemeris = { calculateBodies, calculateHouses };
+export const browserEphemeris: Ephemeris = {
+  calculateBodies,
+  calculateBody,
+  calculateHouses,
+};

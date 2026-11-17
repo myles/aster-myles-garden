@@ -194,6 +194,37 @@ test("finds a lunar return and sets it against the natal chart", async ({
   await expect(wheel.locator(".wheel-body--outer")).toHaveCount(13);
 });
 
+test("dates each transit's exact moment and time in orb", async ({ page }) => {
+  await drawChart(page);
+  await page.getByRole("button", { name: "See transits" }).click();
+
+  const form = page.getByRole("form", { name: "Transit moment" });
+  await form.getByLabel("Date").fill("2030-06-15");
+  await form.getByLabel("Time").fill("12:00");
+  await form.getByRole("button", { name: "Show transits" }).click();
+  await expect(form.getByRole("alert")).toHaveCount(0);
+
+  const table = page
+    .getByRole("table")
+    .filter({ has: page.getByRole("columnheader", { name: "Exact" }) });
+  await expect(
+    table.getByRole("columnheader", { name: "In orb" }),
+  ).toBeVisible();
+  await expect(table.getByRole("row").nth(1)).toBeVisible();
+
+  // Every transit is either exact at a dated moment or turns back first,
+  // and every one has a span in orb.
+  const exact = await table.locator("tbody td:nth-child(5)").allTextContents();
+  const inOrb = await table.locator("tbody td:nth-child(6)").allTextContents();
+  expect(exact.length).toBeGreaterThan(0);
+  for (const text of exact) {
+    expect(text).toMatch(/\d{4}, \d{2}:\d{2}|Not this pass/);
+  }
+  for (const text of inOrb) {
+    expect(text).toMatch(/\d{4}/);
+  }
+});
+
 test("shows progressions for a date", async ({ page }) => {
   await drawChart(page);
   await page.getByRole("button", { name: "See progressions" }).click();

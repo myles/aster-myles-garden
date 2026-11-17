@@ -74,14 +74,26 @@ describe("createTransits", () => {
     const transits = createTransits(natal, natal.bornAt);
 
     // Every planet sits on itself, and in its own natal house.
-    expect(transits.aspects).toContainEqual({
-      first: Body.Sun,
-      second: Body.Sun,
-      type: AspectType.Conjunction,
-      orbDegrees: 0,
-    });
+    expect(transits.aspects).toContainEqual(
+      expect.objectContaining({
+        first: Body.Sun,
+        second: Body.Sun,
+        type: AspectType.Conjunction,
+        orbDegrees: 0,
+      }),
+    );
     const sun = natal.bodies.find((placed) => placed.body === Body.Sun);
     expect(transits.inNatalHouses?.[Body.Sun]).toBe(sun?.house);
+  });
+
+  it("times each transit around the moment shown", () => {
+    const at = new Date("2026-11-13T20:00:00Z");
+    const transits = createTransits(natal, at);
+
+    for (const { timing } of transits.aspects) {
+      expect(timing.entersOrb!.getTime()).toBeLessThan(at.getTime());
+      expect(timing.leavesOrb!.getTime()).toBeGreaterThan(at.getTime());
+    }
   });
 
   it("only counts aspects within the transit orb", () => {
