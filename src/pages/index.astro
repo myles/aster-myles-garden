@@ -1,7 +1,8 @@
 ---
 import App from "@/components/App.svelte";
-import { AUTHOR_URL, SOURCE_URL } from "@/consts";
+import { AUTHOR_URL, SOURCE_URL, VERSION } from "@/consts";
 import Layout from "@/layouts/Layout.astro";
+import { buildReleaseUrl } from "@/lib/release";
 ---
 
 <Layout>
@@ -45,6 +46,12 @@ import Layout from "@/layouts/Layout.astro";
           Myles
         </a>
         .
+      </p>
+      <p class="mt-1">
+        Aster{" "}
+        <a class="underline" href={buildReleaseUrl(VERSION)}>
+          v{VERSION}
+        </a>
       </p>
     </footer>
   </div>

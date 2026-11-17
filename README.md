@@ -121,6 +121,16 @@ Leave out `time` when the birth time isn't known: the chart is cast for local no
 
 `astro preview` doesn't run under the Vercel adapter. Use `npm run dev` to try the API locally.
 
+## Releases
+
+Releases are made by [release-please](https://github.com/googleapis/release-please-action) from [conventional commits](https://www.conventionalcommits.org/).
+
+1. Pull requests are squash-merged, so each title becomes a commit on `main`. A check fails any title that isn't a conventional commit, such as `feat: add lunar returns` or `fix(ci): patch path-to-regexp`.
+2. On each push to `main`, release-please opens or updates a release PR. It lists the changes since the last release and bumps the version: `fix` for a patch, `feat` for a minor version. Before 1.0, a breaking change (`feat!`) bumps the minor version too. `docs`, `chore`, `test`, `refactor`, `ci` and the like don't start a release on their own.
+3. Merge the release PR to release. That bumps `package.json`, updates `CHANGELOG.md`, tags the commit as `v` and the version, and publishes a GitHub Release.
+
+The page's footer shows the version from `package.json`, linked to its release, so the deployed site always names the release it was built from. CI doesn't run on release PRs, since they're opened with the workflow's own token and only change the version and the changelog.
+
 ## Roadmap
 
 See [ROADMAP.md](./ROADMAP.md).
