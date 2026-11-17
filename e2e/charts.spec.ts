@@ -106,6 +106,18 @@ for (const format of ["SVG", "PNG"]) {
   });
 }
 
+test("links the footer's version to its release", async ({ page }) => {
+  await page.goto("/");
+
+  const footer = page.getByRole("contentinfo");
+  const version = footer.getByRole("link", { name: /^v\d+\.\d+\.\d+$/ });
+  const name = await version.textContent();
+  await expect(version).toHaveAttribute(
+    "href",
+    `https://github.com/myles/aster-myles-garden/releases/tag/${name?.trim()}`,
+  );
+});
+
 test("compares two charts and returns to the natal chart", async ({ page }) => {
   await compareCharts(page);
   await expect(
