@@ -1,0 +1,12 @@
+---
+// Every UI building block in each of its states, to see a style change
+// everywhere at once. Served at /dev/components by `npm run dev` only.
+import ComponentGallery from "@/dev/ComponentGallery.svelte";
+import Layout from "@/layouts/Layout.astro";
+---
+
+<Layout pageTitle="Components">
+  <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+    <ComponentGallery client:load />
+  </div>
+</Layout>
