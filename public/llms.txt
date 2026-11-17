@@ -86,7 +86,7 @@ Add `comparison=composite` to show a composite chart instead of the bi-wheel: on
 
 ### Transits
 
-Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact (or less, for a tighter orb), and which natal house each is in. A link can carry only one of `transits`, `progressed`, a second chart or `return`.
+Add `transits` with a moment in UTC, to the minute, as `YYYY-MM-DDTHH:MMZ`. The page then shows that moment's sky against the chart: a bi-wheel with the natal chart inside and the planets at that moment outside, the aspects they make to the natal planets within 2° of exact (or less, for a tighter orb), and which natal house each is in. A link can carry only one of `transits`, `progressed`, a second chart, `return` or `lunarReturn`.
 
 ```
 https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&transits=2026-11-13T20:05Z
@@ -109,6 +109,16 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placi
 ```
 
 That link shows the 2026 solar return for someone born in Toronto, cast in London.
+
+### Lunar returns
+
+Add `lunarReturn` with a date, as `YYYY-MM-DD`, to show the lunar return in effect on that date: the chart for the latest moment the Moon got back to its natal position before that day ended, where it's cast. That happens about every 27 days, so giving the day a return comes on shows that return. It's cast at the birthplace unless the link gives another place, with the same `place_return`, or `lat_return`, `lon_return`, `tz_return` and `name_return`, as a solar return. A lunar return needs the birth time, and the date must be after the first return, about four weeks after birth.
+
+```
+https://aster.myles.garden/#date=1990-05-15&time=14:30&place=6167865&house=placidus&lunarReturn=2026-12-03
+```
+
+For either kind of return, add `returnStyle=biWheel` to set it against the natal chart: a bi-wheel with the natal chart inside and the return's planets outside, the aspects between them, and the natal house each return planet is in.
 
 ## Finding a place's GeoNames ID
 
@@ -143,6 +153,7 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&lat=43.6833&lon=-79.7667&
 - In a comparison: the bi-wheel, an Aspects between you table, and each person's positions with a column for the house it falls in on the other person's chart.
 - In a composite: one wheel, with the composite's positions and aspects.
 - In a solar return: the return's wheel, positions and aspects, and the moment the Sun returns, on the clock where it's cast.
+- In a lunar return: the same, for the moment the Moon returns.
 - With transits: the bi-wheel, a Transits to your chart table, and the transiting planets' positions with the natal house each is in.
 - With progressions: the bi-wheel, a Progressions to your chart table, and the progressed planets' positions with the natal house each is in.
 

@@ -15,22 +15,20 @@
     HOUSE_SYSTEM_NAMES,
   } from "@/lib/astrology/houses";
   import { formatPlace } from "@/lib/places";
-  import {
-    SolarReturnStyle,
-    type SolarReturn,
-  } from "@/lib/charts/solar-return";
+  import { ReturnStyle } from "@/lib/charts/returns";
+  import type { SolarReturn } from "@/lib/charts/solar-return";
   import { compareCharts } from "@/lib/charts/synastry";
   import { formatLongitude } from "@/lib/astrology/zodiac";
 
   let {
     solarReturn,
-    style = $bindable(SolarReturnStyle.Standalone),
-  }: { solarReturn: SolarReturn; style?: SolarReturnStyle } = $props();
+    style = $bindable(ReturnStyle.Standalone),
+  }: { solarReturn: SolarReturn; style?: ReturnStyle } = $props();
 
   let wheel: SVGSVGElement | undefined = $state();
 
   const chart = $derived(solarReturn.chart);
-  const isBiWheel = $derived(style === SolarReturnStyle.BiWheel);
+  const isBiWheel = $derived(style === ReturnStyle.BiWheel);
   // Only the bi-wheel compares the return with the natal chart.
   const comparison = $derived(
     isBiWheel ? compareCharts(solarReturn.natal, chart) : undefined,
@@ -101,7 +99,7 @@
         type="radio"
         name="solarReturnStyle"
         bind:group={style}
-        value={SolarReturnStyle.Standalone}
+        value={ReturnStyle.Standalone}
       />
       Return alone
     </label>
@@ -110,7 +108,7 @@
         type="radio"
         name="solarReturnStyle"
         bind:group={style}
-        value={SolarReturnStyle.BiWheel}
+        value={ReturnStyle.BiWheel}
       />
       Against natal chart
     </label>

@@ -8,4 +8,5 @@ export enum Panel {
   Transits = "transits",
   Progressions = "progressions",
   SolarReturn = "solarReturn",
+  LunarReturn = "lunarReturn",
 }

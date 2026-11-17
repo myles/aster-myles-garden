@@ -2,7 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { SolarReturnStyle } from "@/lib/charts/solar-return";
+import { ReturnStyle } from "@/lib/charts/returns";
 import { compareCharts } from "@/lib/charts/synastry";
 import {
   ExportFormat,
@@ -15,6 +15,7 @@ import { drawBiWheel, drawWheel } from "@/lib/wheel/wheel";
 import {
   CHART,
   CHART_WITHOUT_TIME,
+  LUNAR_RETURN,
   PROGRESSIONS,
   SOLAR_RETURN,
 } from "../../fixtures/chart";
@@ -328,10 +329,40 @@ describe("exportWheel", () => {
     exportTables({
       kind: SubjectKind.SolarReturn,
       solarReturn: SOLAR_RETURN,
-      style: SolarReturnStyle.BiWheel,
+      style: ReturnStyle.BiWheel,
     });
     expect(downloads[0].filename).toBe(
       "aster-london-2000-01-01-1200-solar-return-2026-bi-wheel.csv",
+    );
+    expect(await downloads[0].blob.text()).toContain("Natal house");
+  });
+
+  it("names a lunar return after the natal chart and its date", async () => {
+    const chart = {
+      ...CHART,
+      details: { ...CHART.details, date: { year: 2026, month: 12, day: 3 } },
+    };
+
+    exportTables({
+      kind: SubjectKind.LunarReturn,
+      lunarReturn: { natal: CHART, chart },
+    });
+
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-lunar-return-2026-12-03.csv",
+    );
+    expect(await downloads[0].blob.text()).toContain("Positions");
+  });
+
+  it("names and exports the lunar return comparison tables", async () => {
+    exportTables({
+      kind: SubjectKind.LunarReturn,
+      lunarReturn: LUNAR_RETURN,
+      style: ReturnStyle.BiWheel,
+    });
+
+    expect(downloads[0].filename).toBe(
+      "aster-london-2000-01-01-1200-lunar-return-2026-12-03-bi-wheel.csv",
     );
     expect(await downloads[0].blob.text()).toContain("Natal house");
   });

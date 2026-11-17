@@ -153,6 +153,35 @@ test("finds a solar return and casts it elsewhere", async ({ page }) => {
   await expect(form.getByRole("alert")).toHaveCount(0);
 });
 
+test("finds a lunar return and sets it against the natal chart", async ({
+  page,
+}) => {
+  await drawChart(page);
+  await page.getByRole("button", { name: "See lunar return" }).click();
+  await expect(
+    page.getByRole("img", { name: "Lunar return chart wheel" }),
+  ).toBeVisible();
+
+  const form = page.getByRole("form", { name: "Lunar return" });
+  await form.getByLabel("Date").fill("2030-06-15");
+  await form.getByRole("combobox", { name: "Place" }).fill("Toronto");
+  await placeOptions(form).first().click();
+  await form.getByRole("button", { name: "Show lunar return" }).click();
+
+  // The return in effect on 15 June comes within the four weeks before.
+  await expect(
+    page.getByRole("heading", { name: /^Lunar return, \d+ (May|June) 2030$/ }),
+  ).toBeVisible();
+  await expect(page.getByText(/Toronto, Ontario, Canada ·/)).toBeVisible();
+  await expect(form.getByRole("alert")).toHaveCount(0);
+
+  await page.getByRole("radio", { name: "Against natal chart" }).check();
+  const wheel = page.getByRole("img", {
+    name: "Lunar return comparison wheel",
+  });
+  await expect(wheel.locator(".wheel-body--outer")).toHaveCount(13);
+});
+
 test("shows progressions for a date", async ({ page }) => {
   await drawChart(page);
   await page.getByRole("button", { name: "See progressions" }).click();

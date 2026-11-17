@@ -12,6 +12,7 @@ import {
 import { HouseSystem } from "@/lib/astrology/houses";
 import { createChart, loadChartEngine } from "@/lib/charts/chart";
 import { createComposite } from "@/lib/charts/composite";
+import { createLunarReturn } from "@/lib/charts/lunar-return";
 import { createProgressions } from "@/lib/charts/progressions";
 import {
   createSolarReturn,
@@ -31,6 +32,7 @@ import {
   CHART,
   CHART_WITHOUT_TIME,
   COMPOSITE,
+  LUNAR_RETURN,
   PROGRESSIONS,
   SOLAR_RETURN,
   TRANSITS,
@@ -71,6 +73,11 @@ vi.mock("@/lib/charts/solar-return", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/charts/solar-return")>()),
   createSolarReturn: vi.fn(),
   findCurrentReturnYear: vi.fn(),
+}));
+
+vi.mock("@/lib/charts/lunar-return", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/charts/lunar-return")>()),
+  createLunarReturn: vi.fn(),
 }));
 
 vi.mock("@/lib/places", async (importOriginal) => ({
@@ -932,6 +939,137 @@ describe("App showing a solar return", () => {
   });
 });
 
+describe("App showing a lunar return", () => {
+  const HEADING = "Lunar return, 3 December 2026";
+
+  beforeEach(() => {
+    vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
+    vi.mocked(createChart).mockReset().mockReturnValue(CHART);
+    vi.mocked(createLunarReturn).mockReset().mockReturnValue(LUNAR_RETURN);
+    vi.mocked(loadPlaceIndex).mockReset().mockResolvedValue(PLACE_INDEX);
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  afterEach(() => {
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("opens on today's, on the visitor's clock, at the birthplace", async () => {
+    const today = toLocal(new Date(), VISITOR_TIME_ZONE);
+
+    await openLunarReturn();
+
+    expect(await screen.findByRole("heading", { name: HEADING })).toBeTruthy();
+    expect(createLunarReturn).toHaveBeenLastCalledWith(
+      CHART,
+      { year: today.year, month: today.month, day: today.day },
+      CHART.details.place,
+    );
+    expect(document.activeElement?.id).toBe("lunar-return-date");
+  });
+
+  it("shows the return in effect on another date", async () => {
+    await openLunarReturn();
+
+    await fireEvent.input(lunarReturnForm().getByLabelText("Date"), {
+      target: { value: "2030-06-01" },
+    });
+    await fireEvent.click(
+      lunarReturnForm().getByRole("button", { name: "Show lunar return" }),
+    );
+
+    expect(createLunarReturn).toHaveBeenLastCalledWith(
+      CHART,
+      { year: 2030, month: 6, day: 1 },
+      CHART.details.place,
+    );
+  });
+
+  it("asks for a date", async () => {
+    await openLunarReturn();
+    vi.mocked(createLunarReturn).mockClear();
+
+    await fireEvent.input(lunarReturnForm().getByLabelText("Date"), {
+      target: { value: "" },
+    });
+    await fireEvent.click(
+      lunarReturnForm().getByRole("button", { name: "Show lunar return" }),
+    );
+
+    expect(lunarReturnForm().getByRole("alert").textContent).toContain(
+      "Enter a date.",
+    );
+    expect(createLunarReturn).not.toHaveBeenCalled();
+  });
+
+  it("explains that a return needs the birth time", async () => {
+    vi.mocked(createChart).mockReturnValue(CHART_WITHOUT_TIME);
+    render(App);
+    await fillDateTime();
+    await fireEvent.click(screen.getByLabelText("I don't know the time"));
+    await choosePlace();
+    await submit();
+    await screen.findByRole("heading", { name: CHART_HEADING });
+
+    await fireEvent.click(
+      screen.getByRole("button", { name: "See lunar return" }),
+    );
+
+    expect(lunarReturnForm().getByRole("alert").textContent).toContain(
+      "A lunar return needs your birth time",
+    );
+    expect(createLunarReturn).not.toHaveBeenCalled();
+  });
+
+  it("reports a return that can't be found", async () => {
+    vi.mocked(createLunarReturn).mockImplementation(() => {
+      throw new Error("The first lunar return comes later.");
+    });
+
+    await openLunarReturn();
+
+    expect(lunarReturnForm().getByRole("alert").textContent).toContain(
+      "Couldn't find the lunar return: The first lunar return comes later.",
+    );
+  });
+
+  it("goes back to your chart", async () => {
+    await openLunarReturn();
+
+    await fireEvent.click(
+      lunarReturnForm().getByRole("button", { name: "Back to your chart" }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { name: CHART_HEADING }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("form", { name: "Lunar return" })).toBeNull();
+  });
+
+  it("opens a return from a share link, against the natal chart", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/#date=2000-01-01&time=12:00&place=2643743&lunarReturn=2027-03-04" +
+        "&returnStyle=biWheel&place_return=6167865",
+    );
+    render(App);
+
+    expect(await screen.findByRole("heading", { name: HEADING })).toBeTruthy();
+    expect(createLunarReturn).toHaveBeenLastCalledWith(
+      CHART,
+      { year: 2027, month: 3, day: 4 },
+      expect.objectContaining({ id: 6167865, name: "Toronto" }),
+    );
+    expect(
+      lunarReturnForm().getByLabelText<HTMLInputElement>("Date").value,
+    ).toBe("2027-03-04");
+    expect(
+      screen.getByRole("img", { name: "Lunar return comparison wheel" }),
+    ).toBeTruthy();
+  });
+});
+
 describe("App showing transits", () => {
   beforeEach(() => {
     vi.mocked(loadChartEngine).mockReset().mockResolvedValue();
@@ -1670,6 +1808,21 @@ async function openSolarReturn(): Promise<void> {
   await screen.findByRole("heading", { name: CHART_HEADING });
   await fireEvent.click(
     screen.getByRole("button", { name: "See solar return" }),
+  );
+}
+
+function lunarReturnForm() {
+  return within(screen.getByRole("form", { name: "Lunar return" }));
+}
+
+async function openLunarReturn(): Promise<void> {
+  render(App);
+  await fillDateTime();
+  await choosePlace();
+  await submit();
+  await screen.findByRole("heading", { name: CHART_HEADING });
+  await fireEvent.click(
+    screen.getByRole("button", { name: "See lunar return" }),
   );
 }
 

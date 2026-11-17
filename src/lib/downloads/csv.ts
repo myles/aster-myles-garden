@@ -14,7 +14,7 @@ import {
 } from "@/lib/astrology/aspects";
 import { BODY_INFO, type Body } from "@/lib/astrology/bodies";
 import { formatLongitude } from "@/lib/astrology/zodiac";
-import { SolarReturnStyle, type SolarReturn } from "@/lib/charts/solar-return";
+import { ReturnStyle } from "@/lib/charts/returns";
 import { compareCharts, type Synastry } from "@/lib/charts/synastry";
 import { formatDegrees, formatNoAspects, formatPlacement } from "@/lib/format";
 
@@ -134,30 +134,32 @@ export function buildProgressionsCsv(progressions: Progressions): string {
   ]);
 }
 
-/** A return alone, or its positions and aspects against the natal chart. */
-export function buildSolarReturnCsv(
-  solarReturn: SolarReturn,
-  style: SolarReturnStyle,
+/**
+ * A solar or lunar return alone, or its positions and aspects against the
+ * natal chart.
+ */
+export function buildReturnCsv(
+  { natal, chart }: { natal: Chart; chart: Chart },
+  style: ReturnStyle,
 ): string {
-  if (style === SolarReturnStyle.Standalone) {
-    return buildChartCsv(solarReturn.chart);
+  if (style === ReturnStyle.Standalone) {
+    return buildChartCsv(chart);
   }
 
-  const comparison = compareCharts(solarReturn.natal, solarReturn.chart);
+  const comparison = compareCharts(natal, chart);
 
   return layOutSideBySide([
-    buildPositionsTable("Positions", solarReturn.chart, {
+    buildPositionsTable("Positions", chart, {
       heading: "Natal house",
       houses: comparison.secondInFirstHouses,
     }),
     {
       title: "Aspects to natal chart",
       headings: ASPECT_HEADINGS,
-      rows: buildAspectRows(
-        comparison.aspects,
-        solarReturn.natal.details.aspectSettings,
-        { first: "Natal", second: "Return" },
-      ),
+      rows: buildAspectRows(comparison.aspects, natal.details.aspectSettings, {
+        first: "Natal",
+        second: "Return",
+      }),
     },
   ]);
 }
