@@ -2,18 +2,16 @@
      moment around it, and the aspects the transiting planets make to
      yours, with when each is exact and in orb. -->
 <script lang="ts">
+  import CrossAspectTable from "@/components/chart/CrossAspectTable.svelte";
   import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
   import PositionsTable from "@/components/chart/PositionsTable.svelte";
-  import { ASPECT_INFO } from "@/lib/astrology/aspects";
-  import { BODY_INFO } from "@/lib/astrology/bodies";
   import { SubjectKind } from "@/lib/downloads/export";
   import {
     formatBirthDate,
-    formatDegrees,
     formatInstant,
     formatOrbSpan,
     formatShortMoment,
@@ -21,6 +19,7 @@
   import { formatPlace } from "@/lib/places";
   import {
     TRANSIT_MAX_ORB_DEGREES,
+    type TimedAspect,
     type Transits,
   } from "@/lib/charts/transits";
 
@@ -64,52 +63,29 @@
 
   <ChartWheel chart={transits.natal} {biWheel} bind:svg={wheel} />
 
-  <div>
-    <h3 class="ui-heading-section mb-2">Transits to your chart</h3>
-    <div class="overflow-x-auto">
-      <table class="ui-table whitespace-nowrap [&_td]:pr-3 [&_th]:pr-3">
-        <thead>
-          <tr>
-            <th scope="col">Transiting</th>
-            <th scope="col">Aspect</th>
-            <th scope="col">Natal</th>
-            <th scope="col" class="text-right">Orb</th>
-            <th scope="col" class="pl-4">Exact</th>
-            <th scope="col" class="pl-4">In orb</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each transits.aspects as aspect (`${aspect.first}-${aspect.second}`)}
-            {@const natal = BODY_INFO[aspect.first]}
-            {@const transiting = BODY_INFO[aspect.second]}
-            {@const info = ASPECT_INFO[aspect.type]}
-            <tr>
-              <td>{transiting.glyph} {transiting.name}</td>
-              <td>{info.glyph} {info.name}</td>
-              <td>{natal.glyph} {natal.name}</td>
-              <td class="text-right tabular-nums">
-                {formatDegrees(aspect.orbDegrees)}
-              </td>
-              <td class="pl-4 whitespace-nowrap tabular-nums">
-                {#each aspect.timing.exact as moment (moment.getTime())}
-                  <div>{formatShortMoment(moment, timeZone)}</div>
-                {:else}
-                  <span class="text-ink-muted">Not this pass</span>
-                {/each}
-              </td>
-              <td class="pl-4 whitespace-nowrap tabular-nums">
-                {formatOrbSpan(aspect.timing, timeZone)}
-              </td>
-            </tr>
-          {:else}
-            <tr>
-              <td colspan="6">No transits within orb.</td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <CrossAspectTable
+    title="Transits to your chart"
+    aspects={transits.aspects}
+    movingLabel="Transiting"
+    noneText="No transits within orb."
+  >
+    {#snippet extraHeadings()}
+      <th scope="col" class="pl-4">Exact</th>
+      <th scope="col" class="pl-4">In orb</th>
+    {/snippet}
+    {#snippet extraCells(aspect: TimedAspect)}
+      <td class="pl-4 whitespace-nowrap tabular-nums">
+        {#each aspect.timing.exact as moment (moment.getTime())}
+          <div>{formatShortMoment(moment, timeZone)}</div>
+        {:else}
+          <span class="text-ink-muted">Not this pass</span>
+        {/each}
+      </td>
+      <td class="pl-4 whitespace-nowrap tabular-nums">
+        {formatOrbSpan(aspect.timing, timeZone)}
+      </td>
+    {/snippet}
+  </CrossAspectTable>
 
   <div class="mt-8">
     <PositionsTable

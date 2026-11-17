@@ -1,173 +1,36 @@
 <!-- A solar return: the chart for the moment the Sun gets back to its natal
-     position, cast where you are that year, with its positions and aspects. -->
+     position, cast where you are that year. -->
 <script lang="ts">
-  import Callout from "@/components/ui/Callout.svelte";
-  import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
-  import AspectTable from "@/components/chart/AspectTable.svelte";
-  import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
-  import ChartShare from "@/components/chart/ChartShare.svelte";
-  import ChartWheel from "@/components/chart/ChartWheel.svelte";
-  import PositionsTable from "@/components/chart/PositionsTable.svelte";
+  import ReturnView from "@/components/views/ReturnView.svelte";
   import { Body } from "@/lib/astrology/bodies";
-  import { usesFallbackHouses } from "@/lib/charts/chart";
-  import { SubjectKind } from "@/lib/downloads/export";
-  import { formatBirthMoment } from "@/lib/format";
-  import {
-    describeHouseFallback,
-    HOUSE_SYSTEM_NAMES,
-  } from "@/lib/astrology/houses";
-  import { formatPlace } from "@/lib/places";
   import { ReturnStyle } from "@/lib/charts/returns";
   import type { SolarReturn } from "@/lib/charts/solar-return";
-  import { compareCharts } from "@/lib/charts/synastry";
-  import { formatLongitude } from "@/lib/astrology/zodiac";
+  import { SubjectKind } from "@/lib/downloads/export";
 
   let {
     solarReturn,
     style = $bindable(ReturnStyle.Standalone),
   }: { solarReturn: SolarReturn; style?: ReturnStyle } = $props();
-
-  let wheel: SVGSVGElement | undefined = $state();
-
-  const chart = $derived(solarReturn.chart);
-  const isBiWheel = $derived(style === ReturnStyle.BiWheel);
-  // Only the bi-wheel compares the return with the natal chart.
-  const comparison = $derived(
-    isBiWheel ? compareCharts(solarReturn.natal, chart) : undefined,
-  );
-  const biWheel = $derived(
-    comparison
-      ? {
-          inner: solarReturn.natal,
-          outerBodies: chart.bodies,
-          aspects: comparison.aspects,
-          title: "Solar return comparison wheel",
-          innerLabel: "Natal",
-          outerLabel: "Solar return",
-        }
-      : undefined,
-  );
-
-  // The bi-wheel draws the natal houses, so the labels follow those.
-  const housesChart = $derived(isBiWheel ? solarReturn.natal : chart);
-
-  const subheading = $derived(
-    [
-      formatPlace(chart.details.place),
-      formatBirthMoment(chart),
-      housesChart.houses && HOUSE_SYSTEM_NAMES[housesChart.houses.houseSystem],
-    ]
-      .filter(Boolean)
-      .join(" · "),
-  );
-
-  const natalSun = $derived(
-    solarReturn.natal.bodies.find((placed) => placed.body === Body.Sun),
-  );
-
-  const fallbackNote = $derived(
-    housesChart.houses && usesFallbackHouses(housesChart)
-      ? describeHouseFallback(
-          housesChart.details.houseSystem,
-          housesChart.houses.houseSystem,
-          isBiWheel ? "your natal chart uses" : "the return uses",
-        )
-      : undefined,
-  );
 </script>
 
-<div>
-  <h2 class="ui-heading-view" tabindex="-1">
-    Solar return {solarReturn.year}
-  </h2>
-  <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
-  <ZodiacNote {chart} />
-  {#if natalSun}
-    <p class="text-ink-muted mt-2 text-sm">
-      The Sun returns to {formatLongitude(natalSun.longitude)}, where it was
-      when you were born. The chart is read for the year until the next return.
-    </p>
-  {/if}
-
-  {#if fallbackNote}
-    <Callout class="mt-4">
-      {fallbackNote}
-    </Callout>
-  {/if}
-
-  <fieldset class="mt-4 flex flex-wrap gap-4 text-sm">
-    <legend class="ui-label mb-2">Show solar return</legend>
-    <label class="flex items-center gap-2">
-      <input
-        type="radio"
-        name="solarReturnStyle"
-        bind:group={style}
-        value={ReturnStyle.Standalone}
-      />
-      Return alone
-    </label>
-    <label class="flex items-center gap-2">
-      <input
-        type="radio"
-        name="solarReturnStyle"
-        bind:group={style}
-        value={ReturnStyle.BiWheel}
-      />
-      Against natal chart
-    </label>
-  </fieldset>
-
-  {#if isBiWheel}
-    <p class="text-ink-muted mt-2 text-sm">
-      Your natal chart and houses sit inside the zodiac. The return's planets,
-      in <span class="text-accent font-medium">this colour</span>, sit outside.
-      Lines show aspects between the natal and return planets.
-    </p>
-  {/if}
-
-  <!-- The bi-wheel is named by its own title. -->
-  <ChartWheel
-    {chart}
-    {biWheel}
-    title={biWheel ? undefined : "Solar return chart wheel"}
-    bind:svg={wheel}
-  />
-
-  <div class="grid gap-8 xl:grid-cols-2">
-    <PositionsTable
-      {chart}
-      title="Positions"
-      overlay={comparison
-        ? {
-            heading: "Natal house",
-            houses: comparison.secondInFirstHouses,
-          }
-        : undefined}
-    />
-
-    <AspectTable
-      title={isBiWheel ? "Aspects to natal chart" : "Aspects"}
-      firstLabel={isBiWheel ? "Natal" : ""}
-      secondLabel={isBiWheel ? "Return" : ""}
-      aspects={comparison ? comparison.aspects : chart.aspects}
-      settings={chart.details.aspectSettings}
-    />
-  </div>
-
-  <div class="border-rule mt-10 grid gap-8 border-t pt-5 sm:grid-cols-2">
-    <ChartShare
-      details={solarReturn.natal.details}
-      addition={{
-        solarReturn: {
-          year: solarReturn.year,
-          place: chart.details.place,
-          style,
-        },
-      }}
-    />
-    <ChartDownloads
-      subject={{ kind: SubjectKind.SolarReturn, solarReturn, style }}
-      {wheel}
-    />
-  </div>
-</div>
+<ReturnView
+  natal={solarReturn.natal}
+  chart={solarReturn.chart}
+  bind:style
+  name="Solar return"
+  heading={`Solar return ${solarReturn.year}`}
+  readFor="the year until the next return."
+  returningBody={Body.Sun}
+  share={(chosen) => ({
+    solarReturn: {
+      year: solarReturn.year,
+      place: solarReturn.chart.details.place,
+      style: chosen,
+    },
+  })}
+  download={(chosen) => ({
+    kind: SubjectKind.SolarReturn,
+    solarReturn,
+    style: chosen,
+  })}
+/>
