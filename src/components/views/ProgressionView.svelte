@@ -1,20 +1,15 @@
 <!-- Progressions: your natal chart inside a bi-wheel, the progressed
      planets around it, and the aspects they make to yours. -->
 <script lang="ts">
+  import CrossAspectTable from "@/components/chart/CrossAspectTable.svelte";
   import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
   import ChartShare from "@/components/chart/ChartShare.svelte";
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
   import PositionsTable from "@/components/chart/PositionsTable.svelte";
-  import { ASPECT_INFO } from "@/lib/astrology/aspects";
-  import { BODY_INFO } from "@/lib/astrology/bodies";
   import { SubjectKind } from "@/lib/downloads/export";
-  import {
-    formatBirthDate,
-    formatDegrees,
-    formatLocalDate,
-  } from "@/lib/format";
+  import { formatBirthDate, formatLocalDate } from "@/lib/format";
   import { formatPlace } from "@/lib/places";
   import {
     PROGRESSION_MAX_ORB_DEGREES,
@@ -60,38 +55,12 @@
 
   <ChartWheel chart={progressions.natal} {biWheel} bind:svg={wheel} />
 
-  <div>
-    <h3 class="ui-heading-section mb-2">Progressions to your chart</h3>
-    <table class="ui-table">
-      <thead>
-        <tr>
-          <th scope="col">Progressed</th>
-          <th scope="col">Aspect</th>
-          <th scope="col">Natal</th>
-          <th scope="col" class="text-right">Orb</th>
-        </tr>
-      </thead>
-      <tbody>
-        {#each progressions.aspects as aspect (`${aspect.first}-${aspect.second}`)}
-          {@const natal = BODY_INFO[aspect.first]}
-          {@const progressed = BODY_INFO[aspect.second]}
-          {@const info = ASPECT_INFO[aspect.type]}
-          <tr>
-            <td>{progressed.glyph} {progressed.name}</td>
-            <td>{info.glyph} {info.name}</td>
-            <td>{natal.glyph} {natal.name}</td>
-            <td class="text-right tabular-nums">
-              {formatDegrees(aspect.orbDegrees)}
-            </td>
-          </tr>
-        {:else}
-          <tr>
-            <td colspan="4">No progressions within orb.</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-  </div>
+  <CrossAspectTable
+    title="Progressions to your chart"
+    aspects={progressions.aspects}
+    movingLabel="Progressed"
+    noneText="No progressions within orb."
+  />
 
   <div class="mt-8">
     <PositionsTable
