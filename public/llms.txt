@@ -10,6 +10,7 @@ A small JSON API runs on a server and calculates the same charts, with the same 
 
 ```
 POST /api/v1/chart
+POST /api/v1/transits
 GET  /api/v1/places?q=
 ```
 
@@ -39,6 +40,23 @@ GET  /api/v1/places?q=
 | `placeName` | No | A name for the place, shown when the share link is opened. |
 
 It returns the birth moment in UTC, each body's longitude, sign, degree within the sign, retrograde status and house, the 12 house cusps with the ascendant and midheaven, the aspects between planets, each with its `rank` (`major` or `minor`), and a `shareUrl` that draws the same chart on the site. A sidereal chart also returns its `ayanamsa` and `ayanamsaDegrees`, how far behind the tropical zodiac it is; every longitude is already moved back by that. Without a `time`, houses and angles are left out and each body lists the signs it may be in. Inside the polar circles, Placidus and Koch houses can't be calculated, so the houses are cast as Porphyry: `effectiveHouseSystem` names the system actually used, and `houseSystem` the one asked for. Invalid input is answered with HTTP 400 and `{ "error": "..." }`.
+
+`POST /api/v1/transits` sets the sky at a moment against a natal chart. Its body nests the chart's request whole, as `natal`, with an optional `at`:
+
+```json
+{
+  "natal": {
+    "date": "1990-05-15",
+    "time": "14:30",
+    "latitude": 43.7064,
+    "longitude": -79.3986,
+    "timeZone": "America/Toronto"
+  },
+  "at": "2026-11-18T10:00:00-05:00"
+}
+```
+
+`at` is an ISO 8601 date and time with a UTC offset or `Z`, to the minute; leave it out for now. It returns the natal chart, the bodies at `at`, each with the natal house it's crossing, and the aspects they make to the natal bodies within 2°. Each aspect's `first` body is natal and its `second` is transiting, and its `timing` gives when it comes into orb (`entersOrb`), every moment it's exact (`exact`, up to three as a planet turns retrograde) and when it leaves orb (`leavesOrb`), searched up to five years either way. The `shareUrl` draws the transits on the site. Positions follow the natal chart's zodiac.
 
 `GET /api/v1/places?q=` searches the same GeoNames cities as the page, most populous first, to find a birthplace's `latitude`, `longitude` and `timeZone`. Text after a comma narrows by region or country, e.g. `q=london, canada`. An optional `limit` of 1 to 25 defaults to 8. It returns `{ next, previous, count, result }`; it isn't paginated, so `next` and `previous` are always null.
 

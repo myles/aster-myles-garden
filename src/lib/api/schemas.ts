@@ -177,6 +177,8 @@ const placedBodySchemaV1 = z
   })
   .meta({ id: "PlacedBody" });
 
+export type PlacedBodyV1 = z.infer<typeof placedBodySchemaV1>;
+
 const angleSchemaV1 = z
   .strictObject({
     longitude: z.number().meta({ description: longitudeDescription }),
@@ -217,6 +219,8 @@ const aspectSchemaV1 = z
     }),
   })
   .meta({ id: "Aspect" });
+
+export type AspectV1 = z.infer<typeof aspectSchemaV1>;
 
 export const chartSchemaV1 = z
   .strictObject({
@@ -268,6 +272,94 @@ export const chartSchemaV1 = z
   .meta({ id: "Chart", description: "A natal chart." });
 
 export type ChartV1 = z.infer<typeof chartSchemaV1>;
+
+const instantSchema = z.iso.datetime().meta({
+  description: "A moment in UTC.",
+  examples: ["2026-11-18T15:00:00.000Z"],
+});
+
+export const transitsRequestSchemaV1 = z
+  .strictObject({
+    natal: chartRequestSchemaV1,
+    at: z.iso
+      .datetime({ offset: true })
+      .optional()
+      .meta({
+        description:
+          "The moment to show the sky for, as an ISO 8601 date and time " +
+          "with a UTC offset or Z. Seconds are dropped, as a share link " +
+          "drops them. Leave it out for now.",
+        examples: ["2026-11-18T10:00:00-05:00"],
+      }),
+  })
+  .meta({
+    id: "TransitsRequest",
+    description: "A natal chart, and the moment to set the sky against it.",
+  });
+
+export type TransitsRequestV1 = z.infer<typeof transitsRequestSchemaV1>;
+
+const transitTimingSchemaV1 = z
+  .strictObject({
+    entersOrb: instantSchema.optional().meta({
+      description:
+        "When the transit came into orb. Absent when that's more than " +
+        "five years before `at`.",
+    }),
+    exact: z.array(instantSchema).meta({
+      description:
+        "Every moment the transit is exact while in orb, in order. Up to " +
+        "three, as a planet turns retrograde and back; none when it turns " +
+        "before reaching exact.",
+    }),
+    leavesOrb: instantSchema.optional().meta({
+      description:
+        "When the transit leaves orb. Absent when that's more than five " +
+        "years after `at`.",
+    }),
+  })
+  .meta({
+    id: "TransitTiming",
+    description: "When a transit is in orb and when it's exact, to the minute.",
+  });
+
+const timedAspectSchemaV1 = aspectSchemaV1
+  .extend({ timing: transitTimingSchemaV1 })
+  .meta({
+    id: "TimedAspect",
+    description:
+      "An aspect from a natal body (`first`) to a transiting one " +
+      "(`second`), with its timing.",
+  });
+
+export const transitsSchemaV1 = z
+  .strictObject({
+    natal: chartSchemaV1,
+    at: instantSchema.meta({ description: "The moment shown, in UTC." }),
+    maxOrbDegrees: z.number().meta({
+      description:
+        "The widest orb a transit is found within, whatever the natal " +
+        "chart's orb size: transits use tighter orbs than a natal chart.",
+      examples: [2],
+    }),
+    bodies: z.array(placedBodySchemaV1).meta({
+      description:
+        "Where each body is at `at`. `house` is the natal house it's " +
+        "crossing, absent when the natal chart has no birth time.",
+    }),
+    aspects: z.array(timedAspectSchemaV1).meta({
+      description: "Aspects from the natal bodies to the transiting ones.",
+    }),
+    shareUrl: z.url().meta({
+      description: "A link that draws these transits on the site.",
+    }),
+  })
+  .meta({
+    id: "Transits",
+    description: "The sky at a moment, against a natal chart.",
+  });
+
+export type TransitsV1 = z.infer<typeof transitsSchemaV1>;
 
 export const placesQuerySchemaV1 = z.object({
   q: z

@@ -4,17 +4,22 @@ import {
   buildOpenApiDocument,
   CHART_PATH,
   PLACES_PATH,
+  TRANSITS_PATH,
 } from "@/lib/api/openapi";
 
 describe("buildOpenApiDocument", () => {
   const document = buildOpenApiDocument();
 
-  it("describes both endpoints", () => {
+  it("describes every endpoint", () => {
     expect(Object.keys(document.paths ?? {})).toEqual([
       CHART_PATH,
+      TRANSITS_PATH,
       PLACES_PATH,
     ]);
     expect(document.paths?.[CHART_PATH]?.post?.operationId).toBe("createChart");
+    expect(document.paths?.[TRANSITS_PATH]?.post?.operationId).toBe(
+      "createTransits",
+    );
     expect(document.paths?.[PLACES_PATH]?.get?.operationId).toBe(
       "searchPlaces",
     );
@@ -30,6 +35,9 @@ describe("buildOpenApiDocument", () => {
         "HouseSystem",
         "Place",
         "PlacesPage",
+        "TimedAspect",
+        "Transits",
+        "TransitsRequest",
       ]),
     );
   });
