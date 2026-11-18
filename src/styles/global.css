@@ -21,7 +21,14 @@
 
 :root {
   color-scheme: light dark;
+}
 
+/*
+ * A downloaded wheel can take either theme, whatever the page's: the
+ * class goes on the wheel while it's copied. See src/lib/downloads/.
+ */
+:root,
+.wheel-theme-light {
   --paper: var(--color-parchment);
   --panel: var(--color-chalk);
   --ink: var(--color-inkwell);
@@ -56,7 +63,11 @@
   );
 }
 
-/* The palette has no dark steps, so panel, muted ink and rules are mixed. */
+/*
+ * The palette has no dark steps, so panel, muted ink and rules are mixed.
+ * Written twice, for the page in dark mode and for a wheel downloaded
+ * dark; tests/styles/themes.test.ts checks the two copies match.
+ */
 @media (prefers-color-scheme: dark) {
   :root {
     --paper: var(--color-midnight-soil);
@@ -86,6 +97,27 @@
     --harmonious: var(--color-sky-wash);
     --challenging: var(--color-candy-gloss);
   }
+}
+
+.wheel-theme-dark {
+  --paper: var(--color-midnight-soil);
+  --panel: color-mix(
+    in srgb,
+    var(--color-midnight-soil),
+    var(--color-parchment) 6%
+  );
+  --ink: var(--color-parchment);
+  --ink-muted: color-mix(in srgb, var(--color-ash), var(--color-parchment) 45%);
+  --rule: color-mix(in srgb, var(--color-ash), var(--color-midnight-soil) 50%);
+  --accent: var(--color-sage);
+
+  --fire: var(--color-candy-gloss);
+  --earth: var(--color-sage);
+  --air: var(--color-honey);
+  --water: var(--color-sky-wash);
+
+  --harmonious: var(--color-sky-wash);
+  --challenging: var(--color-candy-gloss);
 }
 
 body {
@@ -218,6 +250,11 @@ body {
   width: 100%;
   height: auto;
   font-family: var(--font-symbol);
+}
+
+/* Behind a downloaded wheel: a file has no page to sit on. */
+.wheel-backdrop {
+  fill: var(--paper);
 }
 
 .wheel-ring {

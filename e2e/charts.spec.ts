@@ -282,6 +282,54 @@ test("preserves both charts when comparison details are incomplete", async ({
   await expect(page.getByText("Koch houses.", { exact: false })).toBeVisible();
 });
 
+test("downloads the wheel in either theme, whatever the page shows", async ({
+  page,
+}, testInfo) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await drawChart(page);
+  const wheel = page.getByRole("img", { name: "Natal chart wheel" });
+  const pageInk = await wheel
+    .locator(".wheel-ring")
+    .first()
+    .evaluate((ring) => getComputedStyle(ring).stroke);
+
+  const downloadIn = async (theme: string) => {
+    await page.getByRole("combobox", { name: "Wheel colours" }).selectOption({
+      label: theme,
+    });
+    const pending = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download wheel as SVG" }).click();
+    const path = testInfo.outputPath(`wheel-${theme.toLowerCase()}.svg`);
+    await (await pending).saveAs(path);
+    const markup = (await readFile(path)).toString();
+    return {
+      backdrop: /<rect [^>]*fill="([^"]+)"/.exec(markup)?.[1],
+      markup,
+    };
+  };
+
+  await expect(
+    page.getByRole("combobox", { name: "Wheel colours" }),
+  ).toHaveValue("light");
+  const light = await downloadIn("Light");
+  const dark = await downloadIn("Dark");
+
+  expect(light.backdrop).toBeDefined();
+  expect(dark.backdrop).toBeDefined();
+  expect(dark.backdrop).not.toBe(light.backdrop);
+  expect(light.markup).toContain(`stroke:${pageInk}`);
+  expect(dark.markup).not.toContain(`stroke:${pageInk}`);
+  expect(dark.markup).not.toContain("wheel-theme-dark");
+  // The page itself stays light.
+  await expect(wheel).not.toHaveClass(/wheel-theme-dark/);
+  expect(
+    await wheel
+      .locator(".wheel-ring")
+      .first()
+      .evaluate((ring) => getComputedStyle(ring).stroke),
+  ).toBe(pageInk);
+});
+
 for (const format of ["SVG", "PNG"]) {
   test(`compares a solar return and exports ${format}`, async ({
     page,
