@@ -23,6 +23,7 @@ describe("buildOpenApiDocument", () => {
   it("names the shared shapes as components", () => {
     expect(Object.keys(document.components?.schemas ?? {})).toEqual(
       expect.arrayContaining([
+        "Ayanamsa",
         "Chart",
         "ChartRequest",
         "Error",

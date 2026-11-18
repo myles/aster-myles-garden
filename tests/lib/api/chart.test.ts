@@ -9,6 +9,7 @@ import {
 import { CACHE_NO_STORE } from "@/lib/api/http";
 import { chartRequestSchemaV1, type ChartV1 } from "@/lib/api/schemas";
 import { AspectRank, AspectSet, OrbSize } from "@/lib/astrology/aspects";
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { Body } from "@/lib/astrology/bodies";
 import { HouseSystem } from "@/lib/astrology/houses";
 import * as chartService from "@/lib/charts/chart";
@@ -43,6 +44,10 @@ function postChart(body: unknown): Promise<Response> {
       body: typeof body === "string" ? body : JSON.stringify(body),
     }),
   );
+}
+
+function findSun(chart: ChartV1) {
+  return chart.bodies.find((body) => body.body === Body.Sun);
 }
 
 function detailsFor(date: string) {
@@ -153,6 +158,33 @@ describe("handleChartRequest", () => {
     expect(
       parseShareHash(new URL(chart.shareUrl).hash)?.aspectSettings,
     ).toEqual(settings);
+  });
+
+  it("is tropical by default", async () => {
+    const chart = (await (await postChart(BIRTH)).json()) as ChartV1;
+
+    expect(chart.ayanamsa).toBeUndefined();
+    expect(chart.ayanamsaDegrees).toBeUndefined();
+  });
+
+  it("casts a sidereal chart and carries the ayanamsa in the share link", async () => {
+    const tropical = (await (await postChart(BIRTH)).json()) as ChartV1;
+    const response = await postChart({ ...BIRTH, ayanamsa: Ayanamsa.Lahiri });
+    const sidereal = (await response.json()) as ChartV1;
+
+    expect(response.status).toBe(200);
+    expect(sidereal.ayanamsa).toBe(Ayanamsa.Lahiri);
+    // Lahiri was about 23.7° in 1990.
+    expect(sidereal.ayanamsaDegrees).toBeCloseTo(23.7, 1);
+
+    // The tropical Sun, 24° 39′ Taurus, moves back to the start of it.
+    expect(findSun(sidereal)?.label).toBe("0° 56′ Taurus");
+    expect(
+      (findSun(tropical)?.longitude ?? 0) - (findSun(sidereal)?.longitude ?? 0),
+    ).toBeCloseTo(sidereal.ayanamsaDegrees ?? 0, 6);
+    expect(parseShareHash(new URL(sidereal.shareUrl).hash)?.ayanamsa).toBe(
+      Ayanamsa.Lahiri,
+    );
   });
 
   it("names the house system it used", async () => {

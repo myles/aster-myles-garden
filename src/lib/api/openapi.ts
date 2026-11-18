@@ -74,7 +74,8 @@ const DOCUMENT: ZodOpenApiObject = {
           "place. Without a time, the chart is cast for local noon and " +
           "has no houses or angles. Above the polar circles, Placidus " +
           "and Koch can't be cast, so the houses fall back to Porphyry " +
-          "and `effectiveHouseSystem` says so.",
+          "and `effectiveHouseSystem` says so. Positions are in the " +
+          "tropical zodiac unless an `ayanamsa` is given for the sidereal.",
         tags: [TAG_CHARTS],
         requestBody: {
           required: true,

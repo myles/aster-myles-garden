@@ -17,6 +17,7 @@ import {
   DEFAULT_ASPECT_SETTINGS,
   OrbSize,
 } from "@/lib/astrology/aspects";
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { Body } from "@/lib/astrology/bodies";
 import {
   DEFAULT_HOUSE_SYSTEM,
@@ -64,9 +65,18 @@ const orbSizeSchema = z.enum(OrbSize).meta({
     "is a quarter more.",
 });
 
+const ayanamsaSchema = z.enum(Ayanamsa).meta({
+  id: "Ayanamsa",
+  description:
+    "Which ayanamsa a sidereal chart is measured with: how far the " +
+    "sidereal zodiac is set back from the tropical one.",
+});
+
 const houseNumberSchema = z.int().min(1).max(HOUSE_COUNT);
 
-const longitudeDescription = "Ecliptic longitude, in degrees, 0 to 360.";
+const longitudeDescription =
+  "Ecliptic longitude, in degrees, 0 to 360: tropical, or sidereal when " +
+  "the chart has an ayanamsa.";
 const labelDescription = "The longitude as degrees within its sign.";
 
 export const chartRequestSchemaV1 = z
@@ -116,6 +126,12 @@ export const chartRequestSchemaV1 = z
     houseSystem: houseSystemSchema.default(DEFAULT_HOUSE_SYSTEM),
     aspectSet: aspectSetSchema.default(DEFAULT_ASPECT_SETTINGS.aspectSet),
     orbSize: orbSizeSchema.default(DEFAULT_ASPECT_SETTINGS.orbSize),
+    ayanamsa: ayanamsaSchema.optional().meta({
+      description:
+        "For the sidereal zodiac, the ayanamsa to measure it with. Leave " +
+        "it out for the tropical zodiac.",
+      examples: [Ayanamsa.Lahiri],
+    }),
     placeName: z
       .string()
       .trim()
@@ -221,6 +237,19 @@ export const chartSchemaV1 = z
     }),
     aspectSet: aspectSetSchema,
     orbSize: orbSizeSchema,
+    ayanamsa: ayanamsaSchema.optional().meta({
+      description: "The ayanamsa asked for. Absent for the tropical zodiac.",
+    }),
+    ayanamsaDegrees: z
+      .number()
+      .optional()
+      .meta({
+        description:
+          "In a sidereal chart: how far behind the tropical zodiac it " +
+          "is at the birth moment, in degrees. Every longitude is " +
+          "already moved back by this.",
+        examples: [23.7],
+      }),
     bodies: z.array(placedBodySchemaV1),
     houses: housesSchemaV1.optional().meta({
       description: "Absent without a birth time.",
