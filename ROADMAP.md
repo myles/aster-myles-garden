@@ -49,7 +49,8 @@ A small API, in the same style as the other myles.garden sites, so the garden's 
 - [x] `GET /api/v1/places?q=`: place search, so callers can find a GeoNames latitude and longitude.
 - [x] A client in `@myles-garden/sdk`, and `get_birth_chart` and `search_places` tools in the MCP server.
 - [x] Privacy: birth details only ever in request bodies, never logged, and the README, `llms.txt` and `ai.txt` updated to say the API runs on a server.
-- [ ] Bring the API up to date once the chart features settle: the new bodies' and settings' documentation, plus composites, solar returns and transits, with matching SDK methods and MCP tools.
+- [x] Bring the API up to date: the sidereal zodiac, and endpoints for transits, progressions, solar and lunar returns, comparisons and composites.
+- [ ] Matching SDK methods in `@myles-garden/sdk`, and MCP tools in the garden's MCP server, for the new endpoints.
 
 ## WebMCP
 

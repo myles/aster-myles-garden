@@ -92,10 +92,16 @@ A small JSON API calculates the same charts on a server, so tools such as the ga
 
 The OpenAPI document is at [`/api/v1/openapi.json`](https://aster.myles.garden/api/v1/openapi.json).
 
-| Endpoint                | Does                                                                                                                                             |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `POST /api/v1/chart`    | Takes a date, local time, latitude, longitude, time zone, house system and aspect settings; returns positions, houses, aspects and a share link. |
-| `GET /api/v1/places?q=` | Searches the GeoNames index for a birthplace's latitude, longitude and time zone.                                                                |
+| Endpoint                    | Does                                                                                                                                                     |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/v1/chart`        | Takes a date, local time, latitude, longitude, time zone, house system, aspect settings and zodiac; returns positions, houses, aspects and a share link. |
+| `POST /api/v1/transits`     | Sets the sky at a moment, by default now, against a natal chart, with when each transit comes into orb, is exact and leaves orb.                         |
+| `POST /api/v1/progressions` | Progresses a natal chart to a date, by default today, and sets it against the natal chart.                                                               |
+| `POST /api/v1/solar-return` | Finds the chart for the moment the Sun returns to its natal position in a year, cast at the birthplace or another place.                                 |
+| `POST /api/v1/lunar-return` | Finds the chart for the latest return of the Moon to its natal position by a date, cast at the birthplace or another place.                              |
+| `POST /api/v1/synastry`     | Compares two people's charts: the aspects between them, and each person's bodies in the other's houses.                                                  |
+| `POST /api/v1/composite`    | Makes one chart from the midpoints of two people's.                                                                                                      |
+| `GET /api/v1/places?q=`     | Searches the GeoNames index for a birthplace's latitude, longitude and time zone.                                                                        |
 
 ```bash
 curl -s https://aster.myles.garden/api/v1/places?q=toronto
@@ -105,18 +111,27 @@ curl -s -X POST https://aster.myles.garden/api/v1/chart \
   -d '{"date":"1990-05-15","time":"14:30","latitude":43.7064,"longitude":-79.3986,"timeZone":"America/Toronto"}'
 ```
 
-Leave out `time` when the birth time isn't known: the chart is cast for local noon, without houses or angles. Dates run from roughly 3000 BCE to 3000 CE.
+Leave out `time` when the birth time isn't known: the chart is cast for local noon, without houses or angles. Add an `ayanamsa`, such as `lahiri`, for the sidereal zodiac. Dates run from roughly 3000 BCE to 3000 CE.
+
+Every other chart endpoint takes the chart's request whole, nested as `natal`, or as `first` for a comparison, with its own fields alongside:
+
+```bash
+curl -s -X POST https://aster.myles.garden/api/v1/transits \
+  -H 'Content-Type: application/json' \
+  -d '{"natal":{"date":"1990-05-15","time":"14:30","latitude":43.7064,"longitude":-79.3986,"timeZone":"America/Toronto"},"at":"2026-11-18T15:00Z"}'
+```
 
 ### Privacy
 
 - Birth details are only ever accepted in the request body, never the URL, so they stay out of access logs.
 - They're never logged or stored. On an unexpected error the server logs only the error's type, since engine messages quote the birth moment.
 - Chart responses are sent with `Cache-Control: no-store`.
-- Validation errors name the field and the rule, never the value sent.
+- Validation errors name the field and the rule, never the value sent. A request that's valid but can't be calculated, such as a solar return for a year before the birth, is answered with what to change.
 
 ### How the code is laid out
 
 - `src/pages/api/v1/` — routes. HTTP only; each hands its request to `src/lib/api/`.
+- `src/lib/api/request.ts` — what every POST route shares: reading and validating the body, and answering errors without logging what was sent. A `ChartInputError` from the chart services is the caller's to fix, so it's a 400; anything else is a 500.
 - `src/lib/api/schemas.ts` — strict Zod schemas for every request and response. They validate input, guard output, and generate the OpenAPI document (`src/lib/api/openapi.ts`, via [`zod-openapi`](https://www.npmjs.com/package/zod-openapi)), so the document can't drift from the routes.
 - `src/lib/server/` — server-only drivers: the native ephemeris and the bundled place index. The chart service takes the ephemeris as an argument, so the browser and server share every calculation above it.
 
