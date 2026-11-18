@@ -16,40 +16,10 @@ import {
 const RAW_INDEX: RawPlaceIndex = {
   timeZones: ["Europe/London", "America/Toronto", "America/Montreal"],
   places: [
-    [
-      "London",
-      "",
-      "England",
-      "United Kingdom",
-      51.5085,
-      -0.1257,
-      0,
-      8961989,
-      2643743,
-    ],
-    [
-      "Toronto",
-      "",
-      "Ontario",
-      "Canada",
-      43.7064,
-      -79.3986,
-      1,
-      2600000,
-      6167865,
-    ],
-    [
-      "Montréal",
-      "Montreal",
-      "Quebec",
-      "Canada",
-      45.5088,
-      -73.5878,
-      2,
-      1600000,
-      6077243,
-    ],
-    ["London", "", "Ontario", "Canada", 42.9834, -81.233, 1, 346765, 6058560],
+    ["London", "", "England", "United Kingdom", 51.5085, -0.1257, 0, 2643743],
+    ["Toronto", "", "Ontario", "Canada", 43.7064, -79.3986, 1, 6167865],
+    ["Montréal", "Montreal", "Quebec", "Canada", 45.5088, -73.5878, 2, 6077243],
+    ["London", "", "Ontario", "Canada", 42.9834, -81.233, 1, 6058560],
     [
       "East London",
       "",
@@ -58,7 +28,6 @@ const RAW_INDEX: RawPlaceIndex = {
       -33.0153,
       27.9116,
       0,
-      478676,
       1006984,
     ],
   ],
@@ -113,18 +82,8 @@ describe("findNearestPlace", () => {
     const wrapping = parsePlaceIndex({
       timeZones: ["Pacific/Fiji", "Pacific/Pago_Pago"],
       places: [
-        ["Suva", "", "Central", "Fiji", -18.1416, 178.4415, 0, 93970, 2198148],
-        [
-          "Apia",
-          "",
-          "Tuamasaga",
-          "Samoa",
-          -13.8333,
-          -171.7667,
-          1,
-          40407,
-          4035413,
-        ],
+        ["Suva", "", "Central", "Fiji", -18.1416, 178.4415, 0, 2198148],
+        ["Apia", "", "Tuamasaga", "Samoa", -13.8333, -171.7667, 1, 4035413],
       ],
     });
 

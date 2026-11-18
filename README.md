@@ -66,13 +66,20 @@ npm run build
 
 ### Place data
 
-Place search runs offline against `public/data/places.json`, built from [GeoNames](https://www.geonames.org/) (CC BY 4.0) cities with a population over 15,000. To regenerate it:
+Place search runs offline against two indexes built from [GeoNames](https://www.geonames.org/) (CC BY 4.0) cities with a population over 15,000:
+
+- `public/data/places-top.json` — the cities of 100,000 or more, about 120 KB over the wire. It loads first, so search starts in about a second on a slow phone connection.
+- `public/data/places-all.json` — every city, about 600 KB over the wire. It loads next, then replaces the top index. It's also the one share links and the API look places up in.
+
+Every top city has more people than any city left out, so its results stay first, in the same order, when the whole index takes over. Change either file's row layout under a new name: the service worker serves its cached copy before refreshing it.
+
+To regenerate them:
 
 1. Download `cities15000.zip`, `admin1CodesASCII.txt` and `countryInfo.txt` from <https://download.geonames.org/export/dump/> into one directory.
 2. Unzip `cities15000.zip` there.
 3. Run `node scripts/places-build.mjs <that-directory>`.
 
-To see how long the index takes to become searchable, run `npm run places:measure`. It serves the index brotli-compressed and times a first search in headless Chromium, as is and throttled to a phone's CPU and network. Set `CHROMIUM_PATH` to use a Chromium other than Playwright's own.
+To see how long the indexes take to become searchable, run `npm run places:measure`. It serves them brotli-compressed and loads them as the place field does, in headless Chromium, as is and throttled to a phone's CPU and network. Set `CHROMIUM_PATH` to use a Chromium other than Playwright's own.
 
 ## Usage
 

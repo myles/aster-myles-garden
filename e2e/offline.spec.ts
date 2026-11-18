@@ -14,7 +14,7 @@ test("draws a chart offline once the site has been opened", async ({
   page,
 }) => {
   // context.route also sees the worker's own requests.
-  await context.route("**/data/places.json", (route) =>
+  await context.route("**/data/places-*.json", (route) =>
     route.fulfill({
       path: PLACE_FIXTURE_PATH,
       contentType: "application/json",

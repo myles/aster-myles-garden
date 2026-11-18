@@ -46,7 +46,8 @@ describe("listPrecachePaths", () => {
   it("leaves out the API, place index and other sites' files", async () => {
     await writeClientFile("index.html");
     await writeClientFile("api/v1/openapi.json");
-    await writeClientFile("data/places.json");
+    await writeClientFile("data/places-all.json");
+    await writeClientFile("data/places-top.json");
     await writeClientFile("og-image.jpg");
     await writeClientFile("x-card.jpg");
     await writeClientFile("llms.txt");

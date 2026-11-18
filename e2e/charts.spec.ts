@@ -37,7 +37,7 @@ async function compareCharts(page: Page): Promise<void> {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.route("**/data/places.json", (route) =>
+  await page.route("**/data/places-*.json", (route) =>
     route.fulfill({
       path: PLACE_FIXTURE_PATH,
       contentType: "application/json",

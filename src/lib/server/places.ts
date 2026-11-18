@@ -1,5 +1,5 @@
 // The GeoNames place index, for the API. The browser fetches this same
-// file from the site; the server bundles it, so a search never makes a
+// file from the site, after the smaller top one; the server bundles it, so a search never makes a
 // network request.
 
 import {
@@ -8,7 +8,7 @@ import {
   type RawPlaceIndex,
 } from "@/lib/places";
 
-import rawPlaceIndex from "../../../public/data/places.json";
+import rawPlaceIndex from "../../../public/data/places-all.json";
 
 let _index: PlaceIndex | undefined;
 

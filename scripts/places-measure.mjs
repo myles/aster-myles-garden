@@ -1,14 +1,15 @@
-// Measures how long the place index takes to become searchable in a
+// Measures how long the place indexes take to become searchable in a
 // browser, on this machine and throttled to a phone's CPU and network,
-// so a change to the index's size or shape can be checked.
+// so a change to their size or shape can be checked.
 //
 // Usage:
-//   node scripts/places-measure.mjs [path/to/places.json]
+//   node scripts/places-measure.mjs
 //
 // Set CHROMIUM_PATH to use a Chromium other than Playwright's own.
 //
-// It serves the index brotli-compressed, as the host does, and runs the
-// site's own search code from src/lib/places.ts in headless Chromium.
+// It serves public/data's indexes brotli-compressed, as the host does,
+// and loads the top one, then the whole one, with the site's own code from
+// src/lib/places.ts, as the place field does, in headless Chromium.
 // CPU throttling slows this machine down, so the phone numbers are only
 // as good as the machine they're scaled from: compare runs on one machine.
 
@@ -22,7 +23,7 @@ import { brotliCompressSync, constants } from "node:zlib";
 import { chromium } from "playwright";
 import { build } from "rolldown";
 
-const INDEX_PATH = process.argv[2] ?? "public/data/places.json";
+const INDEX_FILES = ["places-top.json", "places-all.json"];
 const RUNS = 5;
 
 /** Lighthouse's mobile network: "Slow 4G", 150 ms and 1.6 Mbit/s. */
@@ -37,10 +38,15 @@ const PROFILES = [
 /** A common query, one that narrows, and one that scans every place. */
 const QUERIES = ["tor", "london, canada", "zzzz"];
 
-const raw = readFileSync(INDEX_PATH);
-const compressed = brotliCompressSync(raw, {
-  params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
-});
+const files = new Map(
+  INDEX_FILES.map((name) => {
+    const raw = readFileSync(`public/data/${name}`);
+    const compressed = brotliCompressSync(raw, {
+      params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
+    });
+    return [`/data/${name}`, { name, raw, compressed }];
+  }),
+);
 
 const bundle = await build({
   input: "src/lib/places.ts",
@@ -53,13 +59,14 @@ const script = bundle.output[0].code;
 const page = `<!doctype html><meta charset="utf-8"><script>${script}</script>`;
 
 const server = createServer((request, response) => {
-  if (request.url === "/data/places.json") {
+  const file = files.get(request.url);
+  if (file) {
     response.writeHead(200, {
       "Content-Type": "application/json",
       "Content-Encoding": "br",
       "Cache-Control": "no-store",
     });
-    response.end(compressed);
+    response.end(file.compressed);
     return;
   }
   response.writeHead(200, { "Content-Type": "text/html" });
@@ -68,30 +75,25 @@ const server = createServer((request, response) => {
 await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 
-/** Runs in the page: each step of a first search, in milliseconds. */
+/**
+ * Runs in the page: when each index can first be searched, and how long
+ * each query takes on it, in milliseconds.
+ */
 async function measureInPage(queries) {
   const start = performance.now();
-  const response = await fetch("/data/places.json");
-  const text = await response.text();
-  const fetched = performance.now();
-  const json = JSON.parse(text);
-  const parsedJson = performance.now();
-  const index = globalThis.places.parsePlaceIndex(json);
-  const indexed = performance.now();
+  const time = (load) =>
+    load().then((index) => ({
+      ready: performance.now() - start,
+      searches: queries.map((query) => {
+        const before = performance.now();
+        globalThis.places.searchPlaces(index, query);
+        return performance.now() - before;
+      }),
+    }));
 
-  const searches = queries.map((query) => {
-    const before = performance.now();
-    globalThis.places.searchPlaces(index, query);
-    return performance.now() - before;
-  });
-
-  return {
-    download: fetched - start,
-    jsonParse: parsedJson - fetched,
-    indexBuild: indexed - parsedJson,
-    searches,
-    total: indexed - start + searches[0],
-  };
+  const top = await time(globalThis.places.loadTopPlaceIndex);
+  const all = await time(globalThis.places.loadPlaceIndex);
+  return { top, all };
 }
 
 const median = (values) => {
@@ -104,11 +106,13 @@ const format = (ms) => `${Math.round(ms)} ms`.padStart(9);
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH,
 });
-console.log(
-  `Index: ${(raw.length / 1e6).toFixed(2)} MB, ` +
-    `${(compressed.length / 1e6).toFixed(2)} MB brotli. ` +
-    `Median of ${RUNS} cold loads.\n`,
-);
+for (const { name, raw, compressed } of files.values()) {
+  console.log(
+    `${name}: ${(raw.length / 1e6).toFixed(2)} MB, ` +
+      `${(compressed.length / 1e3).toFixed(0)} KB brotli`,
+  );
+}
+console.log(`Median of ${RUNS} cold loads, the top index first.\n`);
 
 for (const profile of PROFILES) {
   const runs = [];
@@ -134,14 +138,21 @@ for (const profile of PROFILES) {
 
   const pick = (read) => median(runs.map(read));
   console.log(profile.name);
-  console.log(`  Download   ${format(pick((r) => r.download))}`);
-  console.log(`  JSON.parse ${format(pick((r) => r.jsonParse))}`);
-  console.log(`  Indexing   ${format(pick((r) => r.indexBuild))}`);
-  QUERIES.forEach((query, i) => {
-    const label = `"${query}"`.padEnd(16);
-    console.log(`  Search ${label}${format(pick((r) => r.searches[i]))}`);
-  });
-  console.log(`  First result ${format(pick((r) => r.total))}\n`);
+  for (const [label, key] of [
+    ["Biggest cities", "top"],
+    ["Every place", "all"],
+  ]) {
+    console.log(
+      `  ${label.padEnd(15)} ready ${format(pick((r) => r[key].ready))}`,
+    );
+    QUERIES.forEach((query, i) => {
+      const quoted = `"${query}"`.padEnd(16);
+      console.log(
+        `    Search ${quoted}${format(pick((r) => r[key].searches[i]))}`,
+      );
+    });
+  }
+  console.log("");
 }
 
 await browser.close();
