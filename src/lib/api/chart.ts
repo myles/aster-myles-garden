@@ -5,6 +5,7 @@
 
 import type { Aspect } from "@/lib/astrology/aspects";
 import type { HouseOverlay } from "@/lib/astrology/houses";
+import type { HousePositions } from "@/lib/engine/ephemeris";
 
 import { SITE_URL } from "@/consts";
 import { ASPECT_INFO, DEFAULT_ASPECT_SETTINGS } from "@/lib/astrology/aspects";
@@ -17,19 +18,27 @@ import {
   type Chart,
   type PlacedBody,
 } from "@/lib/charts/chart";
-import { createCoordinatePlace, parseCoordinates } from "@/lib/places";
+import { ChartInputError } from "@/lib/charts/errors";
+import {
+  createCoordinatePlace,
+  parseCoordinates,
+  type Place,
+} from "@/lib/places";
 import { nodeEphemeris } from "@/lib/server/ephemeris";
 import { buildShareUrl } from "@/lib/share";
 import { parseLocalDate, parseLocalTime } from "@/lib/time";
 
 import { CHART_PATH } from "./paths";
-import { handleJsonPost, InputError } from "./request";
+import { handleJsonPost } from "./request";
 import {
   chartRequestSchemaV1,
   chartSchemaV1,
   type AspectV1,
   type ChartRequestV1,
   type ChartV1,
+  type HousesV1,
+  type PersonV1,
+  type PlaceRequestV1,
   type PlacedBodyV1,
 } from "./schemas";
 
@@ -41,24 +50,36 @@ export const outOfRangeMessage = (field: string) =>
   `${field}: Outside the supported range, roughly 3000 BCE to 3000 CE`;
 
 /**
- * Turns a validated request into the chart service's birth details.
- * Coordinates are rounded as a share link rounds them, so the chart
- * returned is exactly the one its share link draws.
+ * Turns a validated place into the chart service's. Coordinates are
+ * rounded as a share link rounds them, so the chart returned is exactly
+ * the one its share link draws.
  */
-export function toBirthDetails(request: ChartRequestV1): BirthDetails {
+export function toPlace(request: PlaceRequestV1): Place {
   const coordinates = parseCoordinates(
     `${request.latitude.toFixed(COORDINATE_INPUT_DIGITS)}, ` +
       request.longitude.toFixed(COORDINATE_INPUT_DIGITS),
   );
 
+  return createCoordinatePlace({
+    ...coordinates,
+    name: request.placeName ?? "",
+    timeZone: request.timeZone,
+  });
+}
+
+/** A person's date, time and place, as the chart service holds them. */
+function toPerson(request: PersonV1) {
   return {
     date: parseLocalDate(request.date),
     time: request.time === undefined ? undefined : parseLocalTime(request.time),
-    place: createCoordinatePlace({
-      ...coordinates,
-      name: request.placeName ?? "",
-      timeZone: request.timeZone,
-    }),
+    place: toPlace(request),
+  };
+}
+
+/** Turns a validated request into the chart service's birth details. */
+export function toBirthDetails(request: ChartRequestV1): BirthDetails {
+  return {
+    ...toPerson(request),
     houseSystem: request.houseSystem,
     aspectSettings: {
       aspectSet: request.aspectSet,
@@ -68,20 +89,33 @@ export function toBirthDetails(request: ChartRequestV1): BirthDetails {
   };
 }
 
+/** Throws a ChartInputError, naming `field`, outside the engine's range. */
+function createChartWithin(details: BirthDetails, field: string): Chart {
+  if (!isInEngineRange(details)) {
+    throw new ChartInputError(outOfRangeMessage(field));
+  }
+
+  return createChart(details, nodeEphemeris);
+}
+
 /**
- * The natal chart a request asks for. Throws an InputError, naming
+ * The natal chart a request asks for. Throws an ChartInputError, naming
  * `field`, for a date the engine can't calculate.
  */
 export function createChartForRequest(
   request: ChartRequestV1,
   field = "date",
 ): Chart {
-  const details = toBirthDetails(request);
-  if (!isInEngineRange(details)) {
-    throw new InputError(outOfRangeMessage(field));
-  }
+  return createChartWithin(toBirthDetails(request), field);
+}
 
-  return createChart(details, nodeEphemeris);
+/** A second person's chart, cast with the first chart's settings. */
+export function createSecondChart(
+  person: PersonV1,
+  first: Chart,
+  field = "second.date",
+): Chart {
+  return createChartWithin({ ...first.details, ...toPerson(person) }, field);
 }
 
 /** Whether the engine can calculate every moment the chart needs. */
@@ -129,6 +163,17 @@ export function formatBodiesInHouses(
   );
 }
 
+export function formatHousesForApi(houses: HousePositions): HousesV1 {
+  return {
+    cusps: houses.cusps.map((longitude, index) => ({
+      house: index + 1,
+      ...formatAngle(longitude),
+    })),
+    ascendant: formatAngle(houses.ascendant),
+    midheaven: formatAngle(houses.midheaven),
+  };
+}
+
 export function formatAspectForApi(aspect: Aspect): AspectV1 {
   return {
     first: aspect.first,
@@ -155,14 +200,7 @@ export function formatChartForApi(chart: Chart): ChartV1 {
     ayanamsa: details.ayanamsa,
     ayanamsaDegrees: chart.ayanamsaDegrees,
     bodies: chart.bodies.map((placed) => formatBodyForApi(placed)),
-    houses: houses && {
-      cusps: houses.cusps.map((longitude, index) => ({
-        house: index + 1,
-        ...formatAngle(longitude),
-      })),
-      ascendant: formatAngle(houses.ascendant),
-      midheaven: formatAngle(houses.midheaven),
-    },
+    houses: houses && formatHousesForApi(houses),
     aspects: chart.aspects.map(formatAspectForApi),
     shareUrl: buildShareUrl(details, SITE_URL),
   });

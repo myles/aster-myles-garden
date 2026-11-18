@@ -11,6 +11,11 @@ A small JSON API runs on a server and calculates the same charts, with the same 
 ```
 POST /api/v1/chart
 POST /api/v1/transits
+POST /api/v1/progressions
+POST /api/v1/solar-return
+POST /api/v1/lunar-return
+POST /api/v1/synastry
+POST /api/v1/composite
 GET  /api/v1/places?q=
 ```
 
@@ -57,6 +62,14 @@ It returns the birth moment in UTC, each body's longitude, sign, degree within t
 ```
 
 `at` is an ISO 8601 date and time with a UTC offset or `Z`, to the minute; leave it out for now. It returns the natal chart, the bodies at `at`, each with the natal house it's crossing, and the aspects they make to the natal bodies within 2°. Each aspect's `first` body is natal and its `second` is transiting, and its `timing` gives when it comes into orb (`entersOrb`), every moment it's exact (`exact`, up to three as a planet turns retrograde) and when it leaves orb (`leavesOrb`), searched up to five years either way. The `shareUrl` draws the transits on the site. Positions follow the natal chart's zodiac.
+
+`POST /api/v1/progressions` moves a natal chart on a day for each year of life. It takes `natal` and an optional `date`, `YYYY-MM-DD`, from the birth date on, defaulting to today in UTC. It returns the progressed bodies, each with the natal house it's in, and their aspects to the natal bodies within 1°, natal body `first`.
+
+`POST /api/v1/solar-return` finds the chart for the moment the Sun gets back to its natal position. It takes `natal`, which needs a `time`, an optional `year` after the year of birth, defaulting to the return in effect now, and an optional `place`, `{ latitude, longitude, timeZone, placeName }`, defaulting to the birthplace. `POST /api/v1/lunar-return` does the same for the Moon, about every 27 days, with an optional `date` in place of `year`: it finds the latest return by the end of that date where it's cast, defaulting to today there. Both return the natal chart and the return's `chart`, whose `bornAt` is the moment of the return, to the second.
+
+`POST /api/v1/synastry` compares two people's charts. It takes `first`, a full chart request, and `second`, only `date`, `time`, `latitude`, `longitude`, `timeZone` and `placeName`: the second chart uses the first's house system, aspect settings and zodiac. It returns both charts, the aspects between them, first person's body `first`, and which of each person's houses the other's bodies fall in. `POST /api/v1/composite` takes the same body and returns one chart made from the midpoints of the two, with houses only when both birth times are known.
+
+Every chart endpoint returns a `shareUrl` that draws the same thing on the site, and answers a request it can't calculate, such as a solar return without a birth time, with HTTP 400 and an `error` saying what to change.
 
 `GET /api/v1/places?q=` searches the same GeoNames cities as the page, most populous first, to find a birthplace's `latitude`, `longitude` and `timeZone`. Text after a comma narrows by region or country, e.g. `q=london, canada`. An optional `limit` of 1 to 25 defaults to 8. It returns `{ next, previous, count, result }`; it isn't paginated, so `next` and `previous` are always null.
 

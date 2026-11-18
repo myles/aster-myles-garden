@@ -7,6 +7,7 @@ import type { Chart, PlacedBody } from "@/lib/charts/chart";
 
 import { findAspectsBetween, type Aspect } from "@/lib/astrology/aspects";
 import { placeInHouses, type HouseOverlay } from "@/lib/astrology/houses";
+import { ChartInputError } from "@/lib/charts/errors";
 import { browserEphemeris, type Ephemeris } from "@/lib/engine/ephemeris";
 import { inZodiac } from "@/lib/engine/sidereal";
 import {
@@ -58,7 +59,7 @@ export function createProgressions(
   ephemeris: Ephemeris = browserEphemeris,
 ): Progressions {
   if (compareDates(forDate, natal.details.date) < 0) {
-    throw new Error("Choose a date from the birth onwards.");
+    throw new ChartInputError("Choose a date from the birth onwards.");
   }
 
   // On the birth date itself, noon UT can fall a little before the

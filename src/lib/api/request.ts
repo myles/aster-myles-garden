@@ -4,6 +4,9 @@
 
 import type { z } from "astro/zod";
 
+import { ChartInputError } from "@/lib/charts/errors";
+import { toLocal, type LocalDate } from "@/lib/time";
+
 import {
   errorResponse,
   HTTP_BAD_REQUEST,
@@ -11,15 +14,6 @@ import {
   jsonResponse,
 } from "./http";
 import { formatValidationError } from "./schemas";
-
-/**
- * A request the schema accepts but that can't be answered, such as a date
- * outside the engine's range. Its message goes back to the caller as a
- * 400, so it must only describe the problem, never the details sent.
- */
-export class InputError extends Error {
-  override name = "InputError";
-}
 
 async function readJsonBody(request: Request): Promise<unknown> {
   try {
@@ -32,8 +26,9 @@ async function readJsonBody(request: Request): Promise<unknown> {
 
 /**
  * Answers a POST with whatever `calculate` returns for its validated
- * body. A body that isn't JSON or doesn't fit `schema`, or an InputError,
- * is a 400; anything else thrown is a 500.
+ * body. A body that isn't JSON or doesn't fit `schema`, or a
+ * ChartInputError, such as a date outside the engine's range, is a 400;
+ * anything else thrown is a 500.
  */
 export async function handleJsonPost<T>(
   request: Request,
@@ -54,7 +49,7 @@ export async function handleJsonPost<T>(
   try {
     return jsonResponse(calculate(parsed.data));
   } catch (error) {
-    if (error instanceof InputError) {
+    if (error instanceof ChartInputError) {
       return errorResponse(HTTP_BAD_REQUEST, error.message);
     }
 
@@ -65,4 +60,10 @@ export async function handleJsonPost<T>(
 
     return errorResponse(HTTP_INTERNAL_SERVER_ERROR, "Internal server error");
   }
+}
+
+/** Today's date in a time zone, for a request that leaves its date out. */
+export function todayIn(timeZone: string, now = new Date()): LocalDate {
+  const { year, month, day } = toLocal(now, timeZone);
+  return { year, month, day };
 }
