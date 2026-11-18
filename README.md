@@ -72,6 +72,8 @@ Place search runs offline against `public/data/places.json`, built from [GeoName
 2. Unzip `cities15000.zip` there.
 3. Run `node scripts/places-build.mjs <that-directory>`.
 
+To see how long the index takes to become searchable, run `npm run places:measure`. It serves the index brotli-compressed and times a first search in headless Chromium, as is and throttled to a phone's CPU and network. Set `CHROMIUM_PATH` to use a Chromium other than Playwright's own.
+
 ## Usage
 
 1. Enter a birth date, time, and place. If you don't know the time, tick **I don't know the time** for a noon chart without houses. If the place isn't listed, choose **Not listed? Enter coordinates** and paste its latitude and longitude from any map; the time zone is suggested from the nearest listed place.

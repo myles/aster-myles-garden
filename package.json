@@ -22,6 +22,7 @@
     "oxfmt:write": "oxfmt --write",
     "oxlint": "oxlint .",
     "oxlint:fix": "oxlint . --fix",
+    "places:measure": "node scripts/places-measure.mjs",
     "prettier": "prettier \"**/*.{astro,svelte}\" -c",
     "prettier:write": "prettier \"**/*.{astro,svelte}\" --write",
     "preview": "astro preview",

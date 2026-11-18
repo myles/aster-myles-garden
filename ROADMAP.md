@@ -40,6 +40,8 @@
 - [ ] Measure angle labels' drawn size in the browser instead of estimating it, so they stay clear if the font or its size changes
 - [ ] A smaller place index: at 2.6 MB, it's fetched and parsed whole on the first search, which may be slow on a phone. Measure first, then split or trim it if it is
 - [x] Choose a light or dark wheel when downloading, rather than always taking the page's current theme
+- [x] Measure the place index on a phone: `npm run places:measure`. Over Slow 4G, the first results take about 4 s, nearly all of it the 0.7 MB brotli download; parsing and searching take under 0.35 s, even at a sixth of the CPU
+- [ ] A faster first search: a small index of the biggest cities, about 120 KB, to search while the whole one loads, and the population column, which only sorts the rows, left out of both. The format changes, so the file needs a new name: the service worker serves its cached copy before refreshing it
 
 ## API
 
