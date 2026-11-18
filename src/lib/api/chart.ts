@@ -62,6 +62,7 @@ export function toBirthDetails(request: ChartRequestV1): BirthDetails {
       aspectSet: request.aspectSet,
       orbSize: request.orbSize,
     },
+    ayanamsa: request.ayanamsa,
   };
 }
 
@@ -90,6 +91,8 @@ export function formatChartForApi(chart: Chart): ChartV1 {
     effectiveHouseSystem: houses?.houseSystem,
     aspectSet: aspectSettings.aspectSet,
     orbSize: aspectSettings.orbSize,
+    ayanamsa: details.ayanamsa,
+    ayanamsaDegrees: chart.ayanamsaDegrees,
     bodies: chart.bodies.map((placed) => ({
       body: placed.body,
       name: BODY_INFO[placed.body].name,

@@ -6,6 +6,7 @@ import {
   placesQuerySchemaV1,
 } from "@/lib/api/schemas";
 import { AspectSet, OrbSize } from "@/lib/astrology/aspects";
+import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { HouseSystem } from "@/lib/astrology/houses";
 import { parseLocalDate, parseLocalTime } from "@/lib/time";
 
@@ -29,6 +30,14 @@ describe("chartRequestSchemaV1", () => {
     });
   });
 
+  it("leaves the zodiac tropical unless an ayanamsa is given", () => {
+    expect(chartRequestSchemaV1.parse(VALID_REQUEST).ayanamsa).toBeUndefined();
+    expect(
+      chartRequestSchemaV1.parse({ ...VALID_REQUEST, ayanamsa: "lahiri" })
+        .ayanamsa,
+    ).toBe(Ayanamsa.Lahiri);
+  });
+
   it("accepts a chart without a birth time", () => {
     const { time: _time, ...withoutTime } = VALID_REQUEST;
 
@@ -46,6 +55,7 @@ describe("chartRequestSchemaV1", () => {
     ["an unknown house system", { houseSystem: "topocentric" }],
     ["an unknown aspect set", { aspectSet: "minor" }],
     ["an unknown orb size", { orbSize: "huge" }],
+    ["an unknown ayanamsa", { ayanamsa: "galactic" }],
     ["an undeclared field", { place: 6167865 }],
   ])("rejects %s", (_label, change) => {
     const result = chartRequestSchemaV1.safeParse({
