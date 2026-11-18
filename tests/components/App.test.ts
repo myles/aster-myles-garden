@@ -84,6 +84,8 @@ vi.mock("@/lib/charts/lunar-return", async (importOriginal) => ({
 vi.mock("@/lib/places", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/places")>()),
   loadPlaceIndex: vi.fn(),
+  // Only the whole index is mocked, so the top one never arrives first.
+  loadTopPlaceIndex: vi.fn(() => Promise.reject(new Error("Not mocked"))),
 }));
 
 /**

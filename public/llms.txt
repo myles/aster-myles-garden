@@ -158,7 +158,8 @@ For either kind of return, add `returnStyle=biWheel` to set it against the natal
 Aster knows the cities in GeoNames' `cities15000` list: places with a population over 15,000. For a smaller town, give its coordinates instead (see below).
 
 - Search https://www.geonames.org/ for the place. The ID is the number in the place's URL, e.g. `https://www.geonames.org/6167865/toronto.html`.
-- Or look it up in Aster's own index, https://aster.myles.garden/data/places.json. Each entry in `places` is `[name, asciiName, region, country, latitude, longitude, timeZoneIndex, population, geonameId]`, so the GeoNames ID is the last item.
+- Or search Aster's own index with `GET /api/v1/places?q=`, which returns each place's `id`.
+- Or read the index whole, https://aster.myles.garden/data/places-all.json, most populous first. Each entry in `places` is `[name, asciiName, region, country, latitude, longitude, timeZoneIndex, geonameId]`, so the GeoNames ID is the last item. https://aster.myles.garden/data/places-top.json holds only the cities of 100,000 or more, in the same layout.
 
 Some common IDs:
 

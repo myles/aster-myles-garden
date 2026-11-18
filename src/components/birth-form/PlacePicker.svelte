@@ -6,6 +6,7 @@
   import {
     formatPlace,
     loadPlaceIndex,
+    loadTopPlaceIndex,
     searchPlaces,
     type Place,
     type PlaceIndex,
@@ -22,7 +23,11 @@
   const statusId = $derived(`${id}-status`);
   const optionIdPrefix = $derived(`${id}-option-`);
 
+  // The top index stands in until the whole one arrives; only the whole
+  // one is final.
   let index: PlaceIndex | undefined;
+  let isIndexComplete = false;
+  let isLoading = false;
   let query = $state("");
   let results: Place[] = $state.raw([]);
   let activeIndex = $state(-1);
@@ -51,18 +56,33 @@
     return selected ? `Time zone: ${selected.timeZone}` : "";
   }
 
+  // The top index loads first, then the whole one. Loaded together, they
+  // would share a slow connection, and the small one would arrive no
+  // sooner than halfway. The top one's failure doesn't matter: the whole
+  // index is what counts.
   async function loadIndex(): Promise<void> {
-    if (index) {
+    if (isIndexComplete || isLoading) {
       return;
     }
 
+    isLoading = true;
     status = "Loading places…";
     try {
+      const top = await loadTopPlaceIndex().catch(() => undefined);
+      if (top) {
+        index = top;
+        status = selected ? describeSelection() : "Loading smaller places…";
+        search();
+      }
+
       index = await loadPlaceIndex();
+      isIndexComplete = true;
       status = describeSelection();
       search();
     } catch (error) {
       status = `Couldn't load places: ${describeError(error)}`;
+    } finally {
+      isLoading = false;
     }
   }
 
@@ -81,8 +101,14 @@
       return;
     }
 
+    // When the whole index replaces the top one, the place highlighted
+    // stays highlighted, so Enter still chooses what was shown.
+    const active = results[activeIndex];
     results = searchPlaces(index, query);
-    activeIndex = results.length > 0 ? 0 : -1;
+    const kept = active
+      ? results.findIndex((place) => place.id === active.id)
+      : -1;
+    activeIndex = kept >= 0 ? kept : results.length > 0 ? 0 : -1;
   }
 
   function choose(optionIndex: number): void {
@@ -107,7 +133,6 @@
   function onFocus(): void {
     if (index) {
       search();
-      return;
     }
 
     void loadIndex();

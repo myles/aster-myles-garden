@@ -1,10 +1,17 @@
-// Offline place search over the GeoNames index built by
-// scripts/places-build.mjs. The index is fetched once, from this site,
-// so queries never leave the browser.
+// Offline place search over the GeoNames indexes built by
+// scripts/places-build.mjs. They're fetched once, from this site, so
+// queries never leave the browser. Every city is in the whole index; the
+// top one holds only the biggest, to search while the whole one loads.
 
 import { formatCoordinates } from "@/lib/format";
 
-export const PLACE_INDEX_URL = "/data/places.json";
+export const PLACE_INDEX_URL = "/data/places-all.json";
+/**
+ * Cities of 100,000 or more, in the whole index's order. Every one has
+ * more people than any city left out, so its results come first, in the
+ * same order, once the whole index is searched.
+ */
+export const TOP_PLACE_INDEX_URL = "/data/places-top.json";
 const DEFAULT_RESULT_LIMIT = 8;
 
 const EARTH_RADIUS_KM = 6371;
@@ -40,7 +47,6 @@ type PlaceRow = [
   latitude: number,
   longitude: number,
   timeZoneIndex: number,
-  population: number,
   geonameId: number,
 ];
 
@@ -73,8 +79,8 @@ export function normalizeSearchText(text: string): string {
 export function parsePlaceIndex(raw: RawPlaceIndex): PlaceIndex {
   const entries = raw.places.map((row) => {
     const [name, asciiName, region, country, latitude, longitude] = row;
-    const id = row[8];
-    const timeZone = raw.timeZones[row[6]];
+    const [, , , , , , timeZoneIndex, id] = row;
+    const timeZone = raw.timeZones[timeZoneIndex];
     const searchNames = [normalizeSearchText(name)];
 
     if (asciiName) {
@@ -91,26 +97,34 @@ export function parsePlaceIndex(raw: RawPlaceIndex): PlaceIndex {
   return { entries };
 }
 
-let _loading: Promise<PlaceIndex> | undefined;
+/** Fetches and parses an index once; later calls share the promise. */
+function createLoader(url: string): () => Promise<PlaceIndex> {
+  let loading: Promise<PlaceIndex> | undefined;
 
-/** Fetches and parses the place index once; later calls reuse it. */
-export function loadPlaceIndex(): Promise<PlaceIndex> {
-  _loading ??= fetch(PLACE_INDEX_URL)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`Place index failed to load (${response.status})`);
-      }
-      return response.json() as Promise<RawPlaceIndex>;
-    })
-    .then(parsePlaceIndex)
-    .catch((error: unknown) => {
-      // Allow a retry after a failed fetch instead of caching the failure.
-      _loading = undefined;
-      throw error;
-    });
+  return () => {
+    loading ??= fetch(url)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Place index failed to load (${response.status})`);
+        }
+        return response.json() as Promise<RawPlaceIndex>;
+      })
+      .then(parsePlaceIndex)
+      .catch((error: unknown) => {
+        // Allow a retry after a failed fetch instead of caching the failure.
+        loading = undefined;
+        throw error;
+      });
 
-  return _loading;
+    return loading;
+  };
 }
+
+/** Every city: for search, and for looking a place up by its ID. */
+export const loadPlaceIndex = createLoader(PLACE_INDEX_URL);
+
+/** The biggest cities only, to search while the whole index loads. */
+export const loadTopPlaceIndex = createLoader(TOP_PLACE_INDEX_URL);
 
 /**
  * Searches by place name, most populous first. Text after a comma

@@ -1,17 +1,7 @@
 {
   "timeZones": ["Europe/London", "America/Toronto"],
   "places": [
-    [
-      "London",
-      "",
-      "England",
-      "United Kingdom",
-      51.5085,
-      -0.1257,
-      0,
-      8961989,
-      2643743
-    ],
-    ["Toronto", "", "Ontario", "Canada", 43.7064, -79.3986, 1, 2600000, 6167865]
+    ["London", "", "England", "United Kingdom", 51.5085, -0.1257, 0, 2643743],
+    ["Toronto", "", "Ontario", "Canada", 43.7064, -79.3986, 1, 6167865]
   ]
 }

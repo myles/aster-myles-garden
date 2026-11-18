@@ -15,7 +15,10 @@ const PRECACHE_NAME = `${PRECACHE_PREFIX}${CACHE_VERSION}`;
 // searched for rather than on install. It isn't tied to a release, so
 // its cache isn't versioned; each use refreshes it in the background.
 const RUNTIME_NAME = "aster-runtime";
-const RUNTIME_PATHS = new Set(["/data/places.json"]);
+const RUNTIME_PATHS = new Set([
+  "/data/places-top.json",
+  "/data/places-all.json",
+]);
 
 const PAGE_PATH = "/";
 const API_PREFIX = "/api/";
@@ -43,7 +46,11 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(deleteOldPrecaches().then(() => self.clients.claim()));
+  event.waitUntil(
+    Promise.all([deleteOldPrecaches(), deleteOldRuntimeEntries()]).then(() =>
+      self.clients.claim(),
+    ),
+  );
 });
 
 self.addEventListener("fetch", (event) => {
@@ -78,6 +85,20 @@ async function deleteOldPrecaches() {
   );
 
   await Promise.all(old.map((name) => caches.delete(name)));
+}
+
+/**
+ * Runtime files this release no longer asks for, such as a place index
+ * whose name changed with its layout. They'd otherwise stay cached.
+ */
+async function deleteOldRuntimeEntries() {
+  const cache = await caches.open(RUNTIME_NAME);
+  const requests = await cache.keys();
+  const old = requests.filter(
+    (request) => !RUNTIME_PATHS.has(new URL(request.url).pathname),
+  );
+
+  await Promise.all(old.map((request) => cache.delete(request)));
 }
 
 /**

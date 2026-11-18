@@ -1,7 +1,9 @@
 // Builds the offline place index used by the birth form's place search.
 //
 // Reads GeoNames dumps (https://download.geonames.org/export/dump/) and
-// writes a compact JSON file, so place lookup never leaves the browser.
+// writes two compact JSON files, so place lookup never leaves the browser:
+// every city, and the biggest alone, small enough to search while the
+// whole index is still loading on a slow connection.
 // GeoNames data is CC BY 4.0 — keep the attribution in the site footer.
 //
 // Usage:
@@ -13,7 +15,13 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const OUTPUT_PATH = "public/data/places.json";
+// A new name for any change to the row layout: the service worker serves
+// its cached copy before refreshing it, so new code would read old rows.
+const ALL_OUTPUT_PATH = "public/data/places-all.json";
+const TOP_OUTPUT_PATH = "public/data/places-top.json";
+
+/** About 6,300 cities: some 120 KB over the wire, against 600 KB. */
+const TOP_MIN_POPULATION = 100_000;
 const COORDINATE_DECIMALS = 4;
 
 // Column indices in the GeoNames "geoname" table.
@@ -78,16 +86,25 @@ function buildPlaces(dir) {
       Number(Number(row[COL_LATITUDE]).toFixed(COORDINATE_DECIMALS)),
       Number(Number(row[COL_LONGITUDE]).toFixed(COORDINATE_DECIMALS)),
       timeZoneIndices.get(timeZone),
-      Number(row[COL_POPULATION]),
       // Stable across rebuilds, so shared links can name a place by it.
       Number(row[COL_GEONAME_ID]),
+      // Only for sorting and picking the top cities; not written out.
+      Number(row[COL_POPULATION]),
     ]);
   }
 
   // Most populous first, so search results rank sensibly without sorting.
-  places.sort((a, b) => b[7] - a[7]);
+  places.sort((a, b) => b[8] - a[8]);
 
-  return { timeZones, places };
+  const toIndex = (chosen) => ({
+    timeZones,
+    places: chosen.map((place) => place.slice(0, 8)),
+  });
+
+  return {
+    all: toIndex(places),
+    top: toIndex(places.filter((row) => row[8] >= TOP_MIN_POPULATION)),
+  };
 }
 
 const dir = process.argv[2];
@@ -96,6 +113,11 @@ if (!dir) {
   process.exit(1);
 }
 
-const index = buildPlaces(dir);
-writeFileSync(OUTPUT_PATH, JSON.stringify(index));
-console.log(`Wrote ${index.places.length} places to ${OUTPUT_PATH}`);
+const { all, top } = buildPlaces(dir);
+for (const [path, index] of [
+  [ALL_OUTPUT_PATH, all],
+  [TOP_OUTPUT_PATH, top],
+]) {
+  writeFileSync(path, JSON.stringify(index));
+  console.log(`Wrote ${index.places.length} places to ${path}`);
+}
