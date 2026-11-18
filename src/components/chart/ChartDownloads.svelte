@@ -1,10 +1,15 @@
 <!-- Download buttons for what's on screen: a chart, a comparison or
-     transits. The wheel saves as an image, the tables as CSV. -->
+     transits. The wheel saves as an image, light or dark, the tables as
+     CSV. -->
 <script lang="ts">
+  import Select from "@/components/ui/Select.svelte";
   import {
     ExportFormat,
     exportTables,
     exportWheel,
+    findPageTheme,
+    WHEEL_THEME_NAMES,
+    WheelTheme,
     type ExportSubject,
   } from "@/lib/downloads/export";
   import { describeError } from "@/lib/format";
@@ -12,6 +17,9 @@
   let { subject, wheel }: { subject: ExportSubject; wheel?: SVGSVGElement } =
     $props();
 
+  // Starts on the page's theme, so a download matches what's on screen
+  // unless the other is chosen.
+  let theme = $state(findPageTheme());
   let error = $state("");
   let isExporting = $state(false);
 
@@ -38,7 +46,7 @@
     if (!wheel) {
       throw new Error("The wheel hasn't been drawn yet.");
     }
-    return exportWheel(wheel, subject, format);
+    return exportWheel(wheel, subject, format, theme);
   }
 </script>
 
@@ -63,6 +71,16 @@
   <div class="flex flex-wrap items-center gap-x-6 gap-y-3">
     <div class="flex items-center gap-2">
       <span id="download-wheel" class="text-ink-muted text-sm">Wheel</span>
+      <Select
+        bind:value={theme}
+        aria-label="Wheel colours"
+        class="py-1.5 text-sm"
+        disabled={isExporting}
+      >
+        {#each Object.values(WheelTheme) as option (option)}
+          <option value={option}>{WHEEL_THEME_NAMES[option]}</option>
+        {/each}
+      </Select>
       <div
         role="group"
         aria-labelledby="download-wheel"

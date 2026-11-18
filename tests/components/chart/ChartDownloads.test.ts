@@ -10,6 +10,7 @@ import {
   exportTables,
   exportWheel,
   SubjectKind,
+  WheelTheme,
 } from "@/lib/downloads/export";
 
 import { CHART } from "../../fixtures/chart";
@@ -43,7 +44,42 @@ describe("ChartDownloads", () => {
       wheel,
       { kind: SubjectKind.Chart, chart: CHART },
       format,
+      WheelTheme.Light,
     );
+  });
+
+  it("downloads the wheel in the colours chosen", async () => {
+    render(ChartView, { chart: CHART });
+
+    await fireEvent.change(
+      screen.getByRole("combobox", { name: "Wheel colours" }),
+      { target: { value: WheelTheme.Dark } },
+    );
+    await press("Download wheel as PNG");
+
+    expect(exportWheel).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      ExportFormat.Png,
+      WheelTheme.Dark,
+    );
+  });
+
+  it("starts on the page's theme", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true }));
+    try {
+      render(ChartView, { chart: CHART });
+
+      expect(
+        (
+          screen.getByRole("combobox", {
+            name: "Wheel colours",
+          }) as HTMLSelectElement
+        ).value,
+      ).toBe(WheelTheme.Dark);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("exports the tables as CSV", async () => {

@@ -9,7 +9,9 @@ import {
   ExportFormat,
   exportTables,
   exportWheel,
+  findPageTheme,
   SubjectKind,
+  WheelTheme,
 } from "@/lib/downloads/export";
 import { drawBiWheel, drawWheel } from "@/lib/wheel/wheel";
 
@@ -29,6 +31,7 @@ type Download = { blob: Blob; filename: string };
 describe("exportWheel", () => {
   let svg: SVGSVGElement;
   let downloads: Download[];
+  let style: HTMLStyleElement;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -36,11 +39,15 @@ describe("exportWheel", () => {
     document.body.append(svg);
     drawWheel(svg, CHART);
 
-    // Stand-in for the page stylesheet.
-    document.body.style.backgroundColor = "rgb(245, 240, 232)";
-    svg.querySelectorAll(".wheel-axis").forEach((axis) => {
-      axis.setAttribute("style", "stroke: rgb(30, 28, 26); stroke-width: 2");
-    });
+    // Stand-in for the page stylesheet, with a light and a dark theme.
+    style = document.createElement("style");
+    style.textContent = `
+      .wheel-backdrop { fill: rgb(245, 240, 232); }
+      .wheel-axis { stroke: rgb(30, 28, 26); stroke-width: 2; }
+      .wheel-theme-dark .wheel-backdrop { fill: rgb(28, 26, 24); }
+      .wheel-theme-dark .wheel-axis { stroke: rgb(245, 240, 232); }
+    `;
+    document.head.append(style);
 
     downloads = [];
     const blobs = new Map<string, Blob>();
@@ -59,7 +66,7 @@ describe("exportWheel", () => {
 
   afterEach(() => {
     svg.remove();
-    document.body.removeAttribute("style");
+    style.remove();
     vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
@@ -151,7 +158,46 @@ describe("exportWheel", () => {
     expect(axisStyle).toContain("stroke-width:2");
   });
 
-  it("paints the page background behind the wheel", async () => {
+  it("paints the theme's background behind the wheel", async () => {
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART },
+      ExportFormat.Svg,
+      WheelTheme.Light,
+    );
+    const file = await parseSvgDownload();
+
+    const backdrop = file.querySelector(":scope > rect");
+    expect(backdrop?.getAttribute("fill")).toBe("rgb(245, 240, 232)");
+    expect(backdrop?.getAttribute("class")).toBeNull();
+    expect(backdrop?.nextElementSibling?.tagName).toBe("g");
+  });
+
+  it("draws a dark wheel whatever the page shows", async () => {
+    await exportWheel(
+      svg,
+      { kind: SubjectKind.Chart, chart: CHART },
+      ExportFormat.Svg,
+      WheelTheme.Dark,
+    );
+    const file = await parseSvgDownload();
+
+    expect(file.querySelector(":scope > rect")?.getAttribute("fill")).toBe(
+      "rgb(28, 26, 24)",
+    );
+    expect(file.querySelector(".wheel-axis")?.getAttribute("style")).toContain(
+      "stroke:rgb(245, 240, 232)",
+    );
+    // The class only lends the colours; the file doesn't keep it.
+    expect(file.classList.contains("wheel-theme-dark")).toBe(false);
+  });
+
+  it("takes the page's theme by default", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(prefers-color-scheme: dark)",
+    }));
+
+    expect(findPageTheme()).toBe(WheelTheme.Dark);
     await exportWheel(
       svg,
       { kind: SubjectKind.Chart, chart: CHART },
@@ -159,9 +205,15 @@ describe("exportWheel", () => {
     );
     const file = await parseSvgDownload();
 
-    const backdrop = file.querySelector(":scope > rect");
-    expect(backdrop?.getAttribute("fill")).toBe("rgb(245, 240, 232)");
-    expect(backdrop?.nextElementSibling?.tagName).toBe("g");
+    expect(file.querySelector(":scope > rect")?.getAttribute("fill")).toBe(
+      "rgb(28, 26, 24)",
+    );
+  });
+
+  it("reads as light where the browser can't say", () => {
+    vi.stubGlobal("matchMedia", undefined);
+
+    expect(findPageTheme()).toBe(WheelTheme.Light);
   });
 
   it("leaves the on-screen wheel untouched", async () => {
@@ -173,6 +225,7 @@ describe("exportWheel", () => {
 
     expect(svg.querySelector(":scope > rect")).toBeNull();
     expect(svg.getAttribute("width")).toBeNull();
+    expect(svg.getAttribute("class")).toBe("wheel");
   });
 
   it("renders a PNG at twice the wheel's size", async () => {

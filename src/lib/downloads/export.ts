@@ -28,6 +28,24 @@ export enum ExportFormat {
   Png = "png",
 }
 
+/** Which colours a downloaded wheel takes. */
+export enum WheelTheme {
+  Light = "light",
+  Dark = "dark",
+}
+
+export const WHEEL_THEME_NAMES: Record<WheelTheme, string> = {
+  [WheelTheme.Light]: "Light",
+  [WheelTheme.Dark]: "Dark",
+};
+
+/** The theme the page is showing, which a download starts from. */
+export function findPageTheme(): WheelTheme {
+  return globalThis.matchMedia?.("(prefers-color-scheme: dark)").matches
+    ? WheelTheme.Dark
+    : WheelTheme.Light;
+}
+
 export enum SubjectKind {
   Chart = "chart",
   Comparison = "comparison",
@@ -81,15 +99,16 @@ const STYLED_PROPERTIES = [
 ] as const;
 
 /**
- * Downloads the wheel drawn in `svg` as a file named after what it shows.
- * Colours follow the page's current light or dark theme.
+ * Downloads the wheel drawn in `svg` as a file named after what it shows,
+ * in the light or dark theme, whichever the page shows.
  */
 export async function exportWheel(
   svg: SVGSVGElement,
   subject: ExportSubject,
   format: ExportFormat,
+  theme: WheelTheme = findPageTheme(),
 ): Promise<void> {
-  const { markup, sizePx } = serializeWheel(svg);
+  const { markup, sizePx } = serializeInTheme(svg, theme);
   const blob =
     format === ExportFormat.Svg
       ? new Blob([markup], { type: SVG_MIME_TYPE })
@@ -130,6 +149,28 @@ function buildCsv(subject: ExportSubject): string {
   }
 }
 
+/**
+ * Copies the wheel with the theme's colours. Its class sets the theme's
+ * colour tokens on the wheel, and is taken off again before this returns,
+ * so the page never draws the wheel in the other theme.
+ */
+function serializeInTheme(
+  svg: SVGSVGElement,
+  theme: WheelTheme,
+): { markup: string; sizePx: number } {
+  const themeClass = `wheel-theme-${theme}`;
+  const hadClass = svg.classList.contains(themeClass);
+  svg.classList.add(themeClass);
+
+  try {
+    return serializeWheel(svg);
+  } finally {
+    if (!hadClass) {
+      svg.classList.remove(themeClass);
+    }
+  }
+}
+
 function serializeWheel(svg: SVGSVGElement): {
   markup: string;
   sizePx: number;
@@ -150,16 +191,20 @@ function serializeWheel(svg: SVGSVGElement): {
   clone.removeAttribute("class");
 
   // Cover the whole view box, which starts above and left of the origin
-  // on a bi-wheel.
+  // on a bi-wheel. It's styled in the wheel itself, so it takes the
+  // wheel's theme, then copied with its colour written out.
   const backdrop = document.createElementNS(SVG_NAMESPACE, "rect");
+  backdrop.setAttribute("class", "wheel-backdrop");
+  svg.append(backdrop);
+  const fill = getComputedStyle(backdrop).fill;
+  backdrop.remove();
+
+  backdrop.removeAttribute("class");
   backdrop.setAttribute("x", String(viewBox.x));
   backdrop.setAttribute("y", String(viewBox.y));
   backdrop.setAttribute("width", String(viewBox.sizePx));
   backdrop.setAttribute("height", String(viewBox.sizePx));
-  backdrop.setAttribute(
-    "fill",
-    getComputedStyle(document.body).backgroundColor,
-  );
+  backdrop.setAttribute("fill", fill);
   clone.insertBefore(backdrop, clone.querySelector(":scope > g"));
 
   return {
