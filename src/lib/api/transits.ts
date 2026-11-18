@@ -3,6 +3,7 @@
 
 import { SITE_URL } from "@/consts";
 import { canCalculateMoment } from "@/lib/charts/chart";
+import { ChartInputError } from "@/lib/charts/errors";
 import {
   createTransits,
   TRANSIT_MAX_ORB_DEGREES,
@@ -19,7 +20,7 @@ import {
   outOfRangeMessage,
 } from "./chart";
 import { TRANSITS_PATH } from "./paths";
-import { handleJsonPost, InputError } from "./request";
+import { handleJsonPost } from "./request";
 import {
   transitsRequestSchemaV1,
   transitsSchemaV1,
@@ -70,7 +71,7 @@ export function handleTransitsRequest(request: Request): Promise<Response> {
       const natal = createChartForRequest(input.natal, "natal.date");
       const at = readTransitMoment(input);
       if (!canCalculateMoment(at)) {
-        throw new InputError(outOfRangeMessage("at"));
+        throw new ChartInputError(outOfRangeMessage("at"));
       }
 
       return formatTransitsForApi(createTransits(natal, at, nodeEphemeris));

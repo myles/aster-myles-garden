@@ -146,6 +146,38 @@ export const chartRequestSchemaV1 = z
 
 export type ChartRequestV1 = z.infer<typeof chartRequestSchemaV1>;
 
+/**
+ * A second person's birth details, for a comparison or composite. Their
+ * chart takes its settings from the first, as the page's does.
+ */
+export const personSchemaV1 = chartRequestSchemaV1
+  .pick({
+    date: true,
+    time: true,
+    latitude: true,
+    longitude: true,
+    timeZone: true,
+    placeName: true,
+  })
+  .meta({
+    id: "Person",
+    description:
+      "Birth details alone. The chart is cast with the first chart's " +
+      "house system, aspect settings and zodiac.",
+  });
+
+export type PersonV1 = z.infer<typeof personSchemaV1>;
+
+/** Where a return is cast. */
+export const placeRequestSchemaV1 = chartRequestSchemaV1
+  .pick({ latitude: true, longitude: true, timeZone: true, placeName: true })
+  .meta({
+    id: "PlaceRequest",
+    description: "A place, by its coordinates and IANA time zone.",
+  });
+
+export type PlaceRequestV1 = z.infer<typeof placeRequestSchemaV1>;
+
 const placedBodySchemaV1 = z
   .strictObject({
     body: bodySchema,
@@ -206,6 +238,8 @@ const housesSchemaV1 = z
     midheaven: angleSchemaV1,
   })
   .meta({ id: "Houses" });
+
+export type HousesV1 = z.infer<typeof housesSchemaV1>;
 
 const aspectSchemaV1 = z
   .strictObject({
@@ -360,6 +394,230 @@ export const transitsSchemaV1 = z
   });
 
 export type TransitsV1 = z.infer<typeof transitsSchemaV1>;
+
+const shareUrlSchema = (what: string) =>
+  z.url().meta({ description: `A link that draws ${what} on the site.` });
+
+const houseOverlaySchemaV1 = z
+  .array(z.strictObject({ body: bodySchema, house: houseNumberSchema }))
+  .meta({
+    id: "HouseOverlay",
+    description: "Which of the other chart's houses each body falls in.",
+  });
+
+export const comparisonRequestSchemaV1 = z
+  .strictObject({
+    first: chartRequestSchemaV1,
+    second: personSchemaV1,
+  })
+  .meta({
+    id: "ComparisonRequest",
+    description:
+      "Two people's birth details. Both charts use the first's settings, " +
+      "and the first is the inner wheel of a bi-wheel.",
+  });
+
+export type ComparisonRequestV1 = z.infer<typeof comparisonRequestSchemaV1>;
+
+export const synastrySchemaV1 = z
+  .strictObject({
+    first: chartSchemaV1,
+    second: chartSchemaV1,
+    aspects: z.array(aspectSchemaV1).meta({
+      description:
+        "Aspects between the two charts, tightest first. Each `first` " +
+        "body is the first person's, each `second` the second's.",
+    }),
+    secondInFirstHouses: houseOverlaySchemaV1.optional().meta({
+      description:
+        "The second person's bodies in the first's houses. Absent when " +
+        "the first has no birth time.",
+    }),
+    firstInSecondHouses: houseOverlaySchemaV1.optional().meta({
+      description:
+        "The first person's bodies in the second's houses. Absent when " +
+        "the second has no birth time.",
+    }),
+    shareUrl: shareUrlSchema("the comparison, as a bi-wheel,"),
+  })
+  .meta({ id: "Synastry", description: "Two natal charts compared." });
+
+export type SynastryV1 = z.infer<typeof synastrySchemaV1>;
+
+export const compositeSchemaV1 = z
+  .strictObject({
+    first: chartSchemaV1,
+    second: chartSchemaV1,
+    effectiveHouseSystem: houseSystemSchema.optional().meta({
+      description:
+        "The house system the composite's houses were cast with. Absent " +
+        "without houses.",
+    }),
+    bodies: z.array(placedBodySchemaV1).meta({
+      description:
+        "Each body at the midpoint of the pair's positions. A composite " +
+        "isn't a moment in time, so every speed is 0.",
+    }),
+    houses: housesSchemaV1.optional().meta({
+      description:
+        "Cast around the midpoint of the two midheavens, at the latitude " +
+        "halfway between the birthplaces. Absent when either chart has " +
+        "no birth time.",
+    }),
+    aspects: z.array(aspectSchemaV1).meta({
+      description: "Aspects between the composite's own bodies.",
+    }),
+    shareUrl: shareUrlSchema("the composite"),
+  })
+  .meta({
+    id: "Composite",
+    description: "One chart for a relationship, from the midpoints of two.",
+  });
+
+export type CompositeV1 = z.infer<typeof compositeSchemaV1>;
+
+export const progressionsRequestSchemaV1 = z
+  .strictObject({
+    natal: chartRequestSchemaV1,
+    date: z.iso
+      .date()
+      .optional()
+      .meta({
+        description:
+          "The date to progress the chart to, from the birth date on. " +
+          "Leave it out for today, in UTC.",
+        examples: ["2026-11-18"],
+      }),
+  })
+  .meta({
+    id: "ProgressionsRequest",
+    description: "A natal chart, and the date to progress it to.",
+  });
+
+export type ProgressionsRequestV1 = z.infer<typeof progressionsRequestSchemaV1>;
+
+export const progressionsSchemaV1 = z
+  .strictObject({
+    natal: chartSchemaV1,
+    date: z.iso.date().meta({ description: "The date progressed to." }),
+    skyAt: instantSchema.meta({
+      description:
+        "The moment whose sky stands for that date: a day after birth " +
+        "for each year lived.",
+    }),
+    maxOrbDegrees: z.number().meta({
+      description:
+        "The widest orb a progressed aspect is found within, whatever " +
+        "the natal chart's orb size.",
+      examples: [1],
+    }),
+    bodies: z.array(placedBodySchemaV1).meta({
+      description:
+        "The progressed bodies. `house` is the natal house each is in, " +
+        "absent when the natal chart has no birth time.",
+    }),
+    aspects: z.array(aspectSchemaV1).meta({
+      description:
+        "Aspects from the natal bodies (`first`) to the progressed ones " +
+        "(`second`).",
+    }),
+    shareUrl: shareUrlSchema("the progressions"),
+  })
+  .meta({
+    id: "Progressions",
+    description: "Secondary progressions: a day of sky for each year of life.",
+  });
+
+export type ProgressionsV1 = z.infer<typeof progressionsSchemaV1>;
+
+const returnPlaceField = placeRequestSchemaV1.optional().meta({
+  description: "Where the return is cast. Leave it out for the birthplace.",
+});
+
+export const solarReturnRequestSchemaV1 = z
+  .strictObject({
+    natal: chartRequestSchemaV1,
+    year: z
+      .int()
+      .min(1)
+      .optional()
+      .meta({
+        description:
+          "The year of the birthday the return falls on, after the year " +
+          "of birth. Leave it out for the return in effect now.",
+        examples: [2026],
+      }),
+    place: returnPlaceField,
+  })
+  .meta({
+    id: "SolarReturnRequest",
+    description:
+      "A natal chart with a birth time, and which solar return to find.",
+  });
+
+export type SolarReturnRequestV1 = z.infer<typeof solarReturnRequestSchemaV1>;
+
+export const lunarReturnRequestSchemaV1 = z
+  .strictObject({
+    natal: chartRequestSchemaV1,
+    date: z.iso
+      .date()
+      .optional()
+      .meta({
+        description:
+          "Finds the lunar return in effect on this date where it's cast: " +
+          "the latest to come before the day ends. Leave it out for today " +
+          "there.",
+        examples: ["2026-11-18"],
+      }),
+    place: returnPlaceField,
+  })
+  .meta({
+    id: "LunarReturnRequest",
+    description:
+      "A natal chart with a birth time, and which lunar return to find.",
+  });
+
+export type LunarReturnRequestV1 = z.infer<typeof lunarReturnRequestSchemaV1>;
+
+const returnFields = { natal: chartSchemaV1, chart: chartSchemaV1 };
+
+const RETURN_CHART_NOTE =
+  " `chart` is cast for the return's moment, to the second, and place: " +
+  "its `bornAt` is the moment of the return.";
+
+export const solarReturnSchemaV1 = z
+  .strictObject({
+    ...returnFields,
+    year: z
+      .int()
+      .meta({ description: "The year of the birthday it falls on." }),
+    shareUrl: shareUrlSchema("the solar return"),
+  })
+  .meta({
+    id: "SolarReturn",
+    description:
+      "The chart for when the Sun gets back to its natal position, read " +
+      "for the year until the next." +
+      RETURN_CHART_NOTE,
+  });
+
+export type SolarReturnV1 = z.infer<typeof solarReturnSchemaV1>;
+
+export const lunarReturnSchemaV1 = z
+  .strictObject({
+    ...returnFields,
+    shareUrl: shareUrlSchema("the lunar return"),
+  })
+  .meta({
+    id: "LunarReturn",
+    description:
+      "The chart for when the Moon gets back to its natal position, read " +
+      "for the month until the next." +
+      RETURN_CHART_NOTE,
+  });
+
+export type LunarReturnV1 = z.infer<typeof lunarReturnSchemaV1>;
 
 export const placesQuerySchemaV1 = z.object({
   q: z

@@ -10,6 +10,7 @@ import {
   createChartAt,
   type Chart,
 } from "@/lib/charts/chart";
+import { ChartInputError } from "@/lib/charts/errors";
 import { findBody, findReturnNear } from "@/lib/charts/returns";
 import { browserEphemeris, type Ephemeris } from "@/lib/engine/ephemeris";
 import { inZodiac } from "@/lib/engine/sidereal";
@@ -40,7 +41,7 @@ export function findSolarReturn(
   ephemeris: Ephemeris = browserEphemeris,
 ): Date {
   if (!natal.details.time) {
-    throw new Error(
+    throw new ChartInputError(
       "A solar return needs the birth time: without it, the natal Sun " +
         "could be anywhere in a day's worth of its path.",
     );
@@ -48,14 +49,16 @@ export function findSolarReturn(
 
   const birthYear = natal.details.date.year;
   if (year <= birthYear) {
-    throw new Error(`Choose a year after ${birthYear}, the year of birth.`);
+    throw new ChartInputError(
+      `Choose a year after ${birthYear}, the year of birth.`,
+    );
   }
 
   const birthday = fromJulianDay(
     natal.julianDay + (year - birthYear) * TROPICAL_YEAR_DAYS,
   );
   if (!canCalculateMoment(birthday)) {
-    throw new Error(
+    throw new ChartInputError(
       "Solar returns can only be found from about 3000 BCE to 3000 CE.",
     );
   }

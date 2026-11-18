@@ -12,6 +12,7 @@ import {
   createChartAt,
   type Chart,
 } from "@/lib/charts/chart";
+import { ChartInputError } from "@/lib/charts/errors";
 import { findBody, findReturnNear } from "@/lib/charts/returns";
 import { browserEphemeris, type Ephemeris } from "@/lib/engine/ephemeris";
 import { inZodiac } from "@/lib/engine/sidereal";
@@ -47,7 +48,7 @@ export function findLunarReturn(
   ephemeris: Ephemeris = browserEphemeris,
 ): Date {
   if (!natal.details.time) {
-    throw new Error(
+    throw new ChartInputError(
       "A lunar return needs the birth time: the Moon moves about 13° a " +
         "day, so without it, the natal Moon could be anywhere in that.",
     );
@@ -56,7 +57,7 @@ export function findLunarReturn(
   const byJulianDay = toJulianDay(by);
   const monthBefore = fromJulianDay(byJulianDay - SIDEREAL_MONTH_DAYS);
   if (!canCalculateMoment(by) || !canCalculateMoment(monthBefore)) {
-    throw new Error(
+    throw new ChartInputError(
       "Lunar returns can only be found from about 3000 BCE to 3000 CE.",
     );
   }
@@ -95,7 +96,7 @@ export function findLunarReturn(
 
   // The birth itself is the Moon at its natal position, but not a return.
   if (julianDay < natal.julianDay + SIDEREAL_MONTH_DAYS / 2) {
-    throw new Error(
+    throw new ChartInputError(
       "The first lunar return comes about four weeks after birth. " +
         "Choose a date from then on.",
     );
