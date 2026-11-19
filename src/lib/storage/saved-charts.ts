@@ -2,6 +2,8 @@
 // They live only in the visitor's own storage; nothing is sent anywhere.
 // Storage is passed in, so callers choose it and tests can fake it.
 
+import { z } from "zod/mini";
+
 import type { Place } from "@/lib/places";
 
 import { parseLocalDate, parseLocalTime } from "@/lib/time";
@@ -23,6 +25,42 @@ export type SavedChart = {
 };
 
 type StoredCharts = { version: number; charts: SavedChart[] };
+
+/** True when `parse` doesn't throw. Its error only means "not valid". */
+function parses(parse: (value: string) => unknown) {
+  return (value: string) => {
+    try {
+      parse(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+}
+
+const placeSchema = z.object({
+  // No id means a place entered by its coordinates.
+  id: z.optional(z.number()),
+  name: z.string(),
+  region: z.string(),
+  country: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  timeZone: z.string(),
+}) satisfies z.ZodMiniType<Place>;
+
+const savedChartSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  date: z.string().check(z.refine(parses(parseLocalDate))),
+  time: z.optional(z.string().check(z.refine(parses(parseLocalTime)))),
+  place: placeSchema,
+}) satisfies z.ZodMiniType<SavedChart>;
+
+const storedChartsSchema = z.object({
+  version: z.literal(STORAGE_VERSION),
+  charts: z.array(savedChartSchema),
+}) satisfies z.ZodMiniType<StoredCharts>;
 
 /**
  * The browser's localStorage. Throws when the browser won't allow it,
@@ -52,11 +90,12 @@ export function readSavedCharts(storage: Storage): SavedChart[] {
     throw new Error("The saved charts are damaged.", { cause });
   }
 
-  if (!isStoredCharts(stored)) {
-    throw new Error("The saved charts are damaged.");
+  const result = storedChartsSchema.safeParse(stored);
+  if (!result.success) {
+    throw new Error("The saved charts are damaged.", { cause: result.error });
   }
 
-  return stored.charts;
+  return result.data.charts;
 }
 
 /** Saves a chart under a new id, and returns every saved chart. */
@@ -95,60 +134,4 @@ function writeSavedCharts(storage: Storage, charts: SavedChart[]): void {
     // Full storage, or a browser that refuses writes.
     throw new Error("This browser wouldn't save the chart.", { cause });
   }
-}
-
-function isStoredCharts(value: unknown): value is StoredCharts {
-  return (
-    isRecord(value) &&
-    value.version === STORAGE_VERSION &&
-    Array.isArray(value.charts) &&
-    value.charts.every(isSavedChart)
-  );
-}
-
-function isSavedChart(value: unknown): value is SavedChart {
-  return (
-    isRecord(value) &&
-    typeof value.id === "string" &&
-    typeof value.name === "string" &&
-    isDateValue(value.date) &&
-    (value.time === undefined || isTimeValue(value.time)) &&
-    isPlace(value.place)
-  );
-}
-
-function isPlace(value: unknown): value is Place {
-  return (
-    isRecord(value) &&
-    // No id means a place entered by its coordinates.
-    (value.id === undefined || typeof value.id === "number") &&
-    typeof value.name === "string" &&
-    typeof value.region === "string" &&
-    typeof value.country === "string" &&
-    typeof value.latitude === "number" &&
-    typeof value.longitude === "number" &&
-    typeof value.timeZone === "string"
-  );
-}
-
-function isDateValue(value: unknown): boolean {
-  return typeof value === "string" && parses(() => parseLocalDate(value));
-}
-
-function isTimeValue(value: unknown): boolean {
-  return typeof value === "string" && parses(() => parseLocalTime(value));
-}
-
-/** True when `parse` doesn't throw. Its error only means "not valid". */
-function parses(parse: () => unknown): boolean {
-  try {
-    parse();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
