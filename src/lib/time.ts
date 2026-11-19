@@ -1,6 +1,7 @@
+import { Temporal } from "temporal-polyfill";
+
 const MS_PER_DAY = 86_400_000;
-const MS_PER_MINUTE = 60_000;
-const OFFSET_WINDOW_MS = 2 * MS_PER_DAY;
+const NS_PER_MINUTE = 60_000_000_000;
 
 /** Julian day of the Unix epoch, 1970-01-01T00:00:00Z. */
 const UNIX_EPOCH_JULIAN_DAY = 2_440_587.5;
@@ -10,9 +11,8 @@ const UTC_TIME_ZONE = "UTC";
 const DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 const TIME_PATTERN = /^(\d{2}):(\d{2})$/;
 
-const MONTHS_PER_YEAR = 12;
-const HOURS_PER_DAY = 24;
-const MINUTES_PER_HOUR = 60;
+/** Temporal rejects an impossible date rather than rolling it over. */
+const REJECT_OVERFLOW = { overflow: "reject" } as const;
 
 /** A calendar date with no time zone attached. */
 export type LocalDate = {
@@ -37,21 +37,23 @@ export type LocalDateTime = LocalDate & LocalTime;
  */
 export function parseLocalDate(date: string): LocalDate {
   const match = DATE_PATTERN.exec(date);
-  if (!match) {
-    throw new Error(`Invalid date: "${date}"`);
-  }
 
-  const parsed = {
-    year: Number(match[1]),
-    month: Number(match[2]),
-    day: Number(match[3]),
-  };
-  const isRealMonth = parsed.month >= 1 && parsed.month <= MONTHS_PER_YEAR;
-  if (!isRealMonth || parsed.day < 1 || parsed.day > countDays(parsed)) {
-    throw new Error(`Invalid date: "${date}"`);
+  try {
+    if (!match) {
+      throw new Error("Not YYYY-MM-DD");
+    }
+    const { year, month, day } = Temporal.PlainDate.from(
+      {
+        year: Number(match[1]),
+        month: Number(match[2]),
+        day: Number(match[3]),
+      },
+      REJECT_OVERFLOW,
+    );
+    return { year, month, day };
+  } catch (cause) {
+    throw new Error(`Invalid date: "${date}"`, { cause });
   }
-
-  return parsed;
 }
 
 /**
@@ -60,16 +62,19 @@ export function parseLocalDate(date: string): LocalDate {
  */
 export function parseLocalTime(time: string): LocalTime {
   const match = TIME_PATTERN.exec(time);
-  if (!match) {
-    throw new Error(`Invalid time: "${time}"`);
-  }
 
-  const parsed = { hour: Number(match[1]), minute: Number(match[2]) };
-  if (parsed.hour >= HOURS_PER_DAY || parsed.minute >= MINUTES_PER_HOUR) {
-    throw new Error(`Invalid time: "${time}"`);
+  try {
+    if (!match) {
+      throw new Error("Not HH:MM");
+    }
+    const { hour, minute } = Temporal.PlainTime.from(
+      { hour: Number(match[1]), minute: Number(match[2]) },
+      REJECT_OVERFLOW,
+    );
+    return { hour, minute };
+  } catch (cause) {
+    throw new Error(`Invalid time: "${time}"`, { cause });
   }
-
-  return parsed;
 }
 
 /**
@@ -81,94 +86,27 @@ export function parseLocalDateTime(date: string, time: string): LocalDateTime {
 }
 
 /**
- * Treats a wall-clock reading as if it were UTC and returns its epoch ms.
- * Uses setUTCFullYear because Date.UTC maps years 0–99 to 1900–1999.
- */
-function toNaiveMs(local: LocalDateTime, second = 0): number {
-  const date = new Date(0);
-  date.setUTCFullYear(local.year, local.month - 1, local.day);
-  date.setUTCHours(local.hour, local.minute, second, 0);
-  return date.getTime();
-}
-
-/**
- * Offset of a time zone from UTC at a given instant, in ms.
- *
- * Reads the zone's wall clock via Intl, which carries the full IANA
- * history — including Local Mean Time offsets with seconds, such as
- * Toronto's −5:17:32 before 1895.
- */
-function getOffsetMs(timeZone: string, epochMs: number): number {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    era: "short",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-  });
-
-  const parts = Object.fromEntries(
-    formatter
-      .formatToParts(new Date(epochMs))
-      .map((part) => [part.type, part.value]),
-  );
-
-  // Years before 1 CE come back as a positive year with era "BC".
-  const year = parts.era === "BC" ? 1 - Number(parts.year) : Number(parts.year);
-
-  const wallMs = toNaiveMs(
-    {
-      year,
-      month: Number(parts.month),
-      day: Number(parts.day),
-      hour: Number(parts.hour),
-      minute: Number(parts.minute),
-    },
-    Number(parts.second),
-  );
-
-  // Intl drops sub-second precision, so compare against whole seconds.
-  const flooredMs = Math.floor(epochMs / 1000) * 1000;
-  return wallMs - flooredMs;
-}
-
-/**
  * Converts a wall-clock reading in an IANA time zone to a UTC instant.
+ * Temporal reads the zone's full history, including Local Mean Time
+ * offsets with seconds, such as Toronto's −5:17:32 before 1895.
  *
  * When clocks fall back, an hour repeats; the earlier occurrence wins.
  * When clocks spring forward, an hour is skipped; a time inside the gap
- * is read with the pre-transition offset, landing just after the jump
- * (02:30 on a spring-forward night becomes 03:30).
+ * lands just after the jump (02:30 on a spring-forward night becomes
+ * 03:30). Temporal calls this "compatible" disambiguation.
  */
 export function toUtc(local: LocalDateTime, timeZone: string): Date {
-  const naiveMs = toNaiveMs(local);
-
-  // Sample both sides, including full-day jumps across the date line.
-  // A single guess can land after a transition and hide an earlier match.
-  const offsets = new Set([
-    getOffsetMs(timeZone, naiveMs - OFFSET_WINDOW_MS),
-    getOffsetMs(timeZone, naiveMs),
-    getOffsetMs(timeZone, naiveMs + OFFSET_WINDOW_MS),
-  ]);
-  const candidates = [...offsets].map((offset) => naiveMs - offset);
-  const matches = candidates.filter(
-    (epochMs) => epochMs + getOffsetMs(timeZone, epochMs) === naiveMs,
+  const zoned = Temporal.ZonedDateTime.from(
+    { ...local, timeZone },
+    { disambiguation: "compatible" },
   );
 
-  // Repeated times have two matches: choose the earlier instant. Gaps
-  // have none: the later candidate uses the pre-transition offset.
-  return new Date(
-    matches.length > 0 ? Math.min(...matches) : Math.max(...candidates),
-  );
+  return new Date(zoned.epochMilliseconds);
 }
 
 /** Offset of a time zone from UTC at the given instant, in minutes. */
 export function getOffsetMinutes(timeZone: string, instant: Date): number {
-  return getOffsetMs(timeZone, instant.getTime()) / MS_PER_MINUTE;
+  return toZoned(instant, timeZone).offsetNanoseconds / NS_PER_MINUTE;
 }
 
 /** Julian day (UT) for an instant, as Swiss Ephemeris expects. */
@@ -186,17 +124,9 @@ export function fromJulianDay(julianDay: number): Date {
 
 /** Reads an instant on a time zone's wall clock; the inverse of toUtc. */
 export function toLocal(instant: Date, timeZone: string): LocalDateTime {
-  const epochMs = instant.getTime();
-  // Shift by the offset, then read the shifted instant's UTC fields.
-  const shifted = new Date(epochMs + getOffsetMs(timeZone, epochMs));
+  const { year, month, day, hour, minute } = toZoned(instant, timeZone);
 
-  return {
-    year: shifted.getUTCFullYear(),
-    month: shifted.getUTCMonth() + 1,
-    day: shifted.getUTCDate(),
-    hour: shifted.getUTCHours(),
-    minute: shifted.getUTCMinutes(),
-  };
+  return { year, month, day, hour, minute };
 }
 
 /** Example: 1 Jan 2000 → "2000-01-01", as `<input type="date">` holds it. */
@@ -244,14 +174,10 @@ export function isTimeZone(timeZone: string): boolean {
   }
 }
 
-/**
- * Days in a date's month, by the proleptic Gregorian calendar the date
- * input uses: day 0 of the next month is this month's last day.
- */
-function countDays({ year, month }: Pick<LocalDate, "year" | "month">): number {
-  const lastDay = new Date(0);
-  lastDay.setUTCFullYear(year, month, 0);
-  return lastDay.getUTCDate();
+function toZoned(instant: Date, timeZone: string): Temporal.ZonedDateTime {
+  return Temporal.Instant.fromEpochMilliseconds(
+    instant.getTime(),
+  ).toZonedDateTimeISO(timeZone);
 }
 
 function padTwo(value: number): string {
