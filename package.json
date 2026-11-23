@@ -1,6 +1,6 @@
 {
   "name": "aster-myles-garden",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "A birth chart generator that runs entirely in the browser.",
   "license": "AGPL-3.0-only",
   "author": "Myles Braithwaite <myles@myles.garden> (https://myles.garden)",
