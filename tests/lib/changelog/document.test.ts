@@ -45,6 +45,24 @@ describe("buildDocument", () => {
         "Performance\nsearch the biggest cities",
     );
   });
+
+  it("refuses a release the lexicons reject", () => {
+    expect(() =>
+      buildDocument(RELEASE, "18 November 2026", PUBLICATION_URI),
+    ).toThrow("Release 0.4.0 is malformed");
+  });
+
+  it("refuses a release linking somewhere other than a web page", () => {
+    const item = { text: "click", url: "javascript:alert(1)" };
+    const release = {
+      ...RELEASE,
+      sections: [{ heading: "Features", items: [item] }],
+    };
+
+    expect(() => buildDocument(release, PUBLISHED_AT, PUBLICATION_URI)).toThrow(
+      "web page",
+    );
+  });
 });
 
 describe("buildReleasePath", () => {
@@ -112,6 +130,19 @@ describe("selectReleaseDocuments", () => {
       selectReleaseDocuments([{ ...record, value: broken }], PUBLICATION_URI),
     ).toEqual([]);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining(record.uri));
+  });
+
+  it("warns about and skips another kind of content", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const content = { ...DOCUMENT.content, $type: "pub.leaflet.content" };
+    const other = { ...DOCUMENT, content };
+
+    expect(
+      selectReleaseDocuments([{ ...record, value: other }], PUBLICATION_URI),
+    ).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("garden.myles.aster.releaseNotes"),
+    );
   });
 
   it("rejects links that aren't web pages", () => {

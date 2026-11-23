@@ -6,6 +6,7 @@
 // Usage:
 //   BLUESKY_APP_PASSWORD=… npm run standard:publication-sync
 
+import { AtUri } from "@atproto/syntax";
 import { readFileSync } from "node:fs";
 
 import {
@@ -16,14 +17,8 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/consts";
-import {
-  createSession,
-  putRecord,
-  resolvePdsUrl,
-  toRecordKey,
-  uploadBlob,
-} from "@/lib/atproto/xrpc";
-import { PUBLICATION_COLLECTION } from "@/lib/changelog/document";
+import * as sitePublication from "@/lexicons/site/standard/publication";
+import { loginWithAppPassword } from "@/lib/atproto/xrpc";
 import { buildPublication } from "@/lib/changelog/publication";
 
 const APP_PASSWORD_ENV_VAR = "BLUESKY_APP_PASSWORD";
@@ -37,16 +32,15 @@ if (!password) {
   throw new Error(`Set ${APP_PASSWORD_ENV_VAR} to the account's app password.`);
 }
 
-const pdsUrl = await resolvePdsUrl(ASTER_DID);
-const session = await createSession(pdsUrl, ASTER_HANDLE, password);
+const client = await loginWithAppPassword(ASTER_DID, ASTER_HANDLE, password);
 
 // Uploading the same icon again stores nothing new: blobs are keyed by
 // their contents.
-const icon = await uploadBlob(
-  session,
-  new Uint8Array(readFileSync(ICON_PATH)),
-  ICON_MIME_TYPE,
-);
+const { blob: icon } = (
+  await client.uploadBlob(new Uint8Array(readFileSync(ICON_PATH)), {
+    encoding: ICON_MIME_TYPE,
+  })
+).body;
 
 const publication = buildPublication({
   url: SITE_URL,
@@ -55,11 +49,8 @@ const publication = buildPublication({
   icon,
 });
 
-const { uri } = await putRecord(
-  session,
-  PUBLICATION_COLLECTION,
-  toRecordKey(PUBLICATION_URI),
-  publication,
-);
+const { uri } = await client.put(sitePublication, publication, {
+  rkey: new AtUri(PUBLICATION_URI).rkey,
+});
 
 console.log(`Wrote ${uri}`);

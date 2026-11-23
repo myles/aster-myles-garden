@@ -1,12 +1,10 @@
-import { isDatetimeString } from "@atproto/syntax";
-
+import type * as preferenceAi from "@/lexicons/community/lexicon/preference/ai";
 import type { BirthDetails } from "@/lib/charts/chart";
 
+import * as chart from "@/lexicons/garden/myles/aster/chart";
 import { isHouseSystem } from "@/lib/astrology/houses";
 import { createCoordinatePlace, parseCoordinates } from "@/lib/places";
 import { isTimeZone, toLocal, toUtc } from "@/lib/time";
-
-import { CHART_COLLECTION } from "./config";
 
 const MAX_PLACE_NAME_BYTES = 200;
 const NOON_TIME = { hour: 12, minute: 0 };
@@ -28,16 +26,7 @@ export enum TimeDisclosure {
   Include = "include",
 }
 
-export type ChartRecord = {
-  $type: typeof CHART_COLLECTION;
-  bornAt: string;
-  isBirthTimeKnown: boolean;
-  location: { latitude: string; longitude: string; name?: string };
-  timeZone: string;
-  houseSystem: string;
-  aiPreferences?: AiPreferences;
-  updatedAt: string;
-};
+export type ChartRecord = chart.Main;
 
 export function buildChartRecord(
   details: ChartDetails,
@@ -47,8 +36,8 @@ export function buildChartRecord(
   _validateLocalDetails(details);
   const isBirthTimeKnown =
     disclosure === TimeDisclosure.Include && details.time !== undefined;
-  const record: ChartRecord = {
-    $type: CHART_COLLECTION,
+  const record = chart.$parse({
+    $type: chart.$type,
     bornAt: toUtc(
       {
         ...details.date,
@@ -65,10 +54,10 @@ export function buildChartRecord(
     timeZone: details.place.timeZone,
     houseSystem: details.houseSystem,
     updatedAt: updatedAt.toISOString(),
-  };
-  if (details.aiPreferences !== undefined) {
-    record.aiPreferences = details.aiPreferences;
-  }
+    ...(details.aiPreferences !== undefined && {
+      aiPreferences: details.aiPreferences,
+    }),
+  });
   const restored = parseChartRecord(record);
   if (
     restored.date.year !== details.date.year ||
@@ -81,27 +70,19 @@ export function buildChartRecord(
 }
 
 export function parseChartRecord(value: unknown): ChartDetails {
-  if (!_isObject(value)) {
+  const result = chart.$safeParse(value);
+  if (!result.success) {
     throw new Error("The saved Aster chart is malformed.");
   }
-  const record = value;
+  const record = result.value;
   const location = record.location;
+  // What the lexicon can't say: a zone the browser knows, a house system
+  // Aster draws, and Aster's own bound on the place name.
   if (
-    record.$type !== CHART_COLLECTION ||
-    !_isTimestamp(record.bornAt) ||
-    typeof record.isBirthTimeKnown !== "boolean" ||
-    !_isObject(location) ||
-    typeof location.latitude !== "string" ||
-    typeof location.longitude !== "string" ||
-    (location.name !== undefined &&
-      (typeof location.name !== "string" ||
-        new TextEncoder().encode(location.name).length >
-          MAX_PLACE_NAME_BYTES)) ||
-    typeof record.timeZone !== "string" ||
     !isTimeZone(record.timeZone) ||
-    typeof record.houseSystem !== "string" ||
     !isHouseSystem(record.houseSystem) ||
-    !_isTimestamp(record.updatedAt)
+    (location.name !== undefined &&
+      new TextEncoder().encode(location.name).length > MAX_PLACE_NAME_BYTES)
   ) {
     throw new Error("The saved Aster chart is malformed.");
   }
@@ -124,14 +105,14 @@ export function parseChartRecord(value: unknown): ChartDetails {
       ? { hour: local.hour, minute: local.minute }
       : undefined,
     place: createCoordinatePlace({
-      name: typeof location.name === "string" ? location.name : "",
+      name: location.name ?? "",
       ...parseCoordinates(`${location.latitude}, ${location.longitude}`),
       timeZone: record.timeZone,
     }),
     houseSystem: record.houseSystem,
   };
   if (record.aiPreferences !== undefined) {
-    details.aiPreferences = _parseAiPreferences(record.aiPreferences);
+    details.aiPreferences = _toAiPreferences(record.aiPreferences);
   }
   return details;
 }
@@ -164,22 +145,13 @@ function _validateLocalDetails(details: BirthDetails): void {
   }
 }
 
-function _parseAiPreferences(value: unknown): AiPreferences {
-  if (!_isObject(value)) {
-    throw new Error("Invalid AI preferences.");
-  }
+/** Only the four preferences Aster knows, without their `$type`s. */
+function _toAiPreferences(set: preferenceAi.PreferenceSet): AiPreferences {
   const preferences: AiPreferences = {};
   for (const key of AI_PREFERENCE_KEYS) {
-    const preference = value[key];
+    const preference = set[key];
     if (preference === undefined) {
       continue;
-    }
-    if (
-      !_isObject(preference) ||
-      typeof preference.allow !== "boolean" ||
-      !_isTimestamp(preference.updatedAt)
-    ) {
-      throw new Error("Invalid AI preference.");
     }
     preferences[key] = {
       allow: preference.allow,
@@ -187,16 +159,4 @@ function _parseAiPreferences(value: unknown): AiPreferences {
     };
   }
   return preferences;
-}
-
-function _isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function _isTimestamp(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    isDatetimeString(value) &&
-    Number.isFinite(Date.parse(value))
-  );
 }

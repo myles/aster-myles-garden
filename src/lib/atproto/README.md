@@ -48,17 +48,32 @@ Space access is not end-to-end encryption. Your PDS and authorized Space partici
 
 Every lexicon Aster uses is installed with the `lex` CLI from `@atproto/lex` and tracked in the root `lexicons.json` manifest, which pins each one by CID. `lex install` writes them to the root `lexicons/` directory; commit both.
 
-- Aster's own drafts are authored here, under `lexicons/garden/myles/aster/`. Since they aren't published yet, the manifest's `directory` resolver points at this folder, and `lex install` symlinks them into the root `lexicons/`. Edit them here, never through the symlinks, and keep hand-written files out of the root `lexicons/`: `lex install` deletes JSON files there that the manifest doesn't list.
-- `community.lexicon.location.geo` and `community.lexicon.preference.ai` are fetched from the network. They're MIT-licensed by Lexicon Community; the licence is kept at `lexicons/community/LICENSE`.
+- Aster's own drafts are authored here, under `lexicons/garden/myles/aster/`: the chart, its Space type, and `releaseNotes`, the content of each changelog document. Since they aren't published yet, the manifest's `directory` resolver points at this folder, and `lex install` symlinks them into the root `lexicons/`. Edit them here, never through the symlinks, and keep hand-written files out of the root `lexicons/`: `lex install` deletes JSON files there that the manifest doesn't list.
+- `community.lexicon.location.geo`, `community.lexicon.preference.ai`, `site.standard.document`, `site.standard.publication` and `app.bsky.feed.post`, with their dependencies, are fetched from the network. They're MIT-licensed by Lexicon Community; the licence is kept at `lexicons/community/LICENSE`.
 - The `com.atproto.space.*` endpoints aren't published as resolvable lexicons during the alpha, so they can't be installed yet.
 
-Run `npm run lexicons:install` after changing the manifest or Aster's drafts, and `npm run lexicons:check` to verify that the installed files match their pinned CIDs; CI runs the check. `@atproto/lex` is pinned to a newer Spaces alpha than the OAuth SDK because only the alpha understands `space` definitions, and the SDK's alpha pins in `package.json` are scoped to its own packages so they don't leak into the CLI.
+`npm run lexicons:build` runs `lex build`, generating TypeScript schemas for every installed lexicon in `src/lexicons/`. Code imports a lexicon's namespace, such as `import * as siteDocument from "@/lexicons/site/standard/document"`, for its types, its `$nsid` and its validators. The `com.atproto.repo.*` methods come with `@atproto/lex-client` itself. The generated files are committed, so every tool sees them without a build step; they are never edited by hand, and formatting, linting and `astro check` skip them.
+
+After changing the manifest or Aster's drafts:
+
+1. Run `npm run lexicons:install`.
+2. Run `npm run lexicons:build`.
+3. Commit `lexicons.json`, `lexicons/` and `src/lexicons/` together.
+
+`npm run lexicons:check` verifies the installed files against their pinned CIDs. CI runs it, then rebuilds the schemas and fails if anything in `src/lexicons/` changed.
+
+## Using the schemas
+
+- `record.ts` checks chart records with the generated `garden.myles.aster.chart` schema, then the few things the lexicon can't say: a time zone the browser knows, a house system Aster draws, and a 200-byte bound on the place name.
+- The changelog checks each standard.site document and its `releaseNotes` content before writing it, and again when reading it back; a document that fails is skipped with a warning. Items' links must also be `https://`, since the lexicon allows any URI scheme and they're rendered as links.
+- `xrpc.ts` gives `@atproto/lex-client` `Client`s for Aster's account: a public one for reading, and one logged in with an app password through `@atproto/lex-password-session`. Documents are written with `createRecord` and `putRecord`, because their content is Aster's own type and the typed `create` and `put` only accept the lexicon's open union.
+- `store.ts` still calls the Space endpoints itself, since they have no installable lexicons yet.
 
 ## Verification and maintenance
 
 Run `npm test -- tests/lib/atproto tests/components/atproto` for the unit tests. `e2e/atproto.spec.ts` checks the production build serves `/app/`, loads the real OAuth SDK without errors and keeps sign-in disabled without JavaScript; it never signs in.
 
-The browser OAuth SDK and its alpha dependency chain are pinned to `0.0.0-spaces-alpha-20261112204144`. Pinning avoids prerelease ranges selecting incompatible stable packages, including packages with unpublished `workspace:` references. The incomplete generated `@atproto/api` package is not used. `store.ts` is the only place with raw record endpoints, so protocol changes stay local.
+Every `@atproto/*` package is pinned exactly to the same Spaces alpha, `0.0.0-spaces-alpha-20261117141222`: only the alpha understands `space` definitions, and this alpha pins its own dependencies exactly, so no overrides are needed. Earlier alphas used prerelease ranges that resolved to broken packages; pin any future alpha exactly too. The incomplete generated `@atproto/api` package is not used. `store.ts` is the only place with raw Space endpoints, so protocol changes stay local.
 
 The SDK depends on Zod 3, which has a high-severity advisory (“Zod can exhaust memory while validating oversized constrained collections”, `zod <4.6.6`). `package.json` overrides it to Zod 4. The SDK's schemas still parse and reject as expected in the unit and browser tests, but this is not an upstream-supported combination: re-check sign-in end to end after any SDK or Zod update, and drop the override once the SDK moves to Zod 4.
 

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import type { BlobRef } from "@/lib/atproto/xrpc";
 import type { Release } from "@/lib/changelog/parse";
 
 import {
@@ -10,7 +9,7 @@ import {
   MAX_POST_GRAPHEMES,
 } from "@/lib/changelog/post";
 
-import { RELEASE } from "../../fixtures/changelog";
+import { buildBlobRef, RELEASE } from "../../fixtures/changelog";
 
 const PAGE_URL = "https://aster.myles.garden/changelog/0.4.0";
 const CREATED_AT = "2026-11-23T12:00:00.000Z";
@@ -69,12 +68,7 @@ describe("buildPost", () => {
   });
 
   it("links to the release's page in a card", () => {
-    const thumb: BlobRef = {
-      $type: "blob",
-      ref: { $link: "bafk" },
-      mimeType: "image/jpeg",
-      size: 1,
-    };
+    const thumb = buildBlobRef("image/jpeg");
 
     const post = buildPost(RELEASE, PAGE_URL, CREATED_AT, thumb);
 
@@ -91,6 +85,10 @@ describe("buildPost", () => {
         },
       },
     });
+  });
+
+  it("refuses a post the lexicon rejects", () => {
+    expect(() => buildPost(RELEASE, PAGE_URL, "yesterday")).toThrow();
   });
 
   it("leaves the card's image out when there's none", () => {

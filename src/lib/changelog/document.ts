@@ -3,86 +3,51 @@
 // document's content, structured rather than as Markdown, so the site can
 // render them with plain templates. https://standard.site
 
-import { z } from "zod/mini";
+import type { Release, ReleaseItem } from "@/lib/changelog/parse";
 
-import type { ListedRecord, StrongRef } from "@/lib/atproto/xrpc";
-import type {
-  Release,
-  ReleaseItem,
-  ReleaseSection,
-} from "@/lib/changelog/parse";
+import * as releaseNotes from "@/lexicons/garden/myles/aster/releaseNotes";
+import * as siteDocument from "@/lexicons/site/standard/document";
 
-export const DOCUMENT_COLLECTION = "site.standard.document";
-export const PUBLICATION_COLLECTION = "site.standard.publication";
+const DOCUMENT_COLLECTION = siteDocument.$nsid;
 
 /** Aster's own content type, in its domain's namespace. */
-export const RELEASE_NOTES_TYPE = "garden.myles.aster.releaseNotes";
+const RELEASE_NOTES_TYPE = releaseNotes.$type;
 
 const DOCUMENT_TAGS = ["aster", "release"];
 
-export type ReleaseNotes = {
+export type ReleaseNotes = releaseNotes.Main & {
   $type: typeof RELEASE_NOTES_TYPE;
-  version: string;
-  releaseDate: string;
-  sections: ReleaseSection[];
 };
 
-export type ReleaseDocument = {
-  $type: typeof DOCUMENT_COLLECTION;
-  /** The publication's AT-URI. */
-  site: string;
-  title: string;
-  path: string;
-  description: string;
-  textContent: string;
-  tags: string[];
-  publishedAt: string;
-  content: ReleaseNotes;
-  /** The post announcing the release, once there is one. */
-  bskyPostRef?: StrongRef;
-};
+/**
+ * A standard.site document with the fields a release always fills. Its
+ * content is Aster's own type, where the lexicon allows any.
+ */
+export type ReleaseDocument = Omit<siteDocument.Main, "content"> &
+  Required<
+    Pick<siteDocument.Main, "path" | "description" | "textContent" | "tags">
+  > & { content: ReleaseNotes };
+
+/** A record as a repo lists it, not yet checked against any lexicon. */
+export type ListedRecord = { uri: string; cid: string; value: unknown };
 
 /** A release document as its repo holds it. */
-export type PublishedDocument = StrongRef & { value: ReleaseDocument };
-
-const itemSchema = z.object({
-  scope: z.optional(z.string()),
-  text: z.string(),
-  // Rendered as a link, so only web pages: never "javascript:".
-  url: z.optional(z.string().check(z.startsWith("https://"))),
-}) satisfies z.ZodMiniType<ReleaseItem>;
-
-const documentSchema = z.object({
-  $type: z.literal(DOCUMENT_COLLECTION),
-  site: z.string(),
-  title: z.string(),
-  path: z.string(),
-  description: z.string(),
-  textContent: z.string(),
-  tags: z.array(z.string()),
-  publishedAt: z.string(),
-  content: z.object({
-    $type: z.literal(RELEASE_NOTES_TYPE),
-    version: z.string(),
-    releaseDate: z.string(),
-    sections: z.array(
-      z.object({ heading: z.string(), items: z.array(itemSchema) }),
-    ),
-  }),
-  bskyPostRef: z.optional(z.object({ uri: z.string(), cid: z.string() })),
-}) satisfies z.ZodMiniType<ReleaseDocument>;
+export type PublishedDocument = Omit<ListedRecord, "value"> & {
+  value: ReleaseDocument;
+};
 
 /** Where the site shows a release. Example: "0.4.0" → "/changelog/0.4.0". */
 export function buildReleasePath(version: string): string {
   return `/changelog/${version}`;
 }
 
+/** Checked against both lexicons, so a malformed release never leaves. */
 export function buildDocument(
   release: Release,
   publishedAt: string,
   publicationUri: string,
 ): ReleaseDocument {
-  return {
+  const document = _parseReleaseDocument({
     $type: DOCUMENT_COLLECTION,
     site: publicationUri,
     title: buildReleaseTitle(release.version),
@@ -97,7 +62,12 @@ export function buildDocument(
       releaseDate: release.releaseDate,
       sections: release.sections,
     },
-  };
+  });
+  if (typeof document === "string") {
+    throw new Error(`Release ${release.version} is malformed: ${document}`);
+  }
+
+  return document;
 }
 
 /** Example: "0.4.0" → "Aster 0.4.0". */
@@ -148,16 +118,63 @@ export function selectReleaseDocuments(
       continue;
     }
 
-    const result = documentSchema.safeParse(value);
-    if (!result.success) {
-      console.warn(`Skipped ${uri}: ${z.prettifyError(result.error)}`);
+    const document = _parseReleaseDocument(value);
+    if (typeof document === "string") {
+      console.warn(`Skipped ${uri}: ${document}`);
       continue;
     }
 
-    documents.push({ uri, cid, value: result.data });
+    documents.push({ uri, cid, value: document });
   }
 
   return documents;
+}
+
+/**
+ * A release document, or why the value isn't one. The lexicons allow any
+ * URI scheme, but items are rendered as links, so only web pages are
+ * kept: never "javascript:".
+ */
+function _parseReleaseDocument(value: unknown): ReleaseDocument | string {
+  const document = siteDocument.$safeParse(value);
+  if (!document.success) {
+    return document.reason.message;
+  }
+
+  const { path, description, textContent, tags } = document.value;
+  if (
+    path === undefined ||
+    description === undefined ||
+    textContent === undefined ||
+    tags === undefined
+  ) {
+    return "it is missing a path, description, text content or tags";
+  }
+
+  const content = releaseNotes.$safeParse(document.value.content);
+  if (!content.success) {
+    return content.reason.message;
+  }
+  const { $type, ...notes } = content.value;
+  if ($type !== RELEASE_NOTES_TYPE) {
+    return `its content isn't ${RELEASE_NOTES_TYPE}`;
+  }
+
+  const urls = notes.sections.flatMap(({ items }) =>
+    items.flatMap(({ url }) => (url === undefined ? [] : [url])),
+  );
+  if (!urls.every((url) => url.startsWith("https://"))) {
+    return "an item links somewhere other than a web page";
+  }
+
+  return {
+    ...document.value,
+    path,
+    description,
+    textContent,
+    tags,
+    content: { $type, ...notes },
+  };
 }
 
 /** Each section's heading, then its items, a line each, with no Markdown. */

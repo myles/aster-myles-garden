@@ -1,8 +1,11 @@
+import * as chart from "@/lexicons/garden/myles/aster/chart";
+import * as space from "@/lexicons/garden/myles/aster/space";
+
 export const APP_PATH = "/app/";
 export const METADATA_PATH = "/app/client-metadata.json";
-export const CHART_COLLECTION = "garden.myles.aster.chart";
+export const CHART_COLLECTION = chart.$nsid;
 export const CHART_RECORD_KEY = "self";
-export const SPACE_TYPE = "garden.myles.aster.space";
+export const SPACE_TYPE = space.$nsid;
 export const SPACE_KEY = "self";
 export const PERSONAL_POLICY_TYPE = "com.atproto.personalspace.policy";
 

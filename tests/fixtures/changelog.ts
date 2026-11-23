@@ -1,3 +1,7 @@
+import type { BlobRef } from "@atproto/lex-schema";
+
+import { parseCid } from "@atproto/lex-data";
+
 import type { Release } from "@/lib/changelog/parse";
 
 /** Two releases, as release-please writes CHANGELOG.md. */
@@ -46,3 +50,11 @@ export const RELEASE: Release = {
 export const PUBLICATION_URI =
   "at://did:plc:aster/site.standard.publication/3publication";
 export const SITE_URL = "https://aster.myles.garden";
+
+/** The raw CID of "hello world", as a blob's contents are addressed. */
+const BLOB_CID = "bafkreifzjut3te2nhyekklss27nh3k72ysco7y32koao5eei66wof36n5e";
+
+/** An uploaded image, as uploadBlob returns it. */
+export function buildBlobRef(mimeType: string): BlobRef {
+  return { $type: "blob", ref: parseCid(BLOB_CID), mimeType, size: 1 };
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import type { StrongRef } from "@/lib/atproto/xrpc";
+import type * as strongRef from "@/lexicons/com/atproto/repo/strongRef";
 import type { ReleasePost } from "@/lib/changelog/post";
 
 import {
@@ -20,11 +20,11 @@ const NEWER = RELEASE;
 const OLDER_PUBLISHED_AT = "2026-11-17T12:00:00.000Z";
 const NEWER_PUBLISHED_AT = "2026-11-18T12:00:00.000Z";
 
-const DOCUMENT_REF: StrongRef = {
+const DOCUMENT_REF: strongRef.Main = {
   uri: "at://did/site.standard.document/3doc",
   cid: "doc-cid",
 };
-const POST_REF: StrongRef = {
+const POST_REF: strongRef.Main = {
   uri: "at://did/app.bsky.feed.post/3post",
   cid: "post-cid",
 };

@@ -1,12 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { PUBLICATION_URI } from "@/consts";
+import { ASTER_DID, PUBLICATION_URI } from "@/consts";
 import { buildDocument } from "@/lib/changelog/document";
 import { loadReleaseNote, loadReleaseNotes } from "@/lib/server/changelog";
 
 import { RELEASE } from "../../fixtures/changelog";
 
-const HTTP_OK = 200;
+/** Any well-formed record CID: listing checks the format, not the hash. */
+const RECORD_CID =
+  "bafyreiansycpa3ggyxqnttzb7ir3dw654s2vk7nldpss6jz65m5zh5frzu";
 
 const OLDER = buildDocument(
   { ...RELEASE, version: "0.3.0" },
@@ -26,8 +28,8 @@ function serveDocuments(values: unknown[]) {
     service: [{ id: "#atproto_pds", serviceEndpoint: "https://pds.example" }],
   };
   const records = values.map((value, index) => ({
-    uri: `at://did/site.standard.document/${index}`,
-    cid: `cid${index}`,
+    uri: `at://${ASTER_DID}/site.standard.document/${index}`,
+    cid: RECORD_CID,
     value,
   }));
 
@@ -35,12 +37,8 @@ function serveDocuments(values: unknown[]) {
     "fetch",
     vi
       .fn()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify(didDocument), { status: HTTP_OK }),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ records }), { status: HTTP_OK }),
-      ),
+      .mockResolvedValueOnce(Response.json(didDocument))
+      .mockResolvedValueOnce(Response.json({ records })),
   );
 }
 
