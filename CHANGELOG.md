@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/myles/aster-myles-garden/compare/v0.4.0...v0.5.0) (2026-11-23)
+
+
+### Features
+
+* add AtProto domain verification ([24ba58d](https://github.com/myles/aster-myles-garden/commit/24ba58d93cf9676f07c7b596e3f6eef14649446f))
+* collapse chart settings in the sidebar ([a995fe2](https://github.com/myles/aster-myles-garden/commit/a995fe22b5f36ebc12ac8cf8ac9d5e64197a2ea1))
+* explain settings, tables and charts in a guide ([29a2f5c](https://github.com/myles/aster-myles-garden/commit/29a2f5c4f3ab387ab1c5d85652de23990f8b214e))
+* link Aster to its registry entry, MB-360 ([f5a5f7a](https://github.com/myles/aster-myles-garden/commit/f5a5f7acc42a4b789b3b7759ac06d08976899e5f))
+* show the footer on the guide page ([daa7d50](https://github.com/myles/aster-myles-garden/commit/daa7d50d8196e8d579097b52a22f0209f8f26f01))
+* sum up chart settings while collapsed ([79edd1c](https://github.com/myles/aster-myles-garden/commit/79edd1cd72be25c6bc8f57c91f9c455e32e403a7))
+
 ## [0.4.0](https://github.com/myles/aster-myles-garden/compare/v0.3.0...v0.4.0) (2026-11-18)
 
 
