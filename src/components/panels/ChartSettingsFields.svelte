@@ -1,7 +1,7 @@
 <!-- The chart settings under your birth details: house system, zodiac,
      and which aspects to find, with how wide their orbs are. -->
 <script lang="ts">
-  import { TROPICAL } from "@/components/panels/zodiac";
+  import { toAyanamsa, TROPICAL } from "@/components/panels/zodiac";
   import Field from "@/components/ui/Field.svelte";
   import Select from "@/components/ui/Select.svelte";
   import {
@@ -38,15 +38,47 @@
   const ayanamsas = Object.values(Ayanamsa);
   const aspectSets = Object.values(AspectSet);
   const orbSizes = Object.values(OrbSize);
+
+  const ASPECT_SET_SUMMARIES: Record<AspectSet, string> = {
+    [AspectSet.Major]: "Major aspects",
+    [AspectSet.All]: "Major and minor aspects",
+  };
+
+  // One line under the heading, so the settings show while collapsed:
+  // "Placidus · Tropical · Major aspects · Standard orbs".
+  const summary = $derived.by(() => {
+    const ayanamsa = toAyanamsa(zodiac);
+    const parts = [
+      ayanamsa ? `Sidereal (${AYANAMSA_NAMES[ayanamsa]})` : "Tropical",
+      ASPECT_SET_SUMMARIES[aspectSet],
+      `${ORB_SIZE_NAMES[orbSize]} orbs`,
+    ];
+    if (!isHouseSystemUnused) {
+      parts.unshift(HOUSE_SYSTEM_NAMES[houseSystem as HouseSystem]);
+    }
+
+    return parts.join(" · ");
+  });
 </script>
 
 <!-- Collapsed so the Draw chart button shows on first load; the
      defaults suit most people. -->
-<details class="border-rule rounded border">
-  <summary class="cursor-pointer px-3 py-2 text-sm font-medium"
-    >Chart settings</summary
+<details class="group border-rule border-t pt-4">
+  <summary
+    class="flex cursor-pointer list-none flex-col gap-1 [&::-webkit-details-marker]:hidden"
   >
-  <div class="flex flex-col gap-5 border-t border-[inherit] px-3 py-3">
+    <span class="text-sm font-medium">
+      Chart settings
+      <span
+        aria-hidden="true"
+        class="text-ink-muted inline-block group-open:rotate-90">▸</span
+      >
+    </span>
+    <span data-settings-summary class="text-ink-muted font-mono text-xs">
+      {summary}
+    </span>
+  </summary>
+  <div class="grid grid-cols-2 gap-4 pt-4">
     <Field id="house-system" label="House system">
       <Select
         id="house-system"
@@ -77,28 +109,26 @@
       </Select>
     </Field>
 
-    <div class="grid grid-cols-2 gap-3">
-      <Field id="aspect-set" label="Aspects">
-        <Select
-          id="aspect-set"
-          name="aspectSet"
-          bind:value={aspectSet}
-          {onchange}
-        >
-          {#each aspectSets as set (set)}
-            <option value={set}>{ASPECT_SET_NAMES[set]}</option>
-          {/each}
-        </Select>
-      </Field>
+    <Field id="aspect-set" label="Aspects">
+      <Select
+        id="aspect-set"
+        name="aspectSet"
+        bind:value={aspectSet}
+        {onchange}
+      >
+        {#each aspectSets as set (set)}
+          <option value={set}>{ASPECT_SET_NAMES[set]}</option>
+        {/each}
+      </Select>
+    </Field>
 
-      <Field id="orb-size" label="Orbs">
-        <Select id="orb-size" name="orbSize" bind:value={orbSize} {onchange}>
-          {#each orbSizes as size (size)}
-            <option value={size}>{ORB_SIZE_NAMES[size]}</option>
-          {/each}
-        </Select>
-      </Field>
-    </div>
+    <Field id="orb-size" label="Orbs">
+      <Select id="orb-size" name="orbSize" bind:value={orbSize} {onchange}>
+        {#each orbSizes as size (size)}
+          <option value={size}>{ORB_SIZE_NAMES[size]}</option>
+        {/each}
+      </Select>
+    </Field>
   </div>
 </details>
 {#if note}
