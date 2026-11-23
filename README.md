@@ -19,7 +19,8 @@ Most birth chart tools send your details off to a server you don't control, then
 - **Multiple house systems.** Placidus by default, with others available.
 - **Tropical or sidereal.** The tropical zodiac by default, or the sidereal, with a choice of ayanamsa: Lahiri, Fagan–Bradley, Krishnamurti, Raman, Yukteshwar or True Chitrapaksha.
 - **More than one chart.** Compare two people as a bi-wheel or a composite, set transits or secondary progressions against a natal chart, or cast a year's solar return or a month's lunar return.
-- **Works offline.** Once the site has been opened, a service worker keeps the page and the calculation engine cached, so charts draw without a connection. It can be installed as an app from the browser's menu. The API is never cached.
+- **Explained as you go.** A "?" beside each field, setting, table and chart opens a short note on what it means, and the [guide](https://aster.myles.garden/guide/) gathers them all on one page.
+- **Works offline.** Once the site has been opened, a service worker keeps the pages, the guide included, and the calculation engine cached, so charts draw without a connection. It can be installed as an app from the browser's menu. The API is never cached.
 
 ## How it works
 
@@ -83,11 +84,13 @@ To see how long the indexes take to become searchable, run `npm run places:measu
 
 ## Usage
 
+New to birth charts? Press the **?** beside any field, setting, table or chart for a short explanation, or read the whole [guide](https://aster.myles.garden/guide/).
+
 1. Enter a birth date, time, and place. If you don't know the time, tick **I don't know the time** for a noon chart without houses. If the place isn't listed, choose **Not listed? Enter coordinates** and paste its latitude and longitude from any map; the time zone is suggested from the nearest listed place.
 2. The place resolves, offline, to coordinates and an IANA time zone; the browser's time zone database supplies the historical offset, Local Mean Time included.
 3. The chart is calculated and drawn as an SVG wheel.
-4. Adjust the house system if you'd like a different one, the zodiac, tropical or sidereal by one of several ayanamsas, and the aspects: major only or minor too, with tight, standard or wide orbs. Minor aspects are drawn as dashed lines. A sidereal chart says which ayanamsa it uses, and how far behind the tropical zodiac that puts it, and its comparisons, transits, progressions and returns follow the same zodiac. These settings are remembered in your browser for next time; a shared link's own settings are shown without replacing yours.
-5. Press **Copy link** to share the chart. The link carries the date, time, GeoNames place ID, house system, zodiac and any aspect settings in its `#` fragment, which browsers never send to the server, and opening it fills in the form and draws the same chart.
+4. Open **Chart settings** under the birth details to adjust the house system if you'd like a different one, the zodiac, tropical or sidereal by one of several ayanamsas, and the aspects: major only or minor too, with tight, standard or wide orbs. Minor aspects are drawn as dashed lines. A sidereal chart says which ayanamsa it uses, and how far behind the tropical zodiac that puts it, and its comparisons, transits, progressions and returns follow the same zodiac. The settings start collapsed, with their current choices summed up on one line. They're remembered in your browser for next time; a shared link's own settings are shown without replacing yours.
+5. Under **Download**, save the wheel as SVG or PNG, in light or dark colours whatever the page shows, and the tables as CSV. Press **Copy link** to share the chart. The link carries the date, time, GeoNames place ID, house system, zodiac and any aspect settings in its `#` fragment, which browsers never send to the server, and opening it fills in the form and draws the same chart.
 6. Press **Compare with someone else** under the form to add a second person. The chart becomes a bi-wheel, with their planets outside the zodiac, plus the aspects between you and where each person's planets fall in the other's houses. Choose **Composite** to see one chart for the pair instead, made from the midpoints of your positions.
 7. Press **See transits** to set the sky at a moment, now by default, against your chart. Transits count within 2° of exact, and the time is read in your own time zone. Each transit shows when it's exact and when it's in orb, searched up to five years either way. A planet that turns retrograde can be exact more than once while in orb, and each time is listed.
 8. Press **See progressions** to see your chart moved on a day for each year of life, to today by default or any date after your birth, set against your natal chart as transits are. Progressions count within 1° of exact. Without a birth time there are no houses, and the progressed Moon could be up to 7° out.
@@ -151,15 +154,25 @@ curl -s -X POST https://aster.myles.garden/api/v1/transits \
 The page's look is built from a few building blocks, each defined once, so a change to one shows everywhere it's used.
 
 - `src/styles/global.css` — the colour tokens, light and dark, and the base classes under `@layer components`: `.ui-panel`, `.ui-field`, `.ui-input`, `.ui-button` and its variants, `.ui-table` and the rest. Plain markup can use them directly.
-- `src/components/ui/` — Svelte components that wrap those classes with their structure and behaviour: `Button` (`primary`, `secondary`, `action`, `tool` or `quiet`, and `size="small"`), `Field`, `Input`, `Select`, `FormPanel`, `ButtonRow`, `Alert` and `Callout`.
+- `src/components/ui/` — Svelte components that wrap those classes with their structure and behaviour: `Button` (`primary`, `secondary`, `action`, `tool` or `quiet`, and `size="small"`), `Field`, `Input`, `Select`, `FormPanel`, `ButtonRow`, `Alert` and `Callout`. `Identifier`, the registry badge, is an Astro component, since it needs no JavaScript.
 
 The page is put together from those blocks:
 
 - `src/components/App.svelte` — the page's state, and how its parts fit together. It holds no markup of its own beyond the layout.
 - `src/components/panels/` — the forms in the left column, one per file: `YourChartForm` with `ChartSettingsFields`, `AddToChartMenu`, and a panel for each thing that can be added to your chart (`ComparePanel`, `TransitsPanel`, `ProgressionsPanel`, `SolarReturnPanel`, `LunarReturnPanel`).
 - `src/components/views/` — what's drawn beside them, one view per kind of chart, chosen by `ChartResult`. Solar and lunar returns share `ReturnView`, and transits and progressions share `chart/CrossAspectTable`, so a change to one shows in both.
+- `src/components/guide/` — the "?" toggles, `HelpToggle` and `HelpPanel`, and the list of guide topics in `topics.ts`.
+- `src/components/site/` — the footer, shared by every page.
 
 To see every building block in each of its states, in light and dark, run `npm run dev` and open [`/dev/components`](http://localhost:4321/dev/components). The page lives in `src/dev/` and is added by the `devPages` integration only under `npm run dev`, so a production build never includes it. Add a specimen to `src/dev/ComponentGallery.svelte` when you add a building block.
+
+### The guide
+
+The guide's text is Markdown in `src/content/guide/`, one file per topic, so it can be edited without touching code. Each file opens in place behind its "?" and appears on `/guide`. [Its README](./src/content/guide/README.md) explains the format, and what to change when adding a topic.
+
+The Markdown is rendered when the site is built, so no Markdown parser reaches the browser. The home page passes the rendered topics to `App`, which shares them with every toggle.
+
+### Restyling
 
 To restyle, say, every secondary button, change `.ui-button--secondary` in `global.css`. A component's own classes, such as a margin, still win over these, since they're in the components layer.
 
@@ -220,6 +233,6 @@ The natal wheel, the progressed bi-wheel and the solar return bi-wheel are compa
 
 When upgrading `@playwright/test`, change the image tag in `.github/workflows/ci.yml` to match, then approve new screenshots.
 
-Coverage includes JavaScript-disabled and delayed-hydration privacy guards; drawing a natal chart, a composite, progressions, a solar return and a lunar return with the real WebAssembly engine; creating and closing a comparison; and drawing a chart offline through the service worker. Place search uses a small local fixture, so tests need no GeoNames download or third-party service. This does not verify the generated production place dataset.
+Coverage includes JavaScript-disabled and delayed-hydration privacy guards; drawing a natal chart, a composite, progressions, a solar return and a lunar return with the real WebAssembly engine; creating and closing a comparison; drawing a chart offline through the service worker; opening a setting's explanation in place; the guide page, its footer, and the guide offline; and the registry badge and structured data. Place search uses a small local fixture, so tests need no GeoNames download or third-party service. This does not verify the generated production place dataset.
 
 A regression test checks that incomplete comparison details preserve both charts, and that repairing them allows a consistent retry. CI runs the suite on pushes and pull requests to `main` and retains reports for 14 days.
