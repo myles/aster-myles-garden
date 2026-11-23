@@ -9,14 +9,14 @@ import {
   SOURCE_URL,
   VERSION,
 } from "@/consts";
-import { buildReleaseUrl } from "@/lib/release";
+import { buildReleasePath } from "@/lib/changelog/document";
 ---
 
 <footer class="mt-12 flex items-start justify-between gap-4 border-t border-rule pt-4 text-xs text-ink-muted">
   <div>
     <p>
       Aster{" "}
-      <a class="underline" href={buildReleaseUrl(VERSION)}>
+      <a class="underline" href={buildReleasePath(VERSION)}>
         v{VERSION}
       </a>{" "}
       ·{" "}

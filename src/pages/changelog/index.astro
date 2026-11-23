@@ -1,0 +1,57 @@
+---
+// Every release, newest first, read from Aster's PDS on each request and
+// cached briefly, so a new release shows up minutes after it's published.
+import SiteFooter from "@/components/site/SiteFooter.astro";
+import Layout from "@/layouts/Layout.astro";
+import { formatReleaseDate } from "@/lib/changelog/document";
+import {
+  CACHE_PUBLIC_FIVE_MINUTES,
+  loadReleaseNotes,
+} from "@/lib/server/changelog";
+
+export const prerender = false;
+
+const CHANGELOG_DESCRIPTION = "What changed in each release of Aster.";
+
+const documents = await loadReleaseNotes();
+
+Astro.response.headers.set("Cache-Control", CACHE_PUBLIC_FIVE_MINUTES);
+---
+
+<Layout pageTitle="Changelog" pageDescription={CHANGELOG_DESCRIPTION}>
+  <div class="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-8 sm:px-6">
+    <header class="mb-8">
+      <p class="text-sm">
+        <a class="underline" href="/">
+          ← Aster
+        </a>
+      </p>
+      <h1 class="mt-4 font-serif text-4xl tracking-tight">Changelog</h1>
+      <p class="mt-1 text-ink-muted">{CHANGELOG_DESCRIPTION}</p>
+    </header>
+
+    <main>
+      {documents.length === 0 ? (
+        <p>No releases yet.</p>
+      ) : (
+        <ul class="flex flex-col gap-4">
+          {documents.map(({ value }) => (
+            <li>
+              <a class="ui-heading-section underline" href={value.path}>
+                {value.title}
+              </a>
+              <p class="text-sm text-ink-muted">
+                <time datetime={value.content.releaseDate}>
+                  {formatReleaseDate(value.content.releaseDate)}
+                </time>{" "}
+                · {value.description}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
+
+    <SiteFooter />
+  </div>
+</Layout>

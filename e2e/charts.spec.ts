@@ -106,7 +106,7 @@ for (const format of ["SVG", "PNG"]) {
   });
 }
 
-test("links the footer's version to its release", async ({ page }) => {
+test("links the footer's version to its changelog", async ({ page }) => {
   await page.goto("/");
 
   const footer = page.getByRole("contentinfo");
@@ -114,7 +114,7 @@ test("links the footer's version to its release", async ({ page }) => {
   const name = await version.textContent();
   await expect(version).toHaveAttribute(
     "href",
-    `https://github.com/myles/aster-myles-garden/releases/tag/${name?.trim()}`,
+    `/changelog/${name?.trim().replace(/^v/u, "")}`,
   );
 });
 

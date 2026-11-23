@@ -135,6 +135,7 @@ const structuredData = {
       type="application/ld+json"
       set:html={JSON.stringify(structuredData)}
     />
+    <slot name="head" />
   </head>
   <body>
     <slot />
