@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/myles/aster-myles-garden/compare/v0.5.0...v0.6.0) (2026-11-23)
+
+
+### Features
+
+* post each release to Bluesky with notes on AT Protocol ([#55](https://github.com/myles/aster-myles-garden/issues/55)) ([0d13c5b](https://github.com/myles/aster-myles-garden/commit/0d13c5b959ed61ed97cc7de8a81487668b7719e6))
+* update the standard.site publication from the site ([5f639a5](https://github.com/myles/aster-myles-garden/commit/5f639a5ed8cd15f24d21b09c62af31d61ae805df))
+
 ## [0.5.0](https://github.com/myles/aster-myles-garden/compare/v0.4.0...v0.5.0) (2026-11-23)
 
 
