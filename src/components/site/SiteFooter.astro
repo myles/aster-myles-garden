@@ -1,0 +1,56 @@
+---
+// The footer on every page: version, source, credits and the site's
+// registry entry.
+import Identifier from "@/components/ui/Identifier.astro";
+import {
+  AUTHOR_URL,
+  REGISTRY_ENTRY_URL,
+  REGISTRY_IDENTIFIER,
+  SOURCE_URL,
+  VERSION,
+} from "@/consts";
+import { buildReleaseUrl } from "@/lib/release";
+---
+
+<footer class="mt-12 flex items-start justify-between gap-4 border-t border-rule pt-4 text-xs text-ink-muted">
+  <div>
+    <p>
+      Aster{" "}
+      <a class="underline" href={buildReleaseUrl(VERSION)}>
+        v{VERSION}
+      </a>{" "}
+      ·{" "}
+      <a class="underline" href={SOURCE_URL}>
+        Source code
+      </a>{" "}
+      (AGPL-3.0)
+    </p>
+    <p class="mt-1">
+      Made by{" "}
+      <a class="underline" href={AUTHOR_URL}>
+        Myles
+      </a>
+      , with help from Claude and ChatGPT.
+    </p>
+    <p class="mt-3">
+      Calculations:{" "}
+      <a class="underline" href="https://www.astro.com/swisseph/">
+        Swiss Ephemeris
+      </a>{" "}
+      (Astrodienst AG) · Places:{" "}
+      <a class="underline" href="https://www.geonames.org/">
+        GeoNames
+      </a>{" "}
+      (
+      <a class="underline" href="https://creativecommons.org/licenses/by/4.0/">
+        CC BY 4.0
+      </a>
+      )
+    </p>
+  </div>
+
+  <Identifier
+    identifier={REGISTRY_IDENTIFIER}
+    identifierUrl={REGISTRY_ENTRY_URL}
+  />
+</footer>

@@ -3,6 +3,7 @@ import { getCollection, render } from "astro:content";
 
 import { groupGuideSections } from "@/components/guide/entries";
 import { toGuideAnchor } from "@/components/guide/topics";
+import SiteFooter from "@/components/site/SiteFooter.astro";
 import Layout from "@/layouts/Layout.astro";
 
 const GUIDE_DESCRIPTION =
@@ -68,5 +69,7 @@ const sections = await Promise.all(
         </section>
       ))}
     </main>
+
+    <SiteFooter />
   </div>
 </Layout>

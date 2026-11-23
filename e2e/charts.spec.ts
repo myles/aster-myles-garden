@@ -130,6 +130,16 @@ test("links the footer's identifier to its registry entry", async ({
   );
 });
 
+test("shows the same footer on the guide page", async ({ page }) => {
+  await page.goto("/guide/");
+
+  const footer = page.getByRole("contentinfo");
+  await expect(
+    footer.getByRole("link", { name: /^v\d+\.\d+\.\d+$/ }),
+  ).toBeVisible();
+  await expect(footer.getByRole("link", { name: "MB 360" })).toBeVisible();
+});
+
 test("names the registry identifier in structured data", async ({ page }) => {
   await page.goto("/");
 
