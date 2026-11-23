@@ -31,8 +31,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:linux": "scripts/e2e-linux-run.sh",
     "test:e2e:atproto": "playwright test --config playwright.atproto.config.ts",
+    "test:e2e:linux": "scripts/e2e-linux-run.sh",
     "test:e2e:ui": "playwright test --ui",
     "test:watch": "vitest"
   },
@@ -85,9 +85,6 @@
     "vitest": "^5.1.0"
   },
   "overrides": {
-    "@vercel/routing-utils": {
-      "path-to-regexp": "^6.3.0"
-    },
     "@atproto-labs/did-resolver": "0.0.0-spaces-alpha-20261112204144",
     "@atproto-labs/handle-resolver": "0.0.0-spaces-alpha-20261112204144",
     "@atproto-labs/identity-resolver": "0.0.0-spaces-alpha-20261112204144",
@@ -106,7 +103,10 @@
     "@atproto/oauth-resolver": "0.0.0-spaces-alpha-20261112204144",
     "@atproto/oauth-types": "0.0.0-spaces-alpha-20261112204144",
     "@atproto/syntax": "0.0.0-spaces-alpha-20261112204144",
-    "@atproto/xrpc": "0.0.0-spaces-alpha-20261112204144"
+    "@atproto/xrpc": "0.0.0-spaces-alpha-20261112204144",
+    "@vercel/routing-utils": {
+      "path-to-regexp": "^6.3.0"
+    }
   },
   "engines": {
     "node": ">=22.12.0"
