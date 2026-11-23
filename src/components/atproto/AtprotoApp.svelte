@@ -17,12 +17,14 @@
     parseLocalTime,
   } from "@/lib/time";
 
-  import { createTrialClient, type TrialClient } from "./client";
-  import type { TrialConfig } from "./config";
-  import { TimeDisclosure, type ChartDetails } from "./record";
+  import {
+    createAtprotoClient,
+    type AtprotoClient,
+  } from "@/lib/atproto/client";
+  import { TimeDisclosure, type ChartDetails } from "@/lib/atproto/record";
 
-  let { config }: { config: TrialConfig } = $props();
-  let connection: TrialClient | undefined = $state.raw();
+  let connection: AtprotoClient | undefined = $state.raw();
+  let handle = $state("");
   let date = $state("");
   let time = $state("");
   let place: Place | undefined = $state.raw();
@@ -38,7 +40,7 @@
 
   onMount(() => {
     let isMounted = true;
-    void createTrialClient(config).then(
+    void createAtprotoClient(window.location.href).then(
       (client) => {
         if (!isMounted) {
           void client.dispose();
@@ -73,10 +75,11 @@
     }
   }
 
-  async function signIn(): Promise<void> {
+  async function signIn(event: SubmitEvent): Promise<void> {
+    event.preventDefault();
     await runAction(async () => {
-      connection ??= await createTrialClient(config);
-      await connection.signIn();
+      connection ??= await createAtprotoClient(window.location.href);
+      await connection.signIn(handle.trim());
     });
   }
 
@@ -170,14 +173,14 @@
 </script>
 
 <main class="mx-auto max-w-2xl px-4 py-8">
-  <h1 class="font-serif text-3xl">Aster · personal AT Protocol trial</h1>
+  <h1 class="font-serif text-3xl">Your chart on AT Protocol</h1>
   <p class="mt-3">
-    This experiment saves only your own chart in your configured Space. Your PDS
-    and apps or people with Space access can read it. It is not end-to-end
-    encrypted. Use test details during the alpha.
+    Save your own chart in a personal Space on your AT Protocol account. Your
+    PDS and apps or people with Space access can read it. It is not end-to-end
+    encrypted. Spaces are in alpha, so use test details for now.
   </p>
   <p class="text-ink-muted mt-2 text-sm">
-    This trial has no friend discovery and never publishes to your public repo.
+    Aster never publishes your chart to your public repo.
   </p>
 
   {#if isBusy}
@@ -263,19 +266,37 @@
       </form>
     {/if}
   {:else}
-    <button
-      type="button"
-      disabled={isBusy}
-      onclick={signIn}
-      class="bg-accent text-paper mt-6 rounded px-4 py-2"
-    >
-      Sign in to my trial account
-    </button>
+    <form onsubmit={signIn} class="mt-6">
+      <fieldset disabled={isBusy} class="flex flex-col gap-3">
+        <label class="flex flex-col gap-2">
+          Your handle
+          <input
+            type="text"
+            bind:value={handle}
+            required
+            autocomplete="username"
+            autocapitalize="none"
+            spellcheck="false"
+            placeholder="you.bsky.social"
+            class="rounded border p-2"
+          />
+        </label>
+        <button
+          type="submit"
+          class="bg-accent text-paper self-start rounded px-4 py-2"
+        >
+          Sign in
+        </button>
+      </fieldset>
+    </form>
   {/if}
 
   {#if savedDetails}
     <p class="mt-6">
-      <a class="underline" href={buildShareUrl(savedDetails, config.origin)}>
+      <a
+        class="underline"
+        href={buildShareUrl(savedDetails, window.location.origin)}
+      >
         Open my saved chart in Aster
       </a>
     </p>

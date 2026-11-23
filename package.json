@@ -31,7 +31,6 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:atproto": "playwright test --config playwright.atproto.config.ts",
     "test:e2e:linux": "scripts/e2e-linux-run.sh",
     "test:e2e:ui": "playwright test --ui",
     "test:watch": "vitest"
@@ -106,7 +105,8 @@
     "@atproto/xrpc": "0.0.0-spaces-alpha-20261112204144",
     "@vercel/routing-utils": {
       "path-to-regexp": "^6.3.0"
-    }
+    },
+    "zod": "^4.6.7"
   },
   "engines": {
     "node": ">=22.12.0"

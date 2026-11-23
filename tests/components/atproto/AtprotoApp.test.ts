@@ -3,17 +3,17 @@
 import { fireEvent, render, screen } from "@testing-library/svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTrialClient } from "@/experimental/atproto/client";
-import { TimeDisclosure } from "@/experimental/atproto/record";
-import TrialApp from "@/experimental/atproto/TrialApp.svelte";
+import AtprotoApp from "@/components/atproto/AtprotoApp.svelte";
+import { createAtprotoClient } from "@/lib/atproto/client";
+import { TimeDisclosure } from "@/lib/atproto/record";
 import { loadPlaceIndex } from "@/lib/places";
 
-import { CHART } from "../fixtures/chart";
-import { PLACE_INDEX } from "../fixtures/places";
-import { CONFIG } from "./fixtures";
+import { CHART } from "../../fixtures/chart";
+import { PLACE_INDEX } from "../../fixtures/places";
+import { DID, SPACE } from "../../lib/atproto/fixtures";
 
-vi.mock("@/experimental/atproto/client", () => ({
-  createTrialClient: vi.fn(),
+vi.mock("@/lib/atproto/client", () => ({
+  createAtprotoClient: vi.fn(),
 }));
 vi.mock("@/lib/places", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/places")>()),
@@ -27,7 +27,7 @@ const charts = {
   deleteChart: vi.fn(),
 };
 const client = {
-  did: CONFIG.allowedDid,
+  did: DID,
   charts,
   signIn: vi.fn(),
   signOut: vi.fn(),
@@ -36,9 +36,9 @@ const client = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(createTrialClient).mockResolvedValue(client);
+  vi.mocked(createAtprotoClient).mockResolvedValue(client);
   vi.mocked(loadPlaceIndex).mockResolvedValue(PLACE_INDEX);
-  charts.createSpace.mockResolvedValue(CONFIG.space);
+  charts.createSpace.mockResolvedValue(SPACE);
   charts.loadChart.mockResolvedValue(CHART.details);
   charts.saveChart.mockResolvedValue(undefined);
   charts.deleteChart.mockResolvedValue(undefined);
@@ -58,9 +58,9 @@ async function loadChart(): Promise<void> {
   await screen.findByText("Loaded your saved chart.");
 }
 
-describe("personal trial UI", () => {
+describe("AtprotoApp", () => {
   it("creates a Space on request and uses its URI", async () => {
-    render(TrialApp, { config: CONFIG });
+    render(AtprotoApp);
     const button = await screen.findByRole("button", {
       name: "Create my Aster Space",
     });
@@ -68,12 +68,12 @@ describe("personal trial UI", () => {
     expect(screen.queryByLabelText("Date")).toBeNull();
     await fireEvent.click(button);
     expect(charts.createSpace).toHaveBeenCalledTimes(1);
-    expect(screen.getByText(`Space: ${CONFIG.space}`)).toBeTruthy();
+    expect(screen.getByText(`Space: ${SPACE}`)).toBeTruthy();
     expect(screen.getByLabelText("Date")).toBeTruthy();
   });
   it("allows retry after Space creation fails", async () => {
     charts.createSpace.mockRejectedValueOnce(new Error("Permission denied"));
-    render(TrialApp, { config: CONFIG });
+    render(AtprotoApp);
     const button = await screen.findByRole("button", {
       name: "Create my Aster Space",
     });
@@ -86,7 +86,7 @@ describe("personal trial UI", () => {
     expect(screen.getByLabelText("Date")).toBeTruthy();
   });
   it("requires an explicit save and defaults to omitting time", async () => {
-    render(TrialApp, { config: CONFIG });
+    render(AtprotoApp);
     await loadChart();
     expect(charts.saveChart).not.toHaveBeenCalled();
     await fireEvent.click(
@@ -112,7 +112,7 @@ describe("personal trial UI", () => {
       training: { allow: false, updatedAt: "2026-11-13T12:00:00Z" },
     };
     charts.loadChart.mockResolvedValue({ ...CHART.details, aiPreferences });
-    render(TrialApp, { config: CONFIG });
+    render(AtprotoApp);
     await loadChart();
     await fireEvent.click(
       screen.getByLabelText(
@@ -129,7 +129,7 @@ describe("personal trial UI", () => {
   });
 
   it("includes time only when explicitly selected", async () => {
-    render(TrialApp, { config: CONFIG });
+    render(AtprotoApp);
     await loadChart();
     await fireEvent.click(
       screen.getByLabelText(
@@ -148,7 +148,7 @@ describe("personal trial UI", () => {
     );
   });
   it("requires confirmation of whose details are saved", async () => {
-    render(TrialApp, { config: CONFIG });
+    render(AtprotoApp);
     await loadChart();
     await fireEvent.click(
       screen.getByRole("button", { name: "Save my chart" }),
@@ -159,7 +159,7 @@ describe("personal trial UI", () => {
     expect(charts.saveChart).not.toHaveBeenCalled();
   });
   it("surfaces storage errors and supports explicit deletion", async () => {
-    render(TrialApp, { config: CONFIG });
+    render(AtprotoApp);
     await loadChart();
     charts.deleteChart.mockRejectedValueOnce(new Error("Space unavailable"));
     await fireEvent.click(
@@ -180,7 +180,7 @@ describe("personal trial UI", () => {
     ).toBeNull();
   });
   it("clears loaded birth details when signing out", async () => {
-    render(TrialApp, { config: CONFIG });
+    render(AtprotoApp);
     await loadChart();
     await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     expect(client.signOut).toHaveBeenCalled();
@@ -190,15 +190,28 @@ describe("personal trial UI", () => {
     ).toBeNull();
   });
   it("keeps birth entry disabled after OAuth failure", async () => {
-    vi.mocked(createTrialClient).mockRejectedValue(new Error("OAuth failed"));
-    render(TrialApp, { config: CONFIG });
+    vi.mocked(createAtprotoClient).mockRejectedValue(new Error("OAuth failed"));
+    render(AtprotoApp);
     await screen.findByText("OAuth failed");
     expect(screen.queryByLabelText("Date")).toBeNull();
-    await fireEvent.click(
-      screen.getByRole("button", {
-        name: "Sign in to my trial account",
-      }),
-    );
+    await fireEvent.input(screen.getByLabelText("Your handle"), {
+      target: { value: "you.bsky.social" },
+    });
+    await fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(screen.getByRole("alert").textContent).toContain("OAuth failed");
+  });
+  it("signs in with the handle entered", async () => {
+    vi.mocked(createAtprotoClient).mockResolvedValue({
+      ...client,
+      did: undefined,
+      charts: undefined,
+    });
+    render(AtprotoApp);
+    await fireEvent.input(await screen.findByLabelText("Your handle"), {
+      target: { value: " you.bsky.social " },
+    });
+    await fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(createAtprotoClient).toHaveBeenCalledWith(window.location.href);
+    expect(client.signIn).toHaveBeenCalledWith("you.bsky.social");
   });
 });

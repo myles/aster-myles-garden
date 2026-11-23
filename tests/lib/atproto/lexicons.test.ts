@@ -5,17 +5,14 @@ import {
 } from "@atproto/lex-document";
 import { describe, expect, it } from "vitest";
 
-import chart from "@/experimental/atproto/lexicons/garden.myles.aster.chart.json";
-import space from "@/experimental/atproto/lexicons/garden.myles.aster.space.json";
-import {
-  buildChartRecord,
-  TimeDisclosure,
-} from "@/experimental/atproto/record";
+import { SPACE_TYPE } from "@/lib/atproto/config";
+import chart from "@/lib/atproto/lexicons/garden.myles.aster.chart.json";
+import space from "@/lib/atproto/lexicons/garden.myles.aster.space.json";
+import { buildChartRecord, TimeDisclosure } from "@/lib/atproto/record";
 
-import { CHART } from "../fixtures/chart";
-import geo from "../fixtures/lexicons/community.lexicon.location.geo.json";
-import ai from "../fixtures/lexicons/community.lexicon.preference.ai.json";
-import { CONFIG } from "./fixtures";
+import { CHART } from "../../fixtures/chart";
+import geo from "../../fixtures/lexicons/community.lexicon.location.geo.json";
+import ai from "../../fixtures/lexicons/community.lexicon.preference.ai.json";
 
 describe("published Lexicon drafts", () => {
   it.each([chart, space, geo, ai])(
@@ -30,7 +27,7 @@ describe("published Lexicon drafts", () => {
     expect(space.defs.main).not.toHaveProperty("name");
     expect(space.defs.main.collections).toEqual([chart.id]);
     expect(space.id).toBe("garden.myles.aster.space");
-    expect(CONFIG.spaceType).toBe(space.id);
+    expect(SPACE_TYPE).toBe(space.id);
   });
 
   it("defines inference consent and default-deny behaviour", () => {

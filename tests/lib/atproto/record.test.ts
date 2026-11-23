@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
+import { HouseSystem } from "@/lib/astrology/houses";
 import {
   buildChartRecord,
   parseChartRecord,
   TimeDisclosure,
-} from "@/experimental/atproto/record";
-import { HouseSystem } from "@/lib/astrology/houses";
+} from "@/lib/atproto/record";
 
-import { CHART } from "../fixtures/chart";
+import { CHART } from "../../fixtures/chart";
 
 const UPDATED_AT = new Date("2026-11-13T12:00:00Z");
 const RECORD = buildChartRecord(

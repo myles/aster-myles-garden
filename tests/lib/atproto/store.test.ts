@@ -1,14 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { CHART_COLLECTION } from "@/experimental/atproto/config";
-import {
-  buildChartRecord,
-  TimeDisclosure,
-} from "@/experimental/atproto/record";
-import { SpaceChartStore } from "@/experimental/atproto/store";
+import { CHART_COLLECTION, SPACE_KEY, SPACE_TYPE } from "@/lib/atproto/config";
+import { buildChartRecord, TimeDisclosure } from "@/lib/atproto/record";
+import { SpaceChartStore } from "@/lib/atproto/store";
 
-import { CHART } from "../fixtures/chart";
-import { CONFIG, OTHER_DID } from "./fixtures";
+import { CHART } from "../../fixtures/chart";
+import { DID, SPACE } from "./fixtures";
 
 const HTTP_STATUS_BAD_REQUEST = 400;
 const HTTP_STATUS_FORBIDDEN = 403;
@@ -21,43 +18,24 @@ const RECORD = buildChartRecord(
 
 function createStore() {
   const fetchHandler = vi.fn().mockResolvedValue(Response.json({}));
-  const session = { did: CONFIG.allowedDid, fetchHandler };
-  return { store: new SpaceChartStore(session, CONFIG), fetchHandler };
+  const session = { did: DID, fetchHandler };
+  return { store: new SpaceChartStore(session), fetchHandler };
 }
 
 describe("SpaceChartStore", () => {
-  it("rejects any other account before making a request", () => {
-    const fetchHandler = vi.fn();
-    expect(
-      () => new SpaceChartStore({ did: OTHER_DID, fetchHandler }, CONFIG),
-    ).toThrow("restricted");
-    expect(fetchHandler).not.toHaveBeenCalled();
-  });
-  it("rejects a Space owned by someone else", () => {
-    expect(
-      () =>
-        new SpaceChartStore(
-          {
-            did: CONFIG.allowedDid,
-            fetchHandler: vi.fn(),
-          },
-          {
-            ...CONFIG,
-            space: CONFIG.space.replace(CONFIG.allowedDid, OTHER_DID),
-          },
-        ),
-    ).toThrow("restricted");
+  it("keeps the chart in the signed-in account's personal Space", () => {
+    expect(SPACE).toBe(`at://${DID}/space/${SPACE_TYPE}/${SPACE_KEY}`);
   });
   it("creates a personal Space and returns its URI", async () => {
     const { store, fetchHandler } = createStore();
-    fetchHandler.mockResolvedValue(Response.json({ space: CONFIG.space }));
-    expect(await store.createSpace()).toBe(CONFIG.space);
+    fetchHandler.mockResolvedValue(Response.json({ space: SPACE }));
+    expect(await store.createSpace()).toBe(SPACE);
     expect(fetchHandler.mock.calls[0][0]).toBe(
       "/xrpc/com.atproto.space.createSpace",
     );
     expect(JSON.parse(fetchHandler.mock.calls[0][1].body)).toEqual({
-      spaceType: CONFIG.spaceType,
-      skey: CONFIG.spaceKey,
+      spaceType: SPACE_TYPE,
+      skey: SPACE_KEY,
       policy: { $type: "com.atproto.personalspace.policy" },
     });
   });
@@ -77,18 +55,18 @@ describe("SpaceChartStore", () => {
       )
       .mockResolvedValueOnce(
         Response.json({
-          space: CONFIG.space,
+          space: SPACE,
           policy: { $type: "com.atproto.personalspace.policy" },
         }),
       );
-    expect(await store.createSpace()).toBe(CONFIG.space);
+    expect(await store.createSpace()).toBe(SPACE);
     expect(fetchHandler.mock.calls[1][0]).toContain(
       "/xrpc/com.atproto.space.getSpace?",
     );
   });
   it.each([
     { space: "at://wrong/space/example.test.type/self" },
-    { space: CONFIG.space, policy: { $type: "public" } },
+    { space: SPACE, policy: { $type: "public" } },
   ])("rejects an unsafe existing Space: %j", async (body) => {
     const { store, fetchHandler } = createStore();
     fetchHandler
@@ -113,15 +91,18 @@ describe("SpaceChartStore", () => {
     expect(fetchHandler).toHaveBeenCalledTimes(1);
   });
 
-  it("loads only the configured account and Space", async () => {
+  it("loads only the signed-in account's Space", async () => {
     const { store, fetchHandler } = createStore();
     fetchHandler.mockResolvedValue(Response.json({ value: RECORD }));
     expect((await store.loadChart())?.date).toEqual(CHART.details.date);
-    const url = new URL(fetchHandler.mock.calls[0][0], CONFIG.origin);
+    const url = new URL(
+      fetchHandler.mock.calls[0][0],
+      "https://pds.example.com",
+    );
     expect(url.pathname).toBe("/xrpc/com.atproto.space.getRecord");
     expect(Object.fromEntries(url.searchParams)).toEqual({
-      space: CONFIG.space,
-      repo: CONFIG.allowedDid,
+      space: SPACE,
+      repo: DID,
       collection: CHART_COLLECTION,
       rkey: "self",
     });
@@ -158,8 +139,8 @@ describe("SpaceChartStore", () => {
     expect(path).toBe("/xrpc/com.atproto.space.putRecord");
     expect(init.method).toBe("POST");
     const body = JSON.parse(init.body);
-    expect(body.repo).toBe(CONFIG.allowedDid);
-    expect(body.space).toBe(CONFIG.space);
+    expect(body.repo).toBe(DID);
+    expect(body.space).toBe(SPACE);
     expect(body.rkey).toBe("self");
     expect(body.record).not.toHaveProperty("birthTime");
   });
@@ -170,8 +151,8 @@ describe("SpaceChartStore", () => {
       "/xrpc/com.atproto.space.deleteRecord",
     );
     expect(JSON.parse(fetchHandler.mock.calls[0][1].body)).toEqual({
-      space: CONFIG.space,
-      repo: CONFIG.allowedDid,
+      space: SPACE,
+      repo: DID,
       collection: CHART_COLLECTION,
       rkey: "self",
     });

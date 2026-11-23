@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createTrialClient } from "@/experimental/atproto/client";
+import { createAtprotoClient } from "@/lib/atproto/client";
 
-import { CONFIG, OTHER_DID } from "./fixtures";
+import { DID } from "./fixtures";
+
+const PAGE_URL = "https://aster.example.com/app/";
 
 const oauth = vi.hoisted(() => ({
   init: vi.fn(),
@@ -27,9 +29,9 @@ beforeEach(() => {
   oauth.dispose.mockResolvedValue(undefined);
 });
 
-describe("trial OAuth boundary", () => {
+describe("createAtprotoClient", () => {
   it("restores an empty session without requesting chart data", async () => {
-    const client = await createTrialClient(CONFIG);
+    const client = await createAtprotoClient(PAGE_URL);
     expect(client.did).toBeUndefined();
     expect(client.charts).toBeUndefined();
     expect(createOAuth).toHaveBeenCalledWith(
@@ -43,36 +45,34 @@ describe("trial OAuth boundary", () => {
     await client.dispose();
     expect(oauth.dispose).toHaveBeenCalledTimes(1);
   });
-  it("signs in only with the configured identity", async () => {
-    const client = await createTrialClient(CONFIG);
-    await client.signIn();
-    expect(oauth.signInRedirect).toHaveBeenCalledWith(CONFIG.allowedDid);
+  it("signs in with the handle given", async () => {
+    const client = await createAtprotoClient(PAGE_URL);
+    await client.signIn("you.bsky.social");
+    expect(oauth.signInRedirect).toHaveBeenCalledWith("you.bsky.social");
   });
-  it("restores and signs out the allowed session", async () => {
+  it("refuses an insecure origin before loading the SDK", async () => {
+    await expect(
+      createAtprotoClient("http://example.com/app/"),
+    ).rejects.toThrow("HTTPS");
+    expect(createOAuth).not.toHaveBeenCalled();
+  });
+  it("restores and signs out any account's session", async () => {
     const session = {
-      did: CONFIG.allowedDid,
+      did: DID,
       signOut: vi.fn(),
       fetchHandler: vi.fn(),
     };
     oauth.init.mockResolvedValue({ session });
-    const client = await createTrialClient(CONFIG);
-    expect(client.did).toBe(CONFIG.allowedDid);
+    const client = await createAtprotoClient(PAGE_URL);
+    expect(client.did).toBe(DID);
     expect(client.charts).toBeDefined();
     expect(session.fetchHandler).not.toHaveBeenCalled();
     await client.signOut();
     expect(session.signOut).toHaveBeenCalled();
   });
-  it("revokes other identities without touching their records", async () => {
-    const session = { did: OTHER_DID, signOut: vi.fn(), fetchHandler: vi.fn() };
-    oauth.init.mockResolvedValue({ session });
-    await expect(createTrialClient(CONFIG)).rejects.toThrow("restricted");
-    expect(session.signOut).toHaveBeenCalled();
-    expect(session.fetchHandler).not.toHaveBeenCalled();
-    expect(oauth.dispose).toHaveBeenCalled();
-  });
   it("surfaces callback failures and disposes the SDK", async () => {
     oauth.init.mockRejectedValue(new Error("Callback rejected"));
-    await expect(createTrialClient(CONFIG)).rejects.toThrow(
+    await expect(createAtprotoClient(PAGE_URL)).rejects.toThrow(
       "Callback rejected",
     );
     expect(oauth.dispose).toHaveBeenCalled();
