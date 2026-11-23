@@ -27,7 +27,7 @@
     "prettier": "prettier \"**/*.{astro,svelte}\" -c",
     "prettier:write": "prettier \"**/*.{astro,svelte}\" --write",
     "preview": "astro preview",
-    "standard:publication-create": "node --env-file-if-exists=.env --import tsx scripts/standard-publication-create.ts",
+    "standard:publication-sync": "node --env-file-if-exists=.env --import tsx scripts/standard-publication-sync.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
