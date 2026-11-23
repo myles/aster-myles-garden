@@ -1,5 +1,12 @@
 ---
-import { SITE_DESCRIPTION, SITE_TITLE } from "@/consts";
+import {
+  AUTHOR_URL,
+  REGISTRY_ENTRY_URL,
+  REGISTRY_IDENTIFIER,
+  REGISTRY_URL,
+  SITE_DESCRIPTION,
+  SITE_TITLE,
+} from "@/consts";
 // Global CSS is intentionally imported for its side effects.
 // oxlint-disable-next-line import/no-unassigned-import
 import "@/styles/global.css";
@@ -36,6 +43,46 @@ const SOCIAL_IMAGE_ALT =
 // Browser chrome matches the page: parchment by day, midnight-soil by night.
 const THEME_COLOUR_LIGHT = "#f5f0e8";
 const THEME_COLOUR_DARK = "#1a1814";
+
+// Links the site to its author, to myles.garden, and to its registry
+// entry, as yarrow.myles.garden does.
+const SITE_ROOT_URL = Astro.site?.toString() ?? "/";
+const IDENTIFIER_ID = `${REGISTRY_ENTRY_URL}#PropertyValue`;
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${SITE_ROOT_URL}#WebSite`,
+      name: siteTitle,
+      url: SITE_ROOT_URL,
+      description: siteDescription,
+      author: { "@id": `${AUTHOR_URL}/#Person` },
+      identifier: { "@id": IDENTIFIER_ID },
+      isPartOf: { "@id": `${AUTHOR_URL}/#WebSite` },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${AUTHOR_URL}/#WebSite`,
+      url: AUTHOR_URL,
+      name: "myles' garden",
+    },
+    {
+      "@type": "Person",
+      "@id": `${AUTHOR_URL}/#Person`,
+      givenName: "myles",
+      familyName: "braithwaite",
+      url: AUTHOR_URL,
+    },
+    {
+      "@type": "PropertyValue",
+      "@id": IDENTIFIER_ID,
+      propertyID: REGISTRY_URL,
+      value: REGISTRY_IDENTIFIER,
+      url: REGISTRY_ENTRY_URL,
+    },
+  ],
+};
 ---
 
 <html lang="en">
@@ -82,6 +129,12 @@ const THEME_COLOUR_DARK = "#1a1814";
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={X_CARD_URL} />
     <meta name="twitter:image:alt" content={SOCIAL_IMAGE_ALT} />
+
+    <script
+      is:inline
+      type="application/ld+json"
+      set:html={JSON.stringify(structuredData)}
+    />
   </head>
   <body>
     <slot />

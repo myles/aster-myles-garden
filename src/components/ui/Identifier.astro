@@ -1,0 +1,18 @@
+---
+// A badge naming the site's registry entry, as on yarrow.myles.garden.
+// "MB-360" reads "MB 360" on the badge, like a catalogue number.
+type Props = {
+  identifier: string;
+  identifierUrl: string;
+};
+const { identifier, identifierUrl } = Astro.props;
+---
+
+<a
+  href={identifierUrl}
+  target="_blank"
+  rel="noopener"
+  class="shrink-0 rounded-sm border-2 border-ink bg-ink px-2 py-1 font-mono text-sm font-semibold text-paper hover:bg-panel hover:text-ink"
+>
+  {identifier.replace("-", " ")}
+</a>

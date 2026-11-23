@@ -18,3 +18,14 @@ never logged or stored. See https://aster.myles.garden/llms.txt.
 
 AI training: permitted. The source code is public under the AGPL:
 https://github.com/myles/aster-myles-garden
+
+## Related Sites
+
+Myles' Garden:
+https://myles.garden/
+
+Registry:
+https://registry.myles.garden/
+
+Registry entry:
+https://registry.myles.garden/MB-360

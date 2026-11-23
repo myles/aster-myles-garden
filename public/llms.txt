@@ -195,5 +195,6 @@ https://aster.myles.garden/#date=1990-05-15&time=14:30&lat=43.6833&lon=-79.7667&
 
 - [Source code](https://github.com/myles/aster-myles-garden): AGPL-3.0, Astro and Svelte
 - [ai.txt](https://aster.myles.garden/ai.txt): how AI tools were used to build the site
+- [Registry entry](https://registry.myles.garden/MB-360): Aster's identifier, MB-360, in Myles' registry of projects
 - [Swiss Ephemeris](https://www.astro.com/swisseph/): the astronomical calculation library
 - [GeoNames](https://www.geonames.org/): place data, CC BY 4.0

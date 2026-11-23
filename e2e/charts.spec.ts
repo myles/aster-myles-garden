@@ -118,6 +118,40 @@ test("links the footer's version to its release", async ({ page }) => {
   );
 });
 
+test("links the footer's identifier to its registry entry", async ({
+  page,
+}) => {
+  await page.goto("/");
+
+  const footer = page.getByRole("contentinfo");
+  await expect(footer.getByRole("link", { name: "MB 360" })).toHaveAttribute(
+    "href",
+    "https://registry.myles.garden/MB-360",
+  );
+});
+
+test("names the registry identifier in structured data", async ({ page }) => {
+  await page.goto("/");
+
+  const json = await page
+    .locator('script[type="application/ld+json"]')
+    .textContent();
+  const graph = JSON.parse(json ?? "{}")["@graph"];
+  const site = graph.find((node: { "@type": string }) => {
+    return node["@type"] === "WebSite";
+  });
+  const identifier = graph.find((node: { "@id": string }) => {
+    return node["@id"] === site.identifier["@id"];
+  });
+
+  expect(identifier).toMatchObject({
+    "@type": "PropertyValue",
+    propertyID: "https://registry.myles.garden/",
+    value: "MB-360",
+    url: "https://registry.myles.garden/MB-360",
+  });
+});
+
 test("compares two charts and returns to the natal chart", async ({ page }) => {
   await compareCharts(page);
   await expect(
