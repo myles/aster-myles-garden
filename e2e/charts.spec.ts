@@ -236,6 +236,7 @@ test("redraws the chart in the sidereal zodiac", async ({ page }) => {
     "Capricorn",
   );
 
+  await page.getByText("Chart settings").click();
   await page.getByLabel("Zodiac").selectOption({ label: "Sidereal, Lahiri" });
 
   await expect(
@@ -269,6 +270,7 @@ test("preserves both charts when comparison details are incomplete", async ({
   const originalWheel = await wheel.innerHTML();
   const form = page.getByRole("form", { name: "Their birth details" });
   await form.getByRole("combobox", { name: "Place" }).fill("");
+  await page.getByText("Chart settings").click();
   await page.getByLabel("House system", { exact: true }).selectOption("koch");
   await expect(form.getByRole("alert")).toContainText("Choose a place");
   await expect(wheel).toHaveJSProperty("innerHTML", originalWheel);

@@ -40,53 +40,67 @@
   const orbSizes = Object.values(OrbSize);
 </script>
 
-<Field id="house-system" label="House system">
-  <Select
-    id="house-system"
-    name="houseSystem"
-    bind:value={houseSystem}
-    disabled={isHouseSystemUnused}
-    {onchange}
+<!-- Collapsed so the Draw chart button shows on first load; the
+     defaults suit most people. -->
+<details class="border-rule rounded border">
+  <summary class="cursor-pointer px-3 py-2 text-sm font-medium"
+    >Chart settings</summary
   >
-    {#each houseSystems as system (system)}
-      <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
-    {/each}
-  </Select>
-  {#if isHouseSystemUnused}
-    <p class="ui-hint">Houses need a birth time.</p>
-  {/if}
-</Field>
+  <div class="flex flex-col gap-5 border-t border-[inherit] px-3 py-3">
+    <Field id="house-system" label="House system">
+      <Select
+        id="house-system"
+        name="houseSystem"
+        bind:value={houseSystem}
+        disabled={isHouseSystemUnused}
+        {onchange}
+      >
+        {#each houseSystems as system (system)}
+          <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
+        {/each}
+      </Select>
+      {#if isHouseSystemUnused}
+        <p class="ui-hint">Houses need a birth time.</p>
+      {/if}
+    </Field>
 
-<Field id="zodiac" label="Zodiac">
-  <Select id="zodiac" name="zodiac" bind:value={zodiac} {onchange}>
-    <option value={TROPICAL}>Tropical</option>
-    <optgroup label="Sidereal">
-      {#each ayanamsas as option (option)}
-        <option value={option}>
-          Sidereal, {AYANAMSA_NAMES[option]}
-        </option>
-      {/each}
-    </optgroup>
-  </Select>
-</Field>
+    <Field id="zodiac" label="Zodiac">
+      <Select id="zodiac" name="zodiac" bind:value={zodiac} {onchange}>
+        <option value={TROPICAL}>Tropical</option>
+        <optgroup label="Sidereal">
+          {#each ayanamsas as option (option)}
+            <option value={option}>
+              Sidereal, {AYANAMSA_NAMES[option]}
+            </option>
+          {/each}
+        </optgroup>
+      </Select>
+    </Field>
 
-<div class="grid grid-cols-2 gap-3">
-  <Field id="aspect-set" label="Aspects">
-    <Select id="aspect-set" name="aspectSet" bind:value={aspectSet} {onchange}>
-      {#each aspectSets as set (set)}
-        <option value={set}>{ASPECT_SET_NAMES[set]}</option>
-      {/each}
-    </Select>
-  </Field>
+    <div class="grid grid-cols-2 gap-3">
+      <Field id="aspect-set" label="Aspects">
+        <Select
+          id="aspect-set"
+          name="aspectSet"
+          bind:value={aspectSet}
+          {onchange}
+        >
+          {#each aspectSets as set (set)}
+            <option value={set}>{ASPECT_SET_NAMES[set]}</option>
+          {/each}
+        </Select>
+      </Field>
 
-  <Field id="orb-size" label="Orbs">
-    <Select id="orb-size" name="orbSize" bind:value={orbSize} {onchange}>
-      {#each orbSizes as size (size)}
-        <option value={size}>{ORB_SIZE_NAMES[size]}</option>
-      {/each}
-    </Select>
-  </Field>
-</div>
+      <Field id="orb-size" label="Orbs">
+        <Select id="orb-size" name="orbSize" bind:value={orbSize} {onchange}>
+          {#each orbSizes as size (size)}
+            <option value={size}>{ORB_SIZE_NAMES[size]}</option>
+          {/each}
+        </Select>
+      </Field>
+    </div>
+  </div>
+</details>
 {#if note}
   <p class="text-ink-muted -mt-3 text-xs">{note}</p>
 {/if}
