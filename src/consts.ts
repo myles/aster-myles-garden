@@ -16,7 +16,8 @@ export const ASTER_HANDLE = "aster.myles.garden";
 export const ASTER_DID = "did:plc:vzffyjm4owshm3ngn5sfh577";
 // Made once by scripts/standard-publication-create.ts. Also served at
 // public/.well-known/site.standard.publication, which must match.
-export const PUBLICATION_URI = `at://${ASTER_DID}/site.standard.publication/TODO`;
+const PUBLICATION_RKEY = "3n2ytgiq6vb2a";
+export const PUBLICATION_URI = `at://${ASTER_DID}/site.standard.publication/${PUBLICATION_RKEY}`;
 
 // A named import, so only the version reaches the browser's bundle, not
 // the rest of package.json. release-please bumps it in each release PR.
