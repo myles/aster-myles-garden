@@ -23,7 +23,7 @@ All writes target `com.atproto.space.*`, the session's DID, that personal Space,
 
 ## Using it
 
-1. Use a Spaces-capable alpha account. The Space type `garden.myles.aster.space` is declared in `lexicons/garden.myles.aster.space.json`; the provider must be able to resolve that declaration during OAuth consent, and publishing lexicons is an external setup step.
+1. Use a Spaces-capable alpha account. The Space type `garden.myles.aster.space` is declared in `lexicons/garden/myles/aster/space.json`; the provider must be able to resolve that declaration during OAuth consent, and publishing lexicons is an external setup step.
 2. Open `/app/`, enter your handle and sign in through your provider.
 3. Press **Create my Aster Space**. Aster requests `com.atproto.space.createSpace` with `spaceType`, key `self` and `com.atproto.personalspace.policy`. If the Space already exists, the same button reopens it after checking its personal policy. Existing non-personal Spaces are rejected without changing them. If you signed in before creation support was added, sign out and back in to grant the creation permission.
 4. Enter birth details, confirm they are yours, and press **Save my chart**. Birth time is omitted unless explicitly selected. Use **Load my saved chart**, **Open my saved chart in Aster**, or **Delete my saved chart** to verify the round trip.
@@ -34,7 +34,7 @@ OAuth requests `atproto` plus a single `space:` scope, limited to Aster's Space 
 
 ## Record format
 
-The draft lexicon is in `lexicons/garden.myles.aster.chart.json`. It stores `bornAt` as a datetime, `isBirthTimeKnown`, a `location` reference to `community.lexicon.location.geo#main`, IANA `timeZone`, house system and `updatedAt`. Geo coordinates are separate decimal strings, with an optional location name. Birth date remains required input. Unknown or deliberately withheld birth times use noon on that date in the birthplace's time zone; `isBirthTimeKnown` is false, and loading the record restores an unknown time so houses and angles remain absent. The actual withheld time is never used to compute the persisted datetime.
+The draft lexicon is in `lexicons/garden/myles/aster/chart.json`. It stores `bornAt` as a datetime, `isBirthTimeKnown`, a `location` reference to `community.lexicon.location.geo#main`, IANA `timeZone`, house system and `updatedAt`. Geo coordinates are separate decimal strings, with an optional location name. Birth date remains required input. Unknown or deliberately withheld birth times use noon on that date in the birthplace's time zone; `isBirthTimeKnown` is false, and loading the record restores an unknown time so houses and angles remain absent. The actual withheld time is never used to compute the persisted datetime.
 
 Optional `aiPreferences` references `community.lexicon.preference.ai#preferenceSet`. The four supported preferences are training, embedding, inference and synthetic content; each declares `allow` and its own `updatedAt`. For this chart, `inference` covers sending chart data to an AI model, including a hosted LLM, to generate text such as a horoscope. `syntheticContent` can separately describe permission for the resulting generated content. Aster treats omitted `aiPreferences` and any omitted preference, including `inference`, as denied: chart data must not be sent to an AI model without an explicit `allow: true`. This embeds chart-specific metadata, not a standalone account-wide AI record, and does not enforce what other applications do. The current form preserves preferences from loaded records but does not yet provide controls for editing them.
 
@@ -43,6 +43,16 @@ This replaces the unpublished draft's `birthDate`, `birthTime`, `coordinates` an
 The adapter validates records before writing and after reading. In particular it checks calendar validity and time ranges locally, since the main application's input parsers currently check only string shape. Loaded listed places become coordinate places; their calculation inputs are preserved without depending on a particular GeoNames index. The record is replaced at the same key when saving again. Deleting removes that record, not the Space or any other data.
 
 Space access is not end-to-end encryption. Your PDS and authorized Space participants or applications can read its data. Changing access later does not retract copies others already made. Use test data during this alpha. The creation flow uses a personal policy and verifies that policy before reopening an existing Space. It never silently converts an existing Space or adds members.
+
+## Lexicons
+
+Every lexicon Aster uses is installed with the `lex` CLI from `@atproto/lex` and tracked in the root `lexicons.json` manifest, which pins each one by CID. `lex install` writes them to the root `lexicons/` directory; commit both.
+
+- Aster's own drafts are authored here, under `lexicons/garden/myles/aster/`. Since they aren't published yet, the manifest's `directory` resolver points at this folder, and `lex install` symlinks them into the root `lexicons/`. Edit them here, never through the symlinks, and keep hand-written files out of the root `lexicons/`: `lex install` deletes JSON files there that the manifest doesn't list.
+- `community.lexicon.location.geo` and `community.lexicon.preference.ai` are fetched from the network. They're MIT-licensed by Lexicon Community; the licence is kept at `lexicons/community/LICENSE`.
+- The `com.atproto.space.*` endpoints aren't published as resolvable lexicons during the alpha, so they can't be installed yet.
+
+Run `npm run lexicons:install` after changing the manifest or Aster's drafts, and `npm run lexicons:check` to verify that the installed files match their pinned CIDs; CI runs the check. `@atproto/lex` is pinned to a newer Spaces alpha than the OAuth SDK because only the alpha understands `space` definitions, and the SDK's alpha pins in `package.json` are scoped to its own packages so they don't leak into the CLI.
 
 ## Verification and maintenance
 

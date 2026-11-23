@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "resolvers": [
+    {
+      "type": "directory",
+      "path": "./src/lib/atproto/lexicons",
+      "include": ["garden.myles.aster.*"]
+    }
+  ],
+  "lexicons": [
+    "community.lexicon.location.geo",
+    "community.lexicon.preference.ai",
+    "garden.myles.aster.chart",
+    "garden.myles.aster.space"
+  ],
+  "resolutions": {
+    "community.lexicon.location.geo": {
+      "uri": "at://did:plc:mtr7qrqtcyseedx3jyr5o7db/com.atproto.lexicon.schema/community.lexicon.location.geo",
+      "cid": "bafyreiansycpa3ggyxqnttzb7ir3dw654s2vk7nldpss6jz65m5zh5frzu"
+    },
+    "community.lexicon.preference.ai": {
+      "uri": "at://did:plc:mtr7qrqtcyseedx3jyr5o7db/com.atproto.lexicon.schema/community.lexicon.preference.ai",
+      "cid": "bafyreier5aqvanugzga4lwmc42q45fxhsrjkltqw4p5strgcmmfahxndja"
+    },
+    "garden.myles.aster.chart": {
+      "uri": "file://./src/lib/atproto/lexicons/garden/myles/aster/chart.json",
+      "cid": "bafyreigb3dt663qyiyk2hg3wqeh7fo337f62aqm3oqdlfwfpwvfhll763i"
+    },
+    "garden.myles.aster.space": {
+      "uri": "file://./src/lib/atproto/lexicons/garden/myles/aster/space.json",
+      "cid": "bafyreicglm5pr5rlu5pkhnryh6klsvmoqqti6n5pici6bg2zdpjzki77sy"
+    }
+  }
+}

@@ -6,13 +6,13 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { SPACE_TYPE } from "@/lib/atproto/config";
-import chart from "@/lib/atproto/lexicons/garden.myles.aster.chart.json";
-import space from "@/lib/atproto/lexicons/garden.myles.aster.space.json";
+import chart from "@/lib/atproto/lexicons/garden/myles/aster/chart.json";
+import space from "@/lib/atproto/lexicons/garden/myles/aster/space.json";
 import { buildChartRecord, TimeDisclosure } from "@/lib/atproto/record";
 
+import geo from "../../../lexicons/community/lexicon/location/geo.json";
+import ai from "../../../lexicons/community/lexicon/preference/ai.json";
 import { CHART } from "../../fixtures/chart";
-import geo from "../../fixtures/lexicons/community.lexicon.location.geo.json";
-import ai from "../../fixtures/lexicons/community.lexicon.preference.ai.json";
 
 describe("published Lexicon drafts", () => {
   it.each([chart, space, geo, ai])(

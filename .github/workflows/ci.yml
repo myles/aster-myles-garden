@@ -108,11 +108,17 @@ jobs:
         continue-on-error: true
         run: npm run lint
 
+      - id: lexicons-check
+        name: 📜 Verify installed lexicons
+        continue-on-error: true
+        run: npm run lexicons:check
+
       - id: lint-status
         name: ❗ Fail if lint checks failed
         if: >-
           steps.format-check.outcome == 'failure' ||
-          steps.lint-check.outcome == 'failure'
+          steps.lint-check.outcome == 'failure' ||
+          steps.lexicons-check.outcome == 'failure'
         run: exit 1
 
   e2e:
