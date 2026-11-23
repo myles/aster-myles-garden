@@ -1,6 +1,8 @@
 <!-- Date, time and place fields for one person. Used for your chart and for
      the person you compare it with, so every id takes a prefix. -->
 <script lang="ts">
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import Field from "@/components/ui/Field.svelte";
   import Input from "@/components/ui/Input.svelte";
   import PlaceFields from "@/components/birth-form/PlaceFields.svelte";
@@ -28,6 +30,7 @@
 </script>
 
 <Field id={`${idPrefix}-date`} label="Date">
+  {#snippet help()}<HelpToggle topic={GuideTopic.BirthDate} />{/snippet}
   <Input
     id={`${idPrefix}-date`}
     name="date"
@@ -40,6 +43,7 @@
 </Field>
 
 <Field id={`${idPrefix}-time`} label="Time">
+  {#snippet help()}<HelpToggle topic={GuideTopic.BirthTime} />{/snippet}
   <Input
     id={`${idPrefix}-time`}
     name="time"
@@ -63,4 +67,6 @@
   </label>
 </Field>
 
-<PlaceFields {idPrefix} bind:place />
+<PlaceFields {idPrefix} bind:place>
+  {#snippet help()}<HelpToggle topic={GuideTopic.BirthPlace} />{/snippet}
+</PlaceFields>

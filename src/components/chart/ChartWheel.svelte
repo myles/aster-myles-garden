@@ -1,5 +1,7 @@
 <!-- Hosts the D3 wheel. Svelte owns the <svg>; D3 owns everything in it. -->
 <script lang="ts">
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import Button from "@/components/ui/Button.svelte";
   import { describeBiWheel, describeWheel } from "@/lib/wheel/describe";
   import {
@@ -60,14 +62,17 @@
     </div>
   </div>
 
-  <Button
-    variant="tool"
-    class="aria-pressed:bg-accent/15 mt-3"
-    aria-pressed={String(isEnlarged)}
-    onclick={() => (isEnlarged = !isEnlarged)}
-  >
-    Enlarge wheel
-  </Button>
+  <div class="mt-3 flex flex-wrap items-center gap-2">
+    <Button
+      variant="tool"
+      class="aria-pressed:bg-accent/15"
+      aria-pressed={String(isEnlarged)}
+      onclick={() => (isEnlarged = !isEnlarged)}
+    >
+      Enlarge wheel
+    </Button>
+    <HelpToggle topic={GuideTopic.Wheel} />
+  </div>
 
   <details class="mt-3 text-sm">
     <summary class="text-ink-muted cursor-pointer">Describe the wheel</summary>

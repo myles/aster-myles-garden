@@ -2,6 +2,8 @@
      comparison, an overlay adds the house each body falls in on the other
      person's chart. -->
 <script lang="ts">
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import { BODY_INFO } from "@/lib/astrology/bodies";
   import type { Chart } from "@/lib/charts/chart";
   import { formatPlacement } from "@/lib/format";
@@ -32,7 +34,10 @@
 </script>
 
 <div>
-  <h3 class="ui-heading-section mb-2">{title}</h3>
+  <div class="mb-2 flex flex-wrap items-center gap-x-2">
+    <h3 class="ui-heading-section">{title}</h3>
+    <HelpToggle topic={GuideTopic.Positions} />
+  </div>
   <table class="ui-table">
     <thead>
       <tr>

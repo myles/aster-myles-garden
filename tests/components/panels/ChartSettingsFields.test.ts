@@ -1,13 +1,23 @@
 // @vitest-environment jsdom
 
-import { render } from "@testing-library/svelte";
+import { fireEvent, render, screen } from "@testing-library/svelte";
 import { describe, expect, it } from "vitest";
 
+import { GuideTopic, type GuideEntries } from "@/components/guide/topics";
 import ChartSettingsFields from "@/components/panels/ChartSettingsFields.svelte";
 import { TROPICAL } from "@/components/panels/zodiac";
 import { AspectSet, OrbSize } from "@/lib/astrology/aspects";
 import { Ayanamsa } from "@/lib/astrology/ayanamsa";
 import { HouseSystem } from "@/lib/astrology/houses";
+
+import SettingsHarness from "./SettingsHarness.svelte";
+
+const GUIDE = {
+  [GuideTopic.HouseSystem]: { title: "House system", html: "<p>Houses.</p>" },
+  [GuideTopic.Zodiac]: { title: "Zodiac", html: "<p>Signs.</p>" },
+  [GuideTopic.Aspects]: { title: "Aspects", html: "<p>Angles.</p>" },
+  [GuideTopic.Orbs]: { title: "Orbs", html: "<p>Leeway.</p>" },
+} as GuideEntries;
 
 const DEFAULTS = {
   houseSystem: HouseSystem.Placidus,
@@ -61,5 +71,36 @@ describe("ChartSettingsFields", () => {
     });
 
     expect(summary(container)).toBe("Tropical · Major aspects · Standard orbs");
+  });
+
+  it("opens a setting's help across both columns, under its row", async () => {
+    render(SettingsHarness, { guide: GUIDE });
+
+    await fireEvent.click(screen.getByRole("button", { name: "About Orbs" }));
+
+    const panel = screen.getByText("Leeway.").closest("[id]")!;
+    expect(panel.classList).toContain("col-span-2");
+    expect(
+      screen
+        .getByRole("button", { name: "About Orbs" })
+        .getAttribute("aria-controls"),
+    ).toBe(panel.id);
+  });
+
+  it("keeps one setting's help open at a time", async () => {
+    render(SettingsHarness, { guide: GUIDE });
+
+    await fireEvent.click(
+      screen.getByRole("button", { name: "About House system" }),
+    );
+    await fireEvent.click(screen.getByRole("button", { name: "About Zodiac" }));
+
+    expect(screen.queryByText("Houses.")).toBeNull();
+    expect(screen.getByText("Signs.")).toBeTruthy();
+    expect(
+      screen
+        .getByRole("button", { name: "About House system" })
+        .getAttribute("aria-expanded"),
+    ).toBe("false");
   });
 });

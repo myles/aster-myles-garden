@@ -1,6 +1,9 @@
 <!-- The chart settings under your birth details: house system, zodiac,
      and which aspects to find, with how wide their orbs are. -->
 <script lang="ts">
+  import HelpPanel from "@/components/guide/HelpPanel.svelte";
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import { toAyanamsa, TROPICAL } from "@/components/panels/zodiac";
   import Field from "@/components/ui/Field.svelte";
   import Select from "@/components/ui/Select.svelte";
@@ -59,7 +62,39 @@
 
     return parts.join(" · ");
   });
+
+  // A grid cell is too narrow for a topic's explanation, so each row's
+  // opens across both columns beneath it, one topic at a time.
+  const HELP_ROWS = [
+    [GuideTopic.HouseSystem, GuideTopic.Zodiac],
+    [GuideTopic.Aspects, GuideTopic.Orbs],
+  ];
+  const helpIdPrefix = $props.id();
+  let openTopic: GuideTopic | undefined = $state();
+
+  function findHelpRow(topic: GuideTopic): number {
+    return HELP_ROWS.findIndex((row) => row.includes(topic));
+  }
 </script>
+
+{#snippet settingHelp(topic: GuideTopic)}
+  <HelpToggle
+    {topic}
+    panelId={`${helpIdPrefix}-${findHelpRow(topic)}`}
+    bind:isOpen={
+      () => openTopic === topic,
+      (isOpen) => (openTopic = isOpen ? topic : undefined)
+    }
+  />
+{/snippet}
+
+{#snippet rowHelp(rowIndex: number)}
+  <HelpPanel
+    id={`${helpIdPrefix}-${rowIndex}`}
+    topic={HELP_ROWS[rowIndex].find((topic) => topic === openTopic)}
+    class="col-span-2 -mt-2"
+  />
+{/snippet}
 
 <!-- Collapsed so the Draw chart button shows on first load; the
      defaults suit most people. -->
@@ -80,6 +115,7 @@
   </summary>
   <div class="grid grid-cols-2 gap-4 pt-4">
     <Field id="house-system" label="House system">
+      {#snippet help()}{@render settingHelp(GuideTopic.HouseSystem)}{/snippet}
       <Select
         id="house-system"
         name="houseSystem"
@@ -97,6 +133,7 @@
     </Field>
 
     <Field id="zodiac" label="Zodiac">
+      {#snippet help()}{@render settingHelp(GuideTopic.Zodiac)}{/snippet}
       <Select id="zodiac" name="zodiac" bind:value={zodiac} {onchange}>
         <option value={TROPICAL}>Tropical</option>
         <optgroup label="Sidereal">
@@ -108,8 +145,10 @@
         </optgroup>
       </Select>
     </Field>
+    {@render rowHelp(0)}
 
     <Field id="aspect-set" label="Aspects">
+      {#snippet help()}{@render settingHelp(GuideTopic.Aspects)}{/snippet}
       <Select
         id="aspect-set"
         name="aspectSet"
@@ -123,12 +162,14 @@
     </Field>
 
     <Field id="orb-size" label="Orbs">
+      {#snippet help()}{@render settingHelp(GuideTopic.Orbs)}{/snippet}
       <Select id="orb-size" name="orbSize" bind:value={orbSize} {onchange}>
         {#each orbSizes as size (size)}
           <option value={size}>{ORB_SIZE_NAMES[size]}</option>
         {/each}
       </Select>
     </Field>
+    {@render rowHelp(1)}
   </div>
 </details>
 {#if note}

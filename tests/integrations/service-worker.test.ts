@@ -43,6 +43,13 @@ describe("listPrecachePaths", () => {
     ]);
   });
 
+  it("lists other pages by their folder", async () => {
+    await writeClientFile("index.html");
+    await writeClientFile("guide/index.html");
+
+    expect(await listPrecachePaths(clientDir)).toEqual(["/", "/guide/"]);
+  });
+
   it("leaves out the API, place index and other sites' files", async () => {
     await writeClientFile("index.html");
     await writeClientFile("api/v1/openapi.json");
@@ -66,6 +73,15 @@ describe("hashPrecache", () => {
     await writeClientFile("index.html", "two");
 
     expect(await hashPrecache(clientDir, ["/"])).not.toBe(before);
+  });
+
+  it("reads a folder's page from its index.html", async () => {
+    await writeClientFile("guide/index.html", "one");
+    const before = await hashPrecache(clientDir, ["/guide/"]);
+
+    await writeClientFile("guide/index.html", "two");
+
+    expect(await hashPrecache(clientDir, ["/guide/"])).not.toBe(before);
   });
 
   it("is the same for the same files", async () => {

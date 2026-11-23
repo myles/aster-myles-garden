@@ -7,6 +7,7 @@
     createBlankForm,
     type BirthForm,
   } from "@/components/birth-form/birth-form";
+  import { setGuide, type GuideEntries } from "@/components/guide/topics";
   import { Panel } from "@/components/panel";
   import AddToChartMenu from "@/components/panels/AddToChartMenu.svelte";
   import ChartSettingsFields from "@/components/panels/ChartSettingsFields.svelte";
@@ -76,6 +77,17 @@
   import { createProgressions } from "@/lib/charts/progressions";
   import { createTransits } from "@/lib/charts/transits";
   import { onMount, tick } from "svelte";
+
+  let {
+    guide,
+  }: {
+    /** The guide's topics, rendered at build time, for the "?" toggles. */
+    guide?: GuideEntries;
+  } = $props();
+
+  // The guide is fixed for the page's life, so it's shared once.
+  // svelte-ignore state_referenced_locally
+  setGuide(guide);
 
   const RETURN_NEEDS_TIME =
     "A solar return needs your birth time. Enter it above and draw your " +

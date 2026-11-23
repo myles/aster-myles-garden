@@ -152,6 +152,40 @@ test("names the registry identifier in structured data", async ({ page }) => {
   });
 });
 
+test("explains a setting in place, with a link to the guide", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByText("Chart settings").click();
+
+  const toggle = page.getByRole("button", { name: "About House system" });
+  await toggle.click();
+
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(
+    page.getByText(/divide the sky into twelve parts/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "More in the guide" }),
+  ).toHaveAttribute("href", "/guide/#settings-house-system");
+});
+
+test("lists every topic on the guide page", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Read the guide" }).click();
+
+  await expect(page.getByRole("heading", { name: "Guide" })).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Sections" })
+    .getByRole("link", { name: "Chart settings" })
+    .click();
+
+  await expect(page).toHaveURL(/#settings$/);
+  await expect(
+    page.getByRole("heading", { name: "House system" }),
+  ).toBeInViewport();
+});
+
 test("compares two charts and returns to the natal chart", async ({ page }) => {
   await compareCharts(page);
   await expect(
@@ -271,7 +305,9 @@ test("redraws the chart in the sidereal zodiac", async ({ page }) => {
   );
 
   await page.getByText("Chart settings").click();
-  await page.getByLabel("Zodiac").selectOption({ label: "Sidereal, Lahiri" });
+  await page
+    .getByLabel("Zodiac", { exact: true })
+    .selectOption({ label: "Sidereal, Lahiri" });
 
   await expect(
     page.getByText(/^Sidereal zodiac, Lahiri ayanamsa: 23° 5\d′ behind/),

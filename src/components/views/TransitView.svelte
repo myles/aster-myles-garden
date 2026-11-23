@@ -2,6 +2,8 @@
      moment around it, and the aspects the transiting planets make to
      yours, with when each is exact and in orb. -->
 <script lang="ts">
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import CrossAspectTable from "@/components/chart/CrossAspectTable.svelte";
   import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
@@ -39,7 +41,10 @@
 </script>
 
 <div>
-  <h2 class="ui-heading-view" tabindex="-1">Transits</h2>
+  <div class="flex flex-wrap items-center gap-x-2">
+    <h2 class="ui-heading-view" tabindex="-1">Transits</h2>
+    <HelpToggle topic={GuideTopic.Transits} />
+  </div>
   <p class="text-ink-muted mt-1 text-sm">
     {formatInstant(transits.at, timeZone)} · against your chart for
     {formatPlace(transits.natal.details.place)},

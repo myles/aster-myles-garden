@@ -1,5 +1,7 @@
 <!-- One chart's aspects: each pair of planets, the aspect, and its orb. -->
 <script lang="ts">
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import {
     ASPECT_INFO,
     type Aspect,
@@ -24,7 +26,10 @@
 </script>
 
 <div>
-  <h3 class="ui-heading-section mb-2">{title}</h3>
+  <div class="mb-2 flex flex-wrap items-center gap-x-2">
+    <h3 class="ui-heading-section">{title}</h3>
+    <HelpToggle topic={GuideTopic.AspectsTable} />
+  </div>
   <table class="ui-table">
     <thead>
       <tr>

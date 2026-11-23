@@ -1,5 +1,7 @@
 <!-- Place search combobox; follows the WAI-ARIA combobox pattern. -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
+
   import Field from "@/components/ui/Field.svelte";
   import Input from "@/components/ui/Input.svelte";
   import { describeError } from "@/lib/format";
@@ -17,7 +19,13 @@
   let {
     id = "birth-place",
     selected = $bindable(),
-  }: { id?: string; selected?: Place } = $props();
+    help,
+  }: {
+    id?: string;
+    selected?: Place;
+    /** Beside the label, such as a guide toggle. */
+    help?: Snippet;
+  } = $props();
 
   const optionsId = $derived(`${id}-options`);
   const statusId = $derived(`${id}-status`);
@@ -188,7 +196,7 @@
   }
 </script>
 
-<Field {id} label="Place" class="relative">
+<Field {id} label="Place" class="relative" {help}>
   <Input
     {id}
     name="place"

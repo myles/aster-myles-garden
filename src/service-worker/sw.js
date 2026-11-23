@@ -20,7 +20,6 @@ const RUNTIME_PATHS = new Set([
   "/data/places-all.json",
 ]);
 
-const PAGE_PATH = "/";
 const API_PREFIX = "/api/";
 
 /**
@@ -63,8 +62,9 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (request.mode === "navigate" && url.pathname === PAGE_PATH) {
-    event.respondWith(fetchPage(request));
+  const pagePath = toPagePath(url.pathname);
+  if (request.mode === "navigate" && PRECACHE_PATHS.includes(pagePath)) {
+    event.respondWith(fetchPage(request, pagePath));
     return;
   }
 
@@ -106,16 +106,24 @@ async function deleteOldRuntimeEntries() {
  * cached one when the network fails or is slow. A fresh page isn't cached:
  * it may need files this release's cache doesn't have.
  */
-async function fetchPage(request) {
+async function fetchPage(request, pagePath) {
   try {
     return await rejectAfter(fetch(request), PAGE_TIMEOUT_MS);
   } catch (error) {
-    const cached = await matchPrecache(PAGE_PATH);
+    const cached = await matchPrecache(pagePath);
     if (cached) {
       return cached;
     }
     throw error;
   }
+}
+
+/**
+ * Pages are precached by their folder, so "/guide" and "/guide/" find the
+ * same page. Example: "/guide" → "/guide/".
+ */
+function toPagePath(pathname) {
+  return pathname.endsWith("/") ? pathname : `${pathname}/`;
 }
 
 /** Hashed assets never change, so the cached copy is always right. */

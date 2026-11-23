@@ -17,7 +17,8 @@ const THEIRS = {
 
 function table(name: string): HTMLElement {
   const heading = screen.getByRole("heading", { name });
-  return heading.parentElement!.querySelector("table")!;
+  // The heading shares a row with its guide toggle, above the table.
+  return heading.parentElement!.parentElement!.querySelector("table")!;
 }
 
 describe("ComparisonView", () => {

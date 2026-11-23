@@ -43,3 +43,16 @@ test("draws a chart offline once the site has been opened", async ({
     page.getByRole("img", { name: "Natal chart wheel" }),
   ).toBeVisible();
 });
+
+test("opens the guide offline once the site has been opened", async ({
+  context,
+  page,
+}) => {
+  await page.goto("/");
+  await page.waitForFunction(() => navigator.serviceWorker.controller);
+
+  await context.setOffline(true);
+  await page.goto("/guide");
+
+  await expect(page.getByRole("heading", { name: "Guide" })).toBeVisible();
+});

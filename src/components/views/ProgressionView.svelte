@@ -1,6 +1,8 @@
 <!-- Progressions: your natal chart inside a bi-wheel, the progressed
      planets around it, and the aspects they make to yours. -->
 <script lang="ts">
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import CrossAspectTable from "@/components/chart/CrossAspectTable.svelte";
   import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
@@ -31,7 +33,10 @@
 </script>
 
 <div>
-  <h2 class="ui-heading-view" tabindex="-1">Progressions</h2>
+  <div class="flex flex-wrap items-center gap-x-2">
+    <h2 class="ui-heading-view" tabindex="-1">Progressions</h2>
+    <HelpToggle topic={GuideTopic.Progressions} />
+  </div>
   <p class="text-ink-muted mt-1 text-sm">
     Progressed to {formatLocalDate(progressions.forDate)} · against your chart for
     {formatPlace(progressions.natal.details.place)},

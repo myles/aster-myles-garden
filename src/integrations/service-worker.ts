@@ -16,7 +16,6 @@ export const SERVICE_WORKER_TEMPLATE_PATH = fileURLToPath(
 const SERVICE_WORKER_FILENAME = "sw.js";
 
 const PAGE_FILENAME = "index.html";
-const PAGE_PATH = "/";
 
 /**
  * Built files left out of the precache, by path prefix: the API, which is
@@ -105,14 +104,21 @@ async function writeServiceWorker(clientDir: string): Promise<number> {
   return paths.length;
 }
 
-/** "_astro/App.js" → "/_astro/App.js"; "index.html" → "/". */
+/**
+ * "_astro/App.js" → "/_astro/App.js"; a page by its folder, as it's
+ * visited: "index.html" → "/", "guide/index.html" → "/guide/".
+ */
 function toUrlPath(clientDir: string, filePath: string): string {
   const path = `/${relative(clientDir, filePath).split(sep).join("/")}`;
-  return path === `/${PAGE_FILENAME}` ? PAGE_PATH : path;
+  return path.endsWith(`/${PAGE_FILENAME}`)
+    ? path.slice(0, -PAGE_FILENAME.length)
+    : path;
 }
 
 function toFilePath(clientDir: string, urlPath: string): string {
-  const path = urlPath === PAGE_PATH ? PAGE_FILENAME : urlPath.slice(1);
+  const path = urlPath.endsWith("/")
+    ? `${urlPath.slice(1)}${PAGE_FILENAME}`
+    : urlPath.slice(1);
   return join(clientDir, ...path.split("/"));
 }
 

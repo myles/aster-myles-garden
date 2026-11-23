@@ -1,0 +1,72 @@
+---
+import { getCollection, render } from "astro:content";
+
+import { groupGuideSections } from "@/components/guide/entries";
+import { toGuideAnchor } from "@/components/guide/topics";
+import Layout from "@/layouts/Layout.astro";
+
+const GUIDE_DESCRIPTION =
+  "What Aster's settings, tables and charts mean, for anyone new to them.";
+
+const sections = await Promise.all(
+  groupGuideSections(await getCollection("guide")).map(async (section) => ({
+    heading: section.heading,
+    folder: section.folder,
+    topics: await Promise.all(
+      section.entries.map(async (entry) => ({
+        anchor: toGuideAnchor(entry.id),
+        title: entry.data.title,
+        Content: (await render(entry)).Content,
+      })),
+    ),
+  })),
+);
+---
+
+<Layout pageTitle="Guide" pageDescription={GUIDE_DESCRIPTION}>
+  <div class="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-8 sm:px-6">
+    <header class="mb-8">
+      <p class="text-sm">
+        <a class="underline" href="/">
+          ← Aster
+        </a>
+      </p>
+      <h1 class="mt-4 font-serif text-4xl tracking-tight">Guide</h1>
+      <p class="mt-1 text-ink-muted">
+        What the settings, tables and charts mean. The same notes open in place
+        from each “?” beside them.
+      </p>
+      <nav aria-label="Sections" class="mt-4 text-sm">
+        <ul class="flex flex-wrap gap-x-4 gap-y-1">
+          {sections.map((section) => (
+            <li>
+              <a class="underline" href={`#${section.folder}`}>
+                {section.heading}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </header>
+
+    <main class="flex flex-col gap-12">
+      {sections.map((section) => (
+        <section aria-labelledby={section.folder}>
+          <h2 id={section.folder} class="ui-heading-view scroll-mt-4">
+            {section.heading}
+          </h2>
+          {section.topics.map(({ anchor, title, Content }) => (
+            <article class="mt-6">
+              <h3 id={anchor} class="ui-heading-section scroll-mt-4">
+                {title}
+              </h3>
+              <div class="ui-prose mt-2">
+                <Content />
+              </div>
+            </article>
+          ))}
+        </section>
+      ))}
+    </main>
+  </div>
+</Layout>

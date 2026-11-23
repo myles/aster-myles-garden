@@ -1,6 +1,8 @@
 <!-- A composite: one chart for two people, made from the midpoints of
      their positions, with its own houses, positions and aspects. -->
 <script lang="ts">
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import AspectTable from "@/components/chart/AspectTable.svelte";
@@ -35,7 +37,10 @@
 </script>
 
 <div>
-  <h2 class="ui-heading-view" tabindex="-1">Composite chart</h2>
+  <div class="flex flex-wrap items-center gap-x-2">
+    <h2 class="ui-heading-view" tabindex="-1">Composite chart</h2>
+    <HelpToggle topic={GuideTopic.Composite} />
+  </div>
   <ZodiacNote chart={composite.first} />
   <ComparedPeople first={composite.first} second={composite.second} />
   <p class="text-ink-muted mt-2 text-sm">

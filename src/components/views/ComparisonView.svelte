@@ -2,6 +2,8 @@
      outside, the aspects between them, and each person's positions with
      where their planets fall in the other's houses. -->
 <script lang="ts">
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import ChartDownloads from "@/components/chart/ChartDownloads.svelte";
@@ -62,7 +64,10 @@
 </script>
 
 <div>
-  <h2 class="ui-heading-view" tabindex="-1">Chart comparison</h2>
+  <div class="flex flex-wrap items-center gap-x-2">
+    <h2 class="ui-heading-view" tabindex="-1">Chart comparison</h2>
+    <HelpToggle topic={GuideTopic.Comparison} />
+  </div>
   <ZodiacNote chart={synastry.first} />
   <ComparedPeople first={synastry.first} second={synastry.second} />
   <p class="text-ink-muted mt-2 text-sm">

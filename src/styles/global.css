@@ -144,6 +144,37 @@ body {
     @apply rounded-md border border-rule bg-panel p-3 text-sm;
   }
 
+  /* The "?" that opens a guide topic beside a label or heading. 24px
+     meets WCAG's minimum target size. */
+  .ui-help-toggle {
+    @apply inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-rule font-sans text-xs font-medium text-ink-muted hover:border-ink hover:text-ink aria-expanded:border-ink aria-expanded:text-ink;
+  }
+
+  /* Rendered Markdown from the guide. */
+  .ui-prose {
+    @apply flex flex-col gap-2 leading-relaxed;
+  }
+
+  .ui-prose :where(ul, ol) {
+    @apply flex flex-col gap-1 pl-5;
+  }
+
+  .ui-prose :where(ul) {
+    @apply list-disc;
+  }
+
+  .ui-prose :where(ol) {
+    @apply list-decimal;
+  }
+
+  .ui-prose :where(strong) {
+    @apply font-semibold;
+  }
+
+  .ui-prose :where(a) {
+    @apply underline;
+  }
+
   .ui-heading-view {
     @apply font-serif text-2xl;
   }

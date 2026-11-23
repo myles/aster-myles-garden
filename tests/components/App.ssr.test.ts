@@ -5,10 +5,14 @@ import { describe, expect, it, vi } from "vitest";
 import App from "@/components/App.svelte";
 
 // The testing plugin resolves Svelte's client lifecycle exports even for
-// server rendering. Match the server's no-op onMount behaviour here.
+// server rendering. Match the server's no-op onMount behaviour here, and
+// stand in for context, which the client version only allows while
+// mounting.
 vi.mock("svelte", async (importOriginal) => ({
   ...(await importOriginal<typeof import("svelte")>()),
   onMount: vi.fn(),
+  setContext: vi.fn(),
+  getContext: vi.fn(),
 }));
 
 describe("App before hydration", () => {

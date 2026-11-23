@@ -5,9 +5,18 @@
   import CoordinateFields from "@/components/birth-form/CoordinateFields.svelte";
   import PlacePicker from "@/components/birth-form/PlacePicker.svelte";
   import type { Place } from "@/lib/places";
+  import type { Snippet } from "svelte";
 
-  let { idPrefix, place = $bindable() }: { idPrefix: string; place?: Place } =
-    $props();
+  let {
+    idPrefix,
+    place = $bindable(),
+    help,
+  }: {
+    idPrefix: string;
+    place?: Place;
+    /** Beside the place's label, such as a guide toggle. */
+    help?: Snippet;
+  } = $props();
 
   let isEnteringCoordinates = $state(false);
 
@@ -34,7 +43,7 @@
     <CoordinateFields {idPrefix} bind:place />
   </fieldset>
 {:else}
-  <PlacePicker id={`${idPrefix}-place`} bind:selected={place} />
+  <PlacePicker id={`${idPrefix}-place`} bind:selected={place} {help} />
 {/if}
 
 <Button

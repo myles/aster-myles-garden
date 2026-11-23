@@ -29,6 +29,7 @@
 - [x] Lunar returns: the month's chart for the moment the Moon returns to its natal position, found the way solar returns are, on its own or against the natal chart
 - [x] Exact transit dates: when each transit is exact, and when it comes into and leaves orb, found the way solar returns are
 - [x] Sidereal zodiac, with a choice of ayanamsa
+- [x] A guide for newcomers: each setting, table and chart explained in place behind a "?", and all together at /guide, written as Markdown anyone can edit
 
 ## Charts
 

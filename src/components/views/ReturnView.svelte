@@ -3,6 +3,8 @@
      aspects, on its own or against your natal chart. SolarReturnView and
      LunarReturnView give it their names and words. -->
 <script lang="ts">
+  import HelpToggle from "@/components/guide/HelpToggle.svelte";
+  import { GuideTopic } from "@/components/guide/topics";
   import Callout from "@/components/ui/Callout.svelte";
   import ZodiacNote from "@/components/chart/ZodiacNote.svelte";
   import AspectTable from "@/components/chart/AspectTable.svelte";
@@ -10,7 +12,7 @@
   import ChartShare from "@/components/chart/ChartShare.svelte";
   import ChartWheel from "@/components/chart/ChartWheel.svelte";
   import PositionsTable from "@/components/chart/PositionsTable.svelte";
-  import { BODY_INFO, type Body } from "@/lib/astrology/bodies";
+  import { Body, BODY_INFO } from "@/lib/astrology/bodies";
   import type { Chart } from "@/lib/charts/chart";
   import type { ExportSubject } from "@/lib/downloads/export";
   import type { ShareAddition } from "@/lib/share";
@@ -76,6 +78,12 @@
   // The bi-wheel draws the natal houses, so the labels follow those.
   const housesChart = $derived(isBiWheel ? natal : chart);
 
+  const helpTopic = $derived(
+    returningBody === Body.Sun
+      ? GuideTopic.SolarReturn
+      : GuideTopic.LunarReturn,
+  );
+
   const subheading = $derived(
     [
       formatPlace(chart.details.place),
@@ -106,7 +114,10 @@
 </script>
 
 <div>
-  <h2 class="ui-heading-view" tabindex="-1">{heading}</h2>
+  <div class="flex flex-wrap items-center gap-x-2">
+    <h2 class="ui-heading-view" tabindex="-1">{heading}</h2>
+    <HelpToggle topic={helpTopic} />
+  </div>
   <p class="text-ink-muted mt-1 text-sm">{subheading}</p>
   <ZodiacNote {chart} />
   {#if natalPosition}
