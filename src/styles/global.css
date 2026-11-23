@@ -144,10 +144,15 @@ body {
     @apply rounded-md border border-rule bg-panel p-3 text-sm;
   }
 
-  /* The "?" that opens a guide topic beside a label or heading. 24px
-     meets WCAG's minimum target size. */
+  /* The "?" that opens a guide topic beside a label or heading. Drawn at
+     18px, but the ::before stretches what takes a click or tap to 24px,
+     WCAG's minimum target size. */
   .ui-help-toggle {
-    @apply inline-flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-full border border-rule font-sans text-xs font-medium text-ink-muted hover:border-ink hover:text-ink aria-expanded:border-ink aria-expanded:text-ink;
+    @apply relative inline-flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-rule font-sans text-[0.625rem] font-medium text-ink-muted hover:border-ink hover:text-ink aria-expanded:border-ink aria-expanded:text-ink;
+  }
+
+  .ui-help-toggle::before {
+    @apply absolute -inset-0.75 content-[''];
   }
 
   /* Rendered Markdown from the guide. */
