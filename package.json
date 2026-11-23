@@ -12,6 +12,7 @@
   "scripts": {
     "astro": "astro",
     "build": "astro build",
+    "changelog:publish": "node --env-file-if-exists=.env --import tsx scripts/changelog-publish.ts",
     "check": "astro check",
     "dev": "astro dev",
     "format": "npm run oxfmt && npm run prettier",
@@ -26,6 +27,7 @@
     "prettier": "prettier \"**/*.{astro,svelte}\" -c",
     "prettier:write": "prettier \"**/*.{astro,svelte}\" --write",
     "preview": "astro preview",
+    "standard:publication-create": "node --env-file-if-exists=.env --import tsx scripts/standard-publication-create.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
@@ -74,6 +76,7 @@
     "prettier-plugin-organize-imports": "^4.3.0",
     "prettier-plugin-svelte": "^4.1.1",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "vitest": "^5.1.0"
   },

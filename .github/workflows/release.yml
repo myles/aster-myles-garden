@@ -3,7 +3,8 @@ name: Release
 # On each push to main, release-please reads the conventional commits since
 # the last release and opens or updates a release PR. Merging that PR bumps
 # the version in package.json, updates CHANGELOG.md, tags the commit and
-# publishes a GitHub Release. See release-please-config.json.
+# publishes a GitHub Release. See release-please-config.json. A release
+# is then announced on Bluesky, with its notes on Aster's PDS.
 
 on:
   push:
@@ -22,6 +23,9 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
 
+    outputs:
+      release-created: ${{ steps.release.outputs.release_created }}
+
     steps:
       # The built-in token's PRs don't start other workflows, so CI and the
       # PR title check won't run on the release PR. It only changes the
@@ -32,3 +36,48 @@ jobs:
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  changelog:
+    needs: release-please
+    if: needs.release-please.outputs.release-created == 'true'
+    runs-on: ubuntu-latest
+    # Two releases in quick succession shouldn't post the same one twice.
+    concurrency:
+      group: changelog
+      cancel-in-progress: false
+
+    steps:
+      # Every tag, for each release's publish time.
+      - id: checkout
+        name: 📥 Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - id: setup-node
+        name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: "package.json"
+          cache: "npm"
+
+      # Install scripts only build @swisseph/node, which publishing doesn't
+      # use.
+      - id: install-dependencies
+        name: 📦 Install dependencies
+        run: npm ci --ignore-scripts
+
+      # Vercel deploys the release at the same time. The post links to the
+      # changelog, so wait for the site to serve it.
+      - id: wait-for-site
+        name: ⏳ Wait for the changelog page
+        run: >-
+          curl --silent --show-error --fail --output /dev/null
+          --retry 20 --retry-delay 30 --retry-all-errors
+          https://aster.myles.garden/changelog
+
+      - id: publish
+        name: 🦋 Publish release notes
+        run: npm run changelog:publish
+        env:
+          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}

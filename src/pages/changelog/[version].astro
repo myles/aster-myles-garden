@@ -1,0 +1,84 @@
+---
+// One release's notes, read from its standard.site document on Aster's
+// PDS. The <link> lets AT Protocol readers confirm the page is the
+// document's.
+import SiteFooter from "@/components/site/SiteFooter.astro";
+import Layout from "@/layouts/Layout.astro";
+import { formatItem, formatReleaseDate } from "@/lib/changelog/document";
+import { buildPostWebUrl } from "@/lib/changelog/post";
+import {
+  CACHE_PUBLIC_FIVE_MINUTES,
+  loadReleaseNote,
+} from "@/lib/server/changelog";
+
+export const prerender = false;
+
+const HTTP_NOT_FOUND = 404;
+
+const document = await loadReleaseNote(Astro.params.version ?? "");
+
+// Not cached, so a release asked for just before it's published isn't
+// stuck as missing.
+if (!document) {
+  return new Response("No such release.", {
+    status: HTTP_NOT_FOUND,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
+
+const { uri, value } = document;
+
+Astro.response.headers.set("Cache-Control", CACHE_PUBLIC_FIVE_MINUTES);
+---
+
+<Layout pageTitle={value.title} pageDescription={value.description}>
+  <link slot="head" rel="site.standard.document" href={uri} />
+
+  <div class="mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-8 sm:px-6">
+    <header class="mb-8">
+      <p class="text-sm">
+        <a class="underline" href="/changelog">
+          ← Changelog
+        </a>
+      </p>
+      <h1 class="mt-4 font-serif text-4xl tracking-tight">{value.title}</h1>
+      <p class="mt-1 text-ink-muted">
+        <time datetime={value.content.releaseDate}>
+          {formatReleaseDate(value.content.releaseDate)}
+        </time>
+        {value.bskyPostRef && (
+          <>
+            {" "}
+            ·{" "}
+            <a class="underline" href={buildPostWebUrl(value.bskyPostRef.uri)}>
+              Discuss on Bluesky
+            </a>
+          </>
+        )}
+      </p>
+    </header>
+
+    <main class="flex flex-col gap-8">
+      {value.content.sections.map((section) => (
+        <section>
+          <h2 class="ui-heading-section">{section.heading}</h2>
+          <ul class="ui-prose mt-2">
+            {section.items.map((item) => (
+              <li>
+                {item.url ? (
+                  <a class="underline" href={item.url}>
+                    {formatItem(item)}
+                  </a>
+                ) : (
+                  formatItem(item)
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </main>
+
+    <SiteFooter />
+  </div>
+</Layout>

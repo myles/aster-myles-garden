@@ -10,6 +10,14 @@ export const REGISTRY_URL = "https://registry.myles.garden/";
 export const REGISTRY_IDENTIFIER = "MB-360";
 export const REGISTRY_ENTRY_URL = `${REGISTRY_URL}${REGISTRY_IDENTIFIER}`;
 
+// Aster's AT Protocol account, which announces each release on Bluesky
+// and keeps its notes as documents in a standard.site publication.
+export const ASTER_HANDLE = "aster.myles.garden";
+export const ASTER_DID = "did:plc:vzffyjm4owshm3ngn5sfh577";
+// Made once by scripts/standard-publication-create.ts. Also served at
+// public/.well-known/site.standard.publication, which must match.
+export const PUBLICATION_URI = `at://${ASTER_DID}/site.standard.publication/TODO`;
+
 // A named import, so only the version reaches the browser's bundle, not
 // the rest of package.json. release-please bumps it in each release PR.
 export { version as VERSION } from "../package.json";
