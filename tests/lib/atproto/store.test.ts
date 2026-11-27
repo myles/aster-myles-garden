@@ -79,6 +79,48 @@ describe("SpaceChartStore", () => {
       .mockResolvedValueOnce(Response.json(body));
     await expect(store.createSpace()).rejects.toThrow();
   });
+  it("finds an existing personal Space", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler.mockResolvedValueOnce(
+      Response.json({
+        space: SPACE,
+        policy: { $type: "com.atproto.personalspace.policy" },
+      }),
+    );
+    expect(await store.findSpace()).toBe(SPACE);
+    const params = new URLSearchParams({ space: SPACE });
+    expect(fetchHandler.mock.calls[0][0]).toBe(
+      `/xrpc/com.atproto.space.getSpace?${params}`,
+    );
+  });
+  it("finds no Space when the PDS has none", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler.mockResolvedValueOnce(
+      Response.json(
+        { error: "SpaceNotFound" },
+        { status: HTTP_STATUS_BAD_REQUEST },
+      ),
+    );
+    expect(await store.findSpace()).toBeUndefined();
+  });
+  it.each([
+    { space: "at:space/wrong/example.test.type/self" },
+    { space: SPACE, policy: { $type: "public" } },
+  ])("rejects an unsafe found Space: %j", async (body) => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler.mockResolvedValueOnce(Response.json(body));
+    await expect(store.findSpace()).rejects.toThrow();
+  });
+  it("surfaces lookup failures", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler.mockResolvedValueOnce(
+      Response.json(
+        { error: "NotAuthorized" },
+        { status: HTTP_STATUS_FORBIDDEN },
+      ),
+    );
+    await expect(store.findSpace()).rejects.toThrow("NotAuthorized");
+  });
   it("surfaces creation failures", async () => {
     const { store, fetchHandler } = createStore();
     fetchHandler.mockResolvedValue(

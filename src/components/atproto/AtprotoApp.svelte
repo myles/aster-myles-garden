@@ -48,6 +48,7 @@
         }
         connection = client;
         isBusy = false;
+        void reopenSpace();
         return undefined;
       },
       (cause: unknown) => {
@@ -95,6 +96,16 @@
       place = undefined;
       hasConfirmedOwnership = false;
       status = "Signed out.";
+    });
+  }
+
+  // The Space persists on the PDS, so a restored session reopens it.
+  async function reopenSpace(): Promise<void> {
+    if (!connection?.charts) {
+      return;
+    }
+    await runAction(async () => {
+      space = (await connection?.charts?.findSpace()) ?? "";
     });
   }
 

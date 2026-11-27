@@ -48,24 +48,41 @@ export class SpaceChartStore {
         );
       }
       // Reuse only a verified personal Space; never reset its policies.
-      const params = new URLSearchParams({ space: this._space });
-      const existing = await this._session.fetchHandler(
-        `/xrpc/com.atproto.space.getSpace?${params}`,
-      );
-      const description = await existing.json();
-      if (
-        !existing.ok ||
-        description?.space !== this._space ||
-        description?.policy?.$type !== PERSONAL_POLICY_TYPE
-      ) {
+      const existing = await this.findSpace();
+      if (!existing) {
         throw new Error(
           "The existing Space could not be verified as personal.",
         );
       }
-      return description.space;
+      return existing;
     }
     if (body?.space !== this._space) {
       throw new Error("The PDS returned an unexpected Space URI.");
+    }
+    return body.space;
+  }
+
+  /** The account's personal Space, or undefined if it isn't created yet. */
+  async findSpace(): Promise<string | undefined> {
+    const params = new URLSearchParams({ space: this._space });
+    const response = await this._session.fetchHandler(
+      `/xrpc/com.atproto.space.getSpace?${params}`,
+    );
+    const body = await response.json();
+    if (!response.ok) {
+      // Only an explicit missing Space is absent; other errors surface.
+      if (body?.error === "SpaceNotFound") {
+        return undefined;
+      }
+      throw new Error(
+        `Couldn't look up the Space (${body?.error ?? response.status}).`,
+      );
+    }
+    if (
+      body?.space !== this._space ||
+      body?.policy?.$type !== PERSONAL_POLICY_TYPE
+    ) {
+      throw new Error("The existing Space could not be verified as personal.");
     }
     return body.space;
   }

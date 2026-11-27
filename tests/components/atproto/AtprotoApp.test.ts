@@ -21,6 +21,7 @@ vi.mock("@/lib/places", async (importOriginal) => ({
 }));
 
 const charts = {
+  findSpace: vi.fn(),
   createSpace: vi.fn(),
   loadChart: vi.fn(),
   saveChart: vi.fn(),
@@ -38,6 +39,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(createAtprotoClient).mockResolvedValue(client);
   vi.mocked(loadPlaceIndex).mockResolvedValue(PLACE_INDEX);
+  charts.findSpace.mockResolvedValue(undefined);
   charts.createSpace.mockResolvedValue(SPACE);
   charts.loadChart.mockResolvedValue(CHART.details);
   charts.saveChart.mockResolvedValue(undefined);
@@ -59,6 +61,25 @@ async function loadChart(): Promise<void> {
 }
 
 describe("AtprotoApp", () => {
+  it("reopens an existing Space on load without creating one", async () => {
+    charts.findSpace.mockResolvedValue(SPACE);
+    render(AtprotoApp);
+    expect(await screen.findByText(`Space: ${SPACE}`)).toBeTruthy();
+    expect(charts.createSpace).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole("button", { name: "Create my Aster Space" }),
+    ).toBeNull();
+  });
+  it("surfaces a failed Space lookup and still offers creation", async () => {
+    charts.findSpace.mockRejectedValue(new Error("Lookup failed"));
+    render(AtprotoApp);
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "Lookup failed",
+    );
+    expect(
+      screen.getByRole("button", { name: "Create my Aster Space" }),
+    ).toBeTruthy();
+  });
   it("creates a Space on request and uses its URI", async () => {
     render(AtprotoApp);
     const button = await screen.findByRole("button", {
