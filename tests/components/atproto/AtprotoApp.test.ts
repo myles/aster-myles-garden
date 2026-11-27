@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen } from "@testing-library/svelte";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AtprotoApp from "@/components/atproto/AtprotoApp.svelte";
 import { createAtprotoClient } from "@/lib/atproto/client";
 import { TimeDisclosure } from "@/lib/atproto/record";
-import { loadPlaceIndex } from "@/lib/places";
+import { createChart, loadChartEngine } from "@/lib/charts/chart";
+import { formatPlace, loadPlaceIndex } from "@/lib/places";
 
 import { CHART } from "../../fixtures/chart";
 import { PLACE_INDEX } from "../../fixtures/places";
@@ -14,6 +15,11 @@ import { DID, SPACE } from "../../lib/atproto/fixtures";
 
 vi.mock("@/lib/atproto/client", () => ({
   createAtprotoClient: vi.fn(),
+}));
+vi.mock("@/lib/charts/chart", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/charts/chart")>()),
+  createChart: vi.fn(),
+  loadChartEngine: vi.fn(),
 }));
 vi.mock("@/lib/places", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/places")>()),
@@ -35,8 +41,16 @@ const client = {
   dispose: vi.fn(),
 };
 
+// The drawn chart is headed by its birthplace.
+const CHART_HEADING = { name: formatPlace(CHART.details.place) };
+
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubGlobal("navigator", {
+    clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+  });
+  vi.mocked(loadChartEngine).mockResolvedValue(undefined);
+  vi.mocked(createChart).mockReturnValue(CHART);
   vi.mocked(createAtprotoClient).mockResolvedValue(client);
   vi.mocked(loadPlaceIndex).mockResolvedValue(PLACE_INDEX);
   charts.findSpace.mockResolvedValue(undefined);
@@ -44,6 +58,10 @@ beforeEach(() => {
   charts.loadChart.mockResolvedValue(CHART.details);
   charts.saveChart.mockResolvedValue(undefined);
   charts.deleteChart.mockResolvedValue(undefined);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 async function loadChart(): Promise<void> {
@@ -122,11 +140,39 @@ describe("AtprotoApp", () => {
       expect.objectContaining({ date: CHART.details.date }),
       TimeDisclosure.Omit,
     );
+    // The drawn chart matches what was stored: no birth time.
+    expect(createChart).toHaveBeenLastCalledWith(
+      expect.objectContaining({ time: undefined }),
+    );
+  });
+  it("draws the saved chart on the page once loaded", async () => {
+    render(AtprotoApp);
+    await loadChart();
+    expect(await screen.findByRole("heading", CHART_HEADING)).toBeTruthy();
+    expect(createChart).toHaveBeenCalledWith(CHART.details);
     expect(
-      screen
-        .getByRole("link", { name: "Open my saved chart in Aster" })
-        .getAttribute("href"),
-    ).toContain("time=unknown");
+      screen.queryByRole("link", { name: "Open my saved chart in Aster" }),
+    ).toBeNull();
+  });
+  it("draws the saved chart when a resumed session reopens", async () => {
+    charts.findSpace.mockResolvedValue(SPACE);
+    render(AtprotoApp);
+    expect(await screen.findByRole("heading", CHART_HEADING)).toBeTruthy();
+    expect(charts.loadChart).toHaveBeenCalledTimes(1);
+  });
+  it("surfaces a chart that can't be calculated", async () => {
+    vi.mocked(loadChartEngine).mockRejectedValue(new Error("No engine"));
+    render(AtprotoApp);
+    await fireEvent.click(
+      await screen.findByRole("button", { name: "Create my Aster Space" }),
+    );
+    await fireEvent.click(
+      await screen.findByRole("button", { name: "Load my saved chart" }),
+    );
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "No engine",
+    );
+    expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
   });
   it("preserves loaded AI preferences when saving the form", async () => {
     const aiPreferences = {
@@ -196,9 +242,7 @@ describe("AtprotoApp", () => {
         name: "Delete my saved chart",
       }),
     );
-    expect(
-      screen.queryByRole("link", { name: "Open my saved chart in Aster" }),
-    ).toBeNull();
+    expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
   });
   it("clears loaded birth details when signing out", async () => {
     render(AtprotoApp);
@@ -206,9 +250,7 @@ describe("AtprotoApp", () => {
     await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
     expect(client.signOut).toHaveBeenCalled();
     expect(screen.queryByLabelText("Date")).toBeNull();
-    expect(
-      screen.queryByRole("link", { name: "Open my saved chart in Aster" }),
-    ).toBeNull();
+    expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
   });
   it("keeps birth entry disabled after OAuth failure", async () => {
     vi.mocked(createAtprotoClient).mockRejectedValue(new Error("OAuth failed"));
