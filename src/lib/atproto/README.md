@@ -17,7 +17,7 @@ The page is `src/pages/app/index.astro`, rendering `src/components/atproto/Atpro
 
 `/app/client-metadata.json` is rendered per request from the request's origin, so production and preview deployments each publish matching OAuth metadata with no configuration. Only HTTPS origins can publish metadata. For local development, open `http://127.0.0.1:4321/app/`; Aster then uses a loopback client, which requires the numeric host, and refuses `localhost`.
 
-Any account can sign in with its handle. The Space is always `at://<did>/space/garden.myles.aster.space/self` for the signed-in DID, so a session can only reach its own Space. Data access is enforced by the PDS and Space policies.
+Any account can sign in with its handle. The Space is always `at:space/<did>/garden.myles.aster.space/self` for the signed-in DID, so a session can only reach its own Space. Data access is enforced by the PDS and Space policies.
 
 All writes target `com.atproto.space.*`, the session's DID, that personal Space, collection `garden.myles.aster.chart`, and singleton record key `self`. There is no public-repo fallback. Birth details are sent only in the explicit save request body. Read requests carry record identifiers, not birth details. Only an explicit `RecordNotFound` response is treated as an empty chart; missing Spaces and authentication errors surface.
 

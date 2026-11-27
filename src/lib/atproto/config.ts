@@ -13,7 +13,7 @@ const LOOPBACK_HOSTNAME = "127.0.0.1";
 
 /** Every account keeps its chart in one personal Space of Aster's type. */
 export function buildSpaceUri(did: string): string {
-  return `at://${did}/space/${SPACE_TYPE}/${SPACE_KEY}`;
+  return `at:space/${did}/${SPACE_TYPE}/${SPACE_KEY}`;
 }
 
 /**

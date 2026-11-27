@@ -24,7 +24,7 @@ function createStore() {
 
 describe("SpaceChartStore", () => {
   it("keeps the chart in the signed-in account's personal Space", () => {
-    expect(SPACE).toBe(`at://${DID}/space/${SPACE_TYPE}/${SPACE_KEY}`);
+    expect(SPACE).toBe(`at:space/${DID}/${SPACE_TYPE}/${SPACE_KEY}`);
   });
   it("creates a personal Space and returns its URI", async () => {
     const { store, fetchHandler } = createStore();
@@ -65,7 +65,7 @@ describe("SpaceChartStore", () => {
     );
   });
   it.each([
-    { space: "at://wrong/space/example.test.type/self" },
+    { space: "at:space/wrong/example.test.type/self" },
     { space: SPACE, policy: { $type: "public" } },
   ])("rejects an unsafe existing Space: %j", async (body) => {
     const { store, fetchHandler } = createStore();

@@ -12,7 +12,7 @@ import { DID } from "./fixtures";
 describe("buildSpaceUri", () => {
   it("names the account's personal Aster Space", () => {
     expect(buildSpaceUri(DID)).toBe(
-      `at://${DID}/space/garden.myles.aster.space/self`,
+      `at:space/${DID}/garden.myles.aster.space/self`,
     );
   });
 });
