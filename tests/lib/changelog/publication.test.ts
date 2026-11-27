@@ -1,15 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import type { BlobRef } from "@/lib/atproto/xrpc";
-
 import { buildPublication } from "@/lib/changelog/publication";
 
-const ICON: BlobRef = {
-  $type: "blob",
-  ref: { $link: "bafk" },
-  mimeType: "image/png",
-  size: 1,
-};
+import { buildBlobRef } from "../../fixtures/changelog";
+
+const ICON = buildBlobRef("image/png");
 
 const FIELDS = {
   url: "https://aster.myles.garden",
@@ -33,5 +28,9 @@ describe("buildPublication", () => {
     });
 
     expect(publication.url).toBe("https://aster.myles.garden");
+  });
+
+  it("refuses a publication the lexicon rejects", () => {
+    expect(() => buildPublication({ ...FIELDS, url: "not a url" })).toThrow();
   });
 });

@@ -1,0 +1,63 @@
+{
+  "id": "garden.myles.aster.chart",
+  "defs": {
+    "main": {
+      "key": "any",
+      "type": "record",
+      "record": {
+        "type": "object",
+        "required": [
+          "bornAt",
+          "isBirthTimeKnown",
+          "location",
+          "timeZone",
+          "houseSystem",
+          "updatedAt"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 640,
+            "description": "Who the chart belongs to, e.g. 'Mum'. Usually omitted on the 'self' record.",
+            "maxGraphemes": 64
+          },
+          "bornAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Birth instant. When isBirthTimeKnown is false, local noon in timeZone."
+          },
+          "location": {
+            "ref": "community.lexicon.location.geo#main",
+            "type": "ref"
+          },
+          "timeZone": { "type": "string" },
+          "updatedAt": { "type": "string", "format": "datetime" },
+          "houseSystem": {
+            "type": "string",
+            "knownValues": [
+              "placidus",
+              "koch",
+              "wholeSign",
+              "equal",
+              "porphyry",
+              "regiomontanus",
+              "campanus"
+            ]
+          },
+          "aiPreferences": {
+            "ref": "community.lexicon.preference.ai#preferenceSet",
+            "type": "ref",
+            "description": "Chart-specific AI preferences. Aster treats omitted preferences, including inference, as denied. Inference covers sending chart data to an AI model, including a hosted LLM, to generate text such as a horoscope."
+          },
+          "isBirthTimeKnown": {
+            "type": "boolean",
+            "description": "Whether the birth time is known and disclosed."
+          }
+        }
+      },
+      "description": "Birth chart calculation inputs. The record key 'self' holds the author's own chart; any other key (a TID) holds someone else's."
+    }
+  },
+  "$type": "com.atproto.lexicon.schema",
+  "lexicon": 1
+}

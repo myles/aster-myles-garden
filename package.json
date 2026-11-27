@@ -14,9 +14,12 @@
     "build": "astro build",
     "changelog:publish": "node --env-file-if-exists=.env --import tsx scripts/changelog-publish.ts",
     "check": "astro check",
-    "dev": "astro dev",
+    "dev": "astro dev --host 127.0.0.1",
     "format": "npm run oxfmt && npm run prettier",
     "format:fix": "npm run oxfmt:write && npm run prettier:write",
+    "lexicons:build": "lex build --lib @atproto/lex-schema --import-ext \"\" --clear",
+    "lexicons:check": "lex install --ci",
+    "lexicons:install": "lex install",
     "lint": "npm run oxlint",
     "lint:fix": "npm run oxlint:fix",
     "oxfmt": "oxfmt --check",
@@ -38,6 +41,11 @@
   "dependencies": {
     "@astrojs/svelte": "^9.1.6",
     "@astrojs/vercel": "^11.0.22",
+    "@atproto/lex-client": "0.0.0-spaces-alpha-20261117141222",
+    "@atproto/lex-password-session": "0.0.0-spaces-alpha-20261117141222",
+    "@atproto/lex-schema": "0.0.0-spaces-alpha-20261117141222",
+    "@atproto/oauth-client-browser": "0.0.0-spaces-alpha-20261117141222",
+    "@atproto/syntax": "0.0.0-spaces-alpha-20261117141222",
     "@fontsource-variable/bitter": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
     "@myles-garden/styles": "^1.1.0",
@@ -56,6 +64,9 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
+    "@atproto/lex": "0.0.0-spaces-alpha-20261117141222",
+    "@atproto/lex-data": "0.0.0-spaces-alpha-20261117141222",
+    "@atproto/lex-document": "0.0.0-spaces-alpha-20261117141222",
     "@mylesb/oxfmt-config": "^1.0.0",
     "@mylesb/oxlint-config": "^1.0.0",
     "@mylesb/prettier-config": "^1.1.0",
@@ -83,7 +94,8 @@
   "overrides": {
     "@vercel/routing-utils": {
       "path-to-regexp": "^6.3.0"
-    }
+    },
+    "zod": "^4.6.7"
   },
   "engines": {
     "node": ">=22.12.0"

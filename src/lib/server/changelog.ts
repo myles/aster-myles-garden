@@ -3,9 +3,9 @@
 // no login is needed.
 
 import { ASTER_DID, PUBLICATION_URI } from "@/consts";
-import { listRecords, resolvePdsUrl } from "@/lib/atproto/xrpc";
+import * as siteDocument from "@/lexicons/site/standard/document";
+import { createPublicClient } from "@/lib/atproto/xrpc";
 import {
-  DOCUMENT_COLLECTION,
   selectReleaseDocuments,
   type PublishedDocument,
 } from "@/lib/changelog/document";
@@ -16,8 +16,10 @@ export const CACHE_PUBLIC_FIVE_MINUTES =
 
 /** Every release's notes, newest first. */
 export async function loadReleaseNotes(): Promise<PublishedDocument[]> {
-  const pdsUrl = await resolvePdsUrl(ASTER_DID);
-  const records = await listRecords(pdsUrl, ASTER_DID, DOCUMENT_COLLECTION);
+  const client = await createPublicClient(ASTER_DID);
+  const records = await Array.fromAsync(
+    client.listAll(siteDocument, { repo: ASTER_DID }),
+  );
 
   return selectReleaseDocuments(records, PUBLICATION_URI).toSorted((a, b) =>
     b.value.publishedAt.localeCompare(a.value.publishedAt),

@@ -1,0 +1,14 @@
+{
+  "id": "garden.myles.aster.space",
+  "defs": {
+    "main": {
+      "key": "literal:self",
+      "type": "space",
+      "title": "aster.myles.garden",
+      "collections": ["garden.myles.aster.chart"],
+      "description": "Personal data used by Aster."
+    }
+  },
+  "$type": "com.atproto.lexicon.schema",
+  "lexicon": 1
+}

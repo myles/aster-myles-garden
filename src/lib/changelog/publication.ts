@@ -2,28 +2,30 @@
 // to, which tells AT Protocol readers what the site is called and where
 // it lives. https://standard.site
 
-import type { BlobRef } from "@/lib/atproto/xrpc";
+import type { BlobRef } from "@atproto/lex-schema";
 
-import { PUBLICATION_COLLECTION } from "@/lib/changelog/document";
+import * as sitePublication from "@/lexicons/site/standard/publication";
 
-export type Publication = {
-  $type: typeof PUBLICATION_COLLECTION;
+export type Publication = sitePublication.Main;
+
+type PublicationFields = {
   url: string;
   name: string;
   description: string;
   icon: BlobRef;
 };
 
-type PublicationFields = Omit<Publication, "$type">;
-
-/** The publication's URL is the site's, without a trailing slash. */
+/**
+ * The publication's URL is the site's, without a trailing slash. Checked
+ * against the lexicon, so a malformed publication never leaves.
+ */
 export function buildPublication({
   url,
   ...fields
 }: PublicationFields): Publication {
-  return {
-    $type: PUBLICATION_COLLECTION,
+  return sitePublication.$parse({
+    $type: sitePublication.$type,
     url: url.replace(/\/+$/u, ""),
     ...fields,
-  };
+  });
 }

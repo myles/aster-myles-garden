@@ -17,12 +17,16 @@ type Props = {
 
   pageTitle?: string;
   pageDescription?: string;
+
+  /** A robots directive, for pages kept out of search. */
+  robots?: string;
 };
 const {
   siteTitle = SITE_TITLE,
   siteDescription = SITE_DESCRIPTION,
   pageTitle,
   pageDescription,
+  robots,
 } = Astro.props;
 
 const title = pageTitle ? `${pageTitle} | ${siteTitle}` : siteTitle;
@@ -91,6 +95,7 @@ const structuredData = {
 
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+    {robots && <meta name="robots" content={robots} />}
 
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />

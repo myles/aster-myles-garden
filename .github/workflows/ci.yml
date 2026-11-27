@@ -108,11 +108,23 @@ jobs:
         continue-on-error: true
         run: npm run lint
 
+      # The generated schemas are committed, so rebuilding them must
+      # change nothing.
+      - id: lexicons-check
+        name: 📜 Verify installed lexicons and their schemas
+        continue-on-error: true
+        run: |
+          npm run lexicons:check
+          npm run lexicons:build
+          git add --intent-to-add src/lexicons
+          git diff --exit-code -- src/lexicons
+
       - id: lint-status
         name: ❗ Fail if lint checks failed
         if: >-
           steps.format-check.outcome == 'failure' ||
-          steps.lint-check.outcome == 'failure'
+          steps.lint-check.outcome == 'failure' ||
+          steps.lexicons-check.outcome == 'failure'
         run: exit 1
 
   e2e:

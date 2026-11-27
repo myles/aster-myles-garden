@@ -1,27 +1,44 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import * as siteDocument from "@/lexicons/site/standard/document";
 import {
-  createRecord,
-  listRecords,
+  createPublicClient,
+  loginWithAppPassword,
   resolvePdsUrl,
-  toRecordKey,
-  XrpcError,
 } from "@/lib/atproto/xrpc";
 
-const HTTP_OK = 200;
-const HTTP_UNAUTHORIZED = 401;
+const HTTP_NOT_FOUND = 404;
 
+const DID = "did:plc:aster";
 const PDS_URL = "https://pds.example";
-const SESSION = { pdsUrl: PDS_URL, did: "did:plc:aster", accessJwt: "jwt" };
+const DID_DOCUMENT = {
+  service: [{ id: "#atproto_pds", serviceEndpoint: PDS_URL }],
+};
 
-function respondWith(...bodies: [number, unknown][]) {
+/** Fake tokens: the PDS's reply to an app password login. */
+const SESSION = {
+  did: DID,
+  handle: "aster.myles.garden",
+  accessJwt: "fake-access-jwt",
+  refreshJwt: "fake-refresh-jwt",
+};
+
+function respondWith(...responses: Response[]) {
   const fetch = vi.fn();
-  for (const [status, body] of bodies) {
-    fetch.mockResolvedValueOnce(new Response(JSON.stringify(body), { status }));
+  for (const response of responses) {
+    fetch.mockResolvedValueOnce(response);
   }
   vi.stubGlobal("fetch", fetch);
 
   return fetch;
+}
+
+/** The URL and body of a fetch call, whichever form the caller used. */
+async function readRequest(call: unknown[]) {
+  const request = new Request(call[0] as RequestInfo, call[1] as RequestInit);
+  const body = request.method === "GET" ? undefined : await request.text();
+
+  return { url: new URL(request.url), method: request.method, body };
 }
 
 afterEach(() => {
@@ -30,66 +47,61 @@ afterEach(() => {
 
 describe("resolvePdsUrl", () => {
   it("finds the PDS in the DID document", async () => {
-    respondWith([
-      HTTP_OK,
-      {
-        service: [{ id: "#atproto_pds", serviceEndpoint: PDS_URL }],
-      },
-    ]);
+    respondWith(Response.json(DID_DOCUMENT));
 
-    await expect(resolvePdsUrl("did:plc:aster")).resolves.toBe(PDS_URL);
+    await expect(resolvePdsUrl(DID)).resolves.toBe(PDS_URL);
   });
 
   it("throws when the DID document has no PDS", async () => {
-    respondWith([HTTP_OK, { service: [] }]);
+    respondWith(Response.json({ service: [] }));
 
-    await expect(resolvePdsUrl("did:plc:aster")).rejects.toThrow("no PDS");
+    await expect(resolvePdsUrl(DID)).rejects.toThrow("no PDS");
+  });
+
+  it("throws when the directory can't resolve the DID", async () => {
+    respondWith(new Response("Not found", { status: HTTP_NOT_FOUND }));
+
+    await expect(resolvePdsUrl(DID)).rejects.toThrow(String(HTTP_NOT_FOUND));
   });
 });
 
-describe("listRecords", () => {
-  it("follows the cursor to the last page", async () => {
+describe("createPublicClient", () => {
+  it("reads records from the account's PDS", async () => {
     const fetch = respondWith(
-      [HTTP_OK, { records: [{ uri: "a" }], cursor: "next" }],
-      [HTTP_OK, { records: [{ uri: "b" }] }],
+      Response.json(DID_DOCUMENT),
+      Response.json({ records: [] }),
     );
 
-    const records = await listRecords(PDS_URL, "did:plc:aster", "collection");
+    const client = await createPublicClient(DID);
+    await client.list(siteDocument, { repo: DID });
 
-    expect(records.map(({ uri }) => uri)).toEqual(["a", "b"]);
-    expect(String(fetch.mock.calls[1]?.[0])).toContain("cursor=next");
+    const { url } = await readRequest(fetch.mock.calls[1]);
+    expect(url.origin).toBe(PDS_URL);
+    expect(url.pathname).toBe("/xrpc/com.atproto.repo.listRecords");
+    expect(url.searchParams.get("repo")).toBe(DID);
   });
 });
 
-describe("createRecord", () => {
-  it("sends the record with the session's token", async () => {
-    const fetch = respondWith([HTTP_OK, { uri: "at://x", cid: "cid" }]);
+describe("loginWithAppPassword", () => {
+  it("logs in at the account's PDS", async () => {
+    const fetch = respondWith(
+      Response.json(DID_DOCUMENT),
+      Response.json(SESSION),
+    );
 
-    const ref = await createRecord(SESSION, "collection", { a: 1 });
+    const client = await loginWithAppPassword(
+      DID,
+      SESSION.handle,
+      "fake-app-password",
+    );
 
-    expect(ref).toEqual({ uri: "at://x", cid: "cid" });
-    const [url, init] = fetch.mock.calls[0] ?? [];
-    expect(url).toBe(`${PDS_URL}/xrpc/com.atproto.repo.createRecord`);
-    expect(init.headers.Authorization).toBe("Bearer jwt");
-    expect(JSON.parse(init.body)).toEqual({
-      repo: "did:plc:aster",
-      collection: "collection",
-      record: { a: 1 },
+    const { url, method, body } = await readRequest(fetch.mock.calls[1]);
+    expect(url.href).toBe(`${PDS_URL}/xrpc/com.atproto.server.createSession`);
+    expect(method).toBe("POST");
+    expect(JSON.parse(body ?? "")).toMatchObject({
+      identifier: SESSION.handle,
+      password: "fake-app-password",
     });
-  });
-
-  it("surfaces what the server said when it fails", async () => {
-    respondWith([HTTP_UNAUTHORIZED, { error: "ExpiredToken" }]);
-
-    const request = createRecord(SESSION, "collection", {});
-
-    await expect(request).rejects.toBeInstanceOf(XrpcError);
-    await expect(request).rejects.toThrow("ExpiredToken");
-  });
-});
-
-describe("toRecordKey", () => {
-  it("returns the URI's last part", () => {
-    expect(toRecordKey("at://did/site.standard.document/3abc")).toBe("3abc");
+    expect(client.did).toBe(DID);
   });
 });

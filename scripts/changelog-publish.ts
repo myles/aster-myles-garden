@@ -9,26 +9,18 @@
 // The app password is @aster.myles.garden's, from Bluesky's settings.
 // Keep it in .env, which is gitignored, or a GitHub secret: never commit it.
 
+import type { Client } from "@atproto/lex-client";
+
+import { AtUri } from "@atproto/syntax";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 import { ASTER_DID, ASTER_HANDLE, PUBLICATION_URI, SITE_URL } from "@/consts";
-import {
-  createRecord,
-  createSession,
-  listRecords,
-  putRecord,
-  resolvePdsUrl,
-  toRecordKey,
-  uploadBlob,
-  type Session,
-} from "@/lib/atproto/xrpc";
-import {
-  DOCUMENT_COLLECTION,
-  selectReleaseDocuments,
-} from "@/lib/changelog/document";
+import * as appPost from "@/lexicons/app/bsky/feed/post";
+import * as siteDocument from "@/lexicons/site/standard/document";
+import { loginWithAppPassword } from "@/lib/atproto/xrpc";
+import { selectReleaseDocuments } from "@/lib/changelog/document";
 import { parseChangelog } from "@/lib/changelog/parse";
-import { POST_COLLECTION } from "@/lib/changelog/post";
 import { publishReleases, type PublishClient } from "@/lib/changelog/publish";
 
 const APP_PASSWORD_ENV_VAR = "BLUESKY_APP_PASSWORD";
@@ -45,15 +37,14 @@ const releases = parseChangelog(readFileSync(CHANGELOG_PATH, "utf8")).map(
   (release) => ({ release, publishedAt: readTagTime(release.version) }),
 );
 
-const pdsUrl = await resolvePdsUrl(ASTER_DID);
-const session = await createSession(pdsUrl, ASTER_HANDLE, password);
-const thumb = await uploadBlob(
-  session,
-  new Uint8Array(readFileSync(THUMB_PATH)),
-  THUMB_MIME_TYPE,
-);
+const client = await loginWithAppPassword(ASTER_DID, ASTER_HANDLE, password);
+const { blob: thumb } = (
+  await client.uploadBlob(new Uint8Array(readFileSync(THUMB_PATH)), {
+    encoding: THUMB_MIME_TYPE,
+  })
+).body;
 
-const results = await publishReleases(createClient(session), releases, {
+const results = await publishReleases(createPublishClient(client), releases, {
   publicationUri: PUBLICATION_URI,
   siteUrl: SITE_URL,
   thumb,
@@ -75,21 +66,20 @@ function readTagTime(version: string): string {
   return new Date(committedAt).toISOString();
 }
 
-function createClient(activeSession: Session): PublishClient {
+// Documents are written as plain records: their content is Aster's own
+// type, which the typed helpers can't accept for standard.site's open
+// union. buildDocument has already checked them against both lexicons.
+function createPublishClient(activeClient: Client): PublishClient {
   return {
     listDocuments: async () =>
       selectReleaseDocuments(
-        await listRecords(
-          activeSession.pdsUrl,
-          activeSession.did,
-          DOCUMENT_COLLECTION,
-        ),
+        await Array.fromAsync(activeClient.listAll(siteDocument)),
         PUBLICATION_URI,
       ),
-    createDocument: (document) =>
-      createRecord(activeSession, DOCUMENT_COLLECTION, document),
-    putDocument: (uri, document) =>
-      putRecord(activeSession, DOCUMENT_COLLECTION, toRecordKey(uri), document),
-    createPost: (post) => createRecord(activeSession, POST_COLLECTION, post),
+    createDocument: async (document) =>
+      (await activeClient.createRecord(document)).body,
+    putDocument: async (uri, document) =>
+      (await activeClient.putRecord(document, new AtUri(uri).rkey)).body,
+    createPost: (post) => activeClient.create(appPost, post),
   };
 }

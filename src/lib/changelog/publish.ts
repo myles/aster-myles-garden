@@ -3,7 +3,9 @@
 // document again, now pointing at its post. Safe to run again: releases
 // already posted are skipped, and one that stopped partway is finished.
 
-import type { BlobRef, StrongRef } from "@/lib/atproto/xrpc";
+import type { BlobRef } from "@atproto/lex-schema";
+
+import type * as strongRef from "@/lexicons/com/atproto/repo/strongRef";
 import type { Release } from "@/lib/changelog/parse";
 
 import {
@@ -17,9 +19,9 @@ import { buildPost, type ReleasePost } from "@/lib/changelog/post";
 /** The account's repo, as publishing needs it. */
 export type PublishClient = {
   listDocuments(): Promise<PublishedDocument[]>;
-  createDocument(document: ReleaseDocument): Promise<StrongRef>;
-  putDocument(uri: string, document: ReleaseDocument): Promise<StrongRef>;
-  createPost(post: ReleasePost): Promise<StrongRef>;
+  createDocument(document: ReleaseDocument): Promise<strongRef.Main>;
+  putDocument(uri: string, document: ReleaseDocument): Promise<strongRef.Main>;
+  createPost(post: ReleasePost): Promise<strongRef.Main>;
 };
 
 export type ReleaseToPublish = {
