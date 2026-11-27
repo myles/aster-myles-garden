@@ -43,17 +43,21 @@ const client = {
 
 // The drawn chart is headed by its birthplace.
 const CHART_HEADING = { name: formatPlace(CHART.details.place) };
+const OWNERSHIP_LABEL =
+  "These are my own details and I want to store them in my Space";
 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal("navigator", {
     clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
   });
+  // jsdom has no layout; the place picker scrolls its options.
+  Element.prototype.scrollIntoView = vi.fn();
   vi.mocked(loadChartEngine).mockResolvedValue(undefined);
   vi.mocked(createChart).mockReturnValue(CHART);
   vi.mocked(createAtprotoClient).mockResolvedValue(client);
   vi.mocked(loadPlaceIndex).mockResolvedValue(PLACE_INDEX);
-  charts.findSpace.mockResolvedValue(undefined);
+  charts.findSpace.mockResolvedValue(SPACE);
   charts.createSpace.mockResolvedValue(SPACE);
   charts.loadChart.mockResolvedValue(CHART.details);
   charts.saveChart.mockResolvedValue(undefined);
@@ -64,194 +68,64 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-async function loadChart(): Promise<void> {
-  await fireEvent.click(
-    await screen.findByRole("button", {
-      name: "Create my Aster Space",
-    }),
+function click(name: string): Promise<boolean> {
+  return fireEvent.click(screen.getByRole("button", { name }));
+}
+
+async function findChart(): Promise<HTMLElement> {
+  return screen.findByRole("heading", CHART_HEADING);
+}
+
+/** Opens the form for a saved chart, prefilled from the record. */
+async function startEditing(): Promise<void> {
+  render(AtprotoApp);
+  await findChart();
+  await click("Edit my details");
+}
+
+async function fillNewChart(): Promise<void> {
+  await fireEvent.input(screen.getByLabelText("Date"), {
+    target: { value: "2000-01-01" },
+  });
+  await fireEvent.input(screen.getByLabelText("Time"), {
+    target: { value: "12:00" },
+  });
+  const input = screen.getByLabelText("Place");
+  await fireEvent.focus(input);
+  await vi.waitFor(() =>
+    expect(screen.queryByText("Loading places…")).toBeNull(),
   );
-  await fireEvent.click(
-    await screen.findByRole("button", {
-      name: "Load my saved chart",
-    }),
-  );
-  await screen.findByText("Loaded your saved chart.");
+  await fireEvent.input(input, { target: { value: "london, england" } });
+  await fireEvent.keyDown(input, { key: "Enter" });
 }
 
 describe("AtprotoApp", () => {
-  it("reopens an existing Space on load without creating one", async () => {
-    charts.findSpace.mockResolvedValue(SPACE);
-    render(AtprotoApp);
-    expect(await screen.findByText(`Space: ${SPACE}`)).toBeTruthy();
-    expect(charts.createSpace).not.toHaveBeenCalled();
-    expect(
-      screen.queryByRole("button", { name: "Create my Aster Space" }),
-    ).toBeNull();
-  });
-  it("surfaces a failed Space lookup and still offers creation", async () => {
-    charts.findSpace.mockRejectedValue(new Error("Lookup failed"));
-    render(AtprotoApp);
-    expect((await screen.findByRole("alert")).textContent).toContain(
-      "Lookup failed",
-    );
-    expect(
-      screen.getByRole("button", { name: "Create my Aster Space" }),
-    ).toBeTruthy();
-  });
-  it("creates a Space on request and uses its URI", async () => {
-    render(AtprotoApp);
-    const button = await screen.findByRole("button", {
-      name: "Create my Aster Space",
+  describe("signed out", () => {
+    beforeEach(() => {
+      vi.mocked(createAtprotoClient).mockResolvedValue({
+        ...client,
+        did: undefined,
+        charts: undefined,
+      });
     });
-    expect(charts.createSpace).not.toHaveBeenCalled();
-    expect(screen.queryByLabelText("Date")).toBeNull();
-    await fireEvent.click(button);
-    expect(charts.createSpace).toHaveBeenCalledTimes(1);
-    expect(screen.getByText(`Space: ${SPACE}`)).toBeTruthy();
-    expect(screen.getByLabelText("Date")).toBeTruthy();
-  });
-  it("allows retry after Space creation fails", async () => {
-    charts.createSpace.mockRejectedValueOnce(new Error("Permission denied"));
-    render(AtprotoApp);
-    const button = await screen.findByRole("button", {
-      name: "Create my Aster Space",
+
+    it("offers only sign-in", async () => {
+      render(AtprotoApp);
+      expect(await screen.findByLabelText("Your handle")).toBeTruthy();
+      expect(screen.queryByLabelText("Date")).toBeNull();
+      expect(charts.findSpace).not.toHaveBeenCalled();
     });
-    await fireEvent.click(button);
-    expect(screen.getByRole("alert").textContent).toContain(
-      "Permission denied",
-    );
-    expect(screen.queryByLabelText("Date")).toBeNull();
-    await fireEvent.click(button);
-    expect(screen.getByLabelText("Date")).toBeTruthy();
-  });
-  it("requires an explicit save and defaults to omitting time", async () => {
-    render(AtprotoApp);
-    await loadChart();
-    expect(charts.saveChart).not.toHaveBeenCalled();
-    await fireEvent.click(
-      screen.getByLabelText(
-        "These are my own details and I want to store them in my Space",
-      ),
-    );
-    await fireEvent.click(
-      screen.getByRole("button", { name: "Save my chart" }),
-    );
-    expect(charts.saveChart).toHaveBeenCalledWith(
-      expect.objectContaining({ date: CHART.details.date }),
-      TimeDisclosure.Omit,
-    );
-    // The drawn chart matches what was stored: no birth time.
-    expect(createChart).toHaveBeenLastCalledWith(
-      expect.objectContaining({ time: undefined }),
-    );
-  });
-  it("draws the saved chart on the page once loaded", async () => {
-    render(AtprotoApp);
-    await loadChart();
-    expect(await screen.findByRole("heading", CHART_HEADING)).toBeTruthy();
-    expect(createChart).toHaveBeenCalledWith(CHART.details);
-    expect(
-      screen.queryByRole("link", { name: "Open my saved chart in Aster" }),
-    ).toBeNull();
-  });
-  it("draws the saved chart when a resumed session reopens", async () => {
-    charts.findSpace.mockResolvedValue(SPACE);
-    render(AtprotoApp);
-    expect(await screen.findByRole("heading", CHART_HEADING)).toBeTruthy();
-    expect(charts.loadChart).toHaveBeenCalledTimes(1);
-  });
-  it("surfaces a chart that can't be calculated", async () => {
-    vi.mocked(loadChartEngine).mockRejectedValue(new Error("No engine"));
-    render(AtprotoApp);
-    await fireEvent.click(
-      await screen.findByRole("button", { name: "Create my Aster Space" }),
-    );
-    await fireEvent.click(
-      await screen.findByRole("button", { name: "Load my saved chart" }),
-    );
-    expect((await screen.findByRole("alert")).textContent).toContain(
-      "No engine",
-    );
-    expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
-  });
-  it("preserves loaded AI preferences when saving the form", async () => {
-    const aiPreferences = {
-      training: { allow: false, updatedAt: "2026-11-13T12:00:00Z" },
-    };
-    charts.loadChart.mockResolvedValue({ ...CHART.details, aiPreferences });
-    render(AtprotoApp);
-    await loadChart();
-    await fireEvent.click(
-      screen.getByLabelText(
-        "These are my own details and I want to store them in my Space",
-      ),
-    );
-    await fireEvent.click(
-      screen.getByRole("button", { name: "Save my chart" }),
-    );
-    expect(charts.saveChart).toHaveBeenCalledWith(
-      expect.objectContaining({ aiPreferences }),
-      TimeDisclosure.Omit,
-    );
+    it("signs in with the handle entered", async () => {
+      render(AtprotoApp);
+      await fireEvent.input(await screen.findByLabelText("Your handle"), {
+        target: { value: " you.bsky.social " },
+      });
+      await click("Sign in");
+      expect(createAtprotoClient).toHaveBeenCalledWith(window.location.href);
+      expect(client.signIn).toHaveBeenCalledWith("you.bsky.social");
+    });
   });
 
-  it("includes time only when explicitly selected", async () => {
-    render(AtprotoApp);
-    await loadChart();
-    await fireEvent.click(
-      screen.getByLabelText(
-        "These are my own details and I want to store them in my Space",
-      ),
-    );
-    await fireEvent.click(
-      screen.getByLabelText("Include my birth time in the saved record"),
-    );
-    await fireEvent.click(
-      screen.getByRole("button", { name: "Save my chart" }),
-    );
-    expect(charts.saveChart).toHaveBeenCalledWith(
-      expect.objectContaining({ time: CHART.details.time }),
-      TimeDisclosure.Include,
-    );
-  });
-  it("requires confirmation of whose details are saved", async () => {
-    render(AtprotoApp);
-    await loadChart();
-    await fireEvent.click(
-      screen.getByRole("button", { name: "Save my chart" }),
-    );
-    expect(screen.getByRole("alert").textContent).toContain(
-      "Confirm these are your own",
-    );
-    expect(charts.saveChart).not.toHaveBeenCalled();
-  });
-  it("surfaces storage errors and supports explicit deletion", async () => {
-    render(AtprotoApp);
-    await loadChart();
-    charts.deleteChart.mockRejectedValueOnce(new Error("Space unavailable"));
-    await fireEvent.click(
-      screen.getByRole("button", {
-        name: "Delete my saved chart",
-      }),
-    );
-    expect(screen.getByRole("alert").textContent).toContain(
-      "Space unavailable",
-    );
-    await fireEvent.click(
-      screen.getByRole("button", {
-        name: "Delete my saved chart",
-      }),
-    );
-    expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
-  });
-  it("clears loaded birth details when signing out", async () => {
-    render(AtprotoApp);
-    await loadChart();
-    await fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
-    expect(client.signOut).toHaveBeenCalled();
-    expect(screen.queryByLabelText("Date")).toBeNull();
-    expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
-  });
   it("keeps birth entry disabled after OAuth failure", async () => {
     vi.mocked(createAtprotoClient).mockRejectedValue(new Error("OAuth failed"));
     render(AtprotoApp);
@@ -260,21 +134,170 @@ describe("AtprotoApp", () => {
     await fireEvent.input(screen.getByLabelText("Your handle"), {
       target: { value: "you.bsky.social" },
     });
-    await fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await click("Sign in");
     expect(screen.getByRole("alert").textContent).toContain("OAuth failed");
   });
-  it("signs in with the handle entered", async () => {
-    vi.mocked(createAtprotoClient).mockResolvedValue({
-      ...client,
-      did: undefined,
-      charts: undefined,
+
+  describe("with a saved chart", () => {
+    it("shows it straight away, without the form", async () => {
+      render(AtprotoApp);
+      expect(await findChart()).toBeTruthy();
+      expect(createChart).toHaveBeenCalledWith(CHART.details);
+      expect(screen.queryByLabelText("Date")).toBeNull();
+      expect(charts.createSpace).not.toHaveBeenCalled();
     });
-    render(AtprotoApp);
-    await fireEvent.input(await screen.findByLabelText("Your handle"), {
-      target: { value: " you.bsky.social " },
+    it("edits the saved details and redraws", async () => {
+      await startEditing();
+      expect(screen.getByLabelText<HTMLInputElement>("Date").value).toBe(
+        "2000-01-01",
+      );
+      await fireEvent.click(screen.getByLabelText(OWNERSHIP_LABEL));
+      await click("Save my chart");
+      expect(charts.saveChart).toHaveBeenCalledWith(
+        expect.objectContaining({ date: CHART.details.date }),
+        TimeDisclosure.Omit,
+      );
+      expect(charts.createSpace).not.toHaveBeenCalled();
+      // The drawn chart matches what was stored: no birth time.
+      expect(createChart).toHaveBeenLastCalledWith(
+        expect.objectContaining({ time: undefined }),
+      );
+      expect(await findChart()).toBeTruthy();
+      expect(screen.queryByLabelText("Date")).toBeNull();
     });
-    await fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
-    expect(createAtprotoClient).toHaveBeenCalledWith(window.location.href);
-    expect(client.signIn).toHaveBeenCalledWith("you.bsky.social");
+    it("cancels editing without saving", async () => {
+      await startEditing();
+      await click("Cancel");
+      expect(await findChart()).toBeTruthy();
+      expect(screen.queryByLabelText("Date")).toBeNull();
+      expect(charts.saveChart).not.toHaveBeenCalled();
+    });
+    it("includes time only when explicitly selected", async () => {
+      await startEditing();
+      await fireEvent.click(screen.getByLabelText(OWNERSHIP_LABEL));
+      await fireEvent.click(
+        screen.getByLabelText("Include my birth time in the saved record"),
+      );
+      await click("Save my chart");
+      expect(charts.saveChart).toHaveBeenCalledWith(
+        expect.objectContaining({ time: CHART.details.time }),
+        TimeDisclosure.Include,
+      );
+    });
+    it("preserves loaded AI preferences when saving", async () => {
+      const aiPreferences = {
+        training: { allow: false, updatedAt: "2026-11-13T12:00:00Z" },
+      };
+      charts.loadChart.mockResolvedValue({ ...CHART.details, aiPreferences });
+      await startEditing();
+      await fireEvent.click(screen.getByLabelText(OWNERSHIP_LABEL));
+      await click("Save my chart");
+      expect(charts.saveChart).toHaveBeenCalledWith(
+        expect.objectContaining({ aiPreferences }),
+        TimeDisclosure.Omit,
+      );
+    });
+    it("requires confirmation of whose details are saved", async () => {
+      await startEditing();
+      await click("Save my chart");
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Confirm these are your own",
+      );
+      expect(charts.saveChart).not.toHaveBeenCalled();
+    });
+    it("deletes the chart and returns to the empty form", async () => {
+      render(AtprotoApp);
+      await findChart();
+      await click("Delete my saved chart");
+      expect(charts.deleteChart).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
+      expect(screen.getByLabelText<HTMLInputElement>("Date").value).toBe("");
+    });
+    it("keeps the chart when deletion fails", async () => {
+      charts.deleteChart.mockRejectedValueOnce(new Error("Space unavailable"));
+      render(AtprotoApp);
+      await findChart();
+      await click("Delete my saved chart");
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Space unavailable",
+      );
+      expect(screen.getByRole("heading", CHART_HEADING)).toBeTruthy();
+    });
+    it("clears the chart when signing out", async () => {
+      render(AtprotoApp);
+      await findChart();
+      await click("Sign out");
+      expect(client.signOut).toHaveBeenCalled();
+      expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
+      expect(screen.getByLabelText("Your handle")).toBeTruthy();
+    });
+  });
+
+  describe("without a saved chart", () => {
+    it("asks for details when the Space has no chart", async () => {
+      charts.loadChart.mockResolvedValue(undefined);
+      render(AtprotoApp);
+      expect(await screen.findByLabelText("Date")).toBeTruthy();
+      expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
+    });
+    it("asks for details without reading a missing Space", async () => {
+      charts.findSpace.mockResolvedValue(undefined);
+      render(AtprotoApp);
+      expect(await screen.findByLabelText("Date")).toBeTruthy();
+      expect(charts.loadChart).not.toHaveBeenCalled();
+    });
+    it("creates the Space on first save, then shows the chart", async () => {
+      charts.findSpace.mockResolvedValue(undefined);
+      render(AtprotoApp);
+      await screen.findByLabelText("Date");
+      await fillNewChart();
+      await fireEvent.click(screen.getByLabelText(OWNERSHIP_LABEL));
+      await click("Save my chart");
+      expect(charts.createSpace).toHaveBeenCalledTimes(1);
+      expect(charts.createSpace.mock.invocationCallOrder[0]).toBeLessThan(
+        charts.saveChart.mock.invocationCallOrder[0],
+      );
+      expect(await findChart()).toBeTruthy();
+    });
+    it("doesn't save when the Space can't be created", async () => {
+      charts.findSpace.mockResolvedValue(undefined);
+      charts.createSpace.mockRejectedValueOnce(new Error("Permission denied"));
+      render(AtprotoApp);
+      await screen.findByLabelText("Date");
+      await fillNewChart();
+      await fireEvent.click(screen.getByLabelText(OWNERSHIP_LABEL));
+      await click("Save my chart");
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Permission denied",
+      );
+      expect(charts.saveChart).not.toHaveBeenCalled();
+      expect(screen.getByLabelText("Date")).toBeTruthy();
+    });
+  });
+
+  describe("when the chart can't be shown", () => {
+    it.each([
+      ["the Space lookup", () => charts.findSpace],
+      ["loading the record", () => charts.loadChart],
+    ])("surfaces a failure in %s and offers a retry", async (_, step) => {
+      step().mockRejectedValueOnce(new Error("Lookup failed"));
+      render(AtprotoApp);
+      expect((await screen.findByRole("alert")).textContent).toContain(
+        "Lookup failed",
+      );
+      // Never offer a blank form that could overwrite an unread chart.
+      expect(screen.queryByLabelText("Date")).toBeNull();
+      await click("Try again");
+      expect(await findChart()).toBeTruthy();
+    });
+    it("surfaces a chart that can't be calculated", async () => {
+      vi.mocked(loadChartEngine).mockRejectedValueOnce(new Error("No engine"));
+      render(AtprotoApp);
+      expect((await screen.findByRole("alert")).textContent).toContain(
+        "No engine",
+      );
+      expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
+      expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+    });
   });
 });
