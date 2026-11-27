@@ -213,3 +213,110 @@ describe("SpaceChartStore", () => {
     await expect(store.loadChart()).rejects.toThrow("offline");
   });
 });
+
+describe("SpaceChartStore people", () => {
+  const PERSON_RKEY = "3lbz2xq4kme2a";
+  const PERSON = { ...CHART.details, name: "Mum" };
+  const PERSON_RECORD = buildChartRecord(
+    PERSON,
+    TimeDisclosure.Include,
+    new Date("2026-11-13T12:00:00Z"),
+  );
+
+  function listed(rkey: string, value: unknown) {
+    return { collection: CHART_COLLECTION, rkey, cid: "bafy", value };
+  }
+
+  it("lists everyone but the account itself, across pages", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler
+      .mockResolvedValueOnce(
+        Response.json({
+          records: [listed("self", RECORD), listed(PERSON_RKEY, PERSON_RECORD)],
+          cursor: "next",
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ records: [listed("3lbz2xq4kme2b", PERSON_RECORD)] }),
+      );
+
+    const people = await store.listPeople();
+
+    expect(people.map(({ rkey }) => rkey)).toEqual([
+      PERSON_RKEY,
+      "3lbz2xq4kme2b",
+    ]);
+    expect(people[0].details.name).toBe("Mum");
+    const firstQuery = new URLSearchParams(
+      fetchHandler.mock.calls[0][0].split("?")[1],
+    );
+    expect(Object.fromEntries(firstQuery)).toMatchObject({
+      space: SPACE,
+      repo: DID,
+      collection: CHART_COLLECTION,
+    });
+    expect(fetchHandler.mock.calls[1][0]).toContain("cursor=next");
+  });
+  it("surfaces listing failures and malformed people", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler.mockResolvedValueOnce(
+      new Response(null, { status: HTTP_STATUS_FORBIDDEN }),
+    );
+    await expect(store.listPeople()).rejects.toThrow("403");
+    fetchHandler.mockResolvedValueOnce(
+      Response.json({ records: [listed(PERSON_RKEY, {})] }),
+    );
+    await expect(store.listPeople()).rejects.toThrow("malformed");
+  });
+  it("adds a person under a key the PDS chooses", async () => {
+    const { store, fetchHandler } = createStore();
+    fetchHandler.mockResolvedValueOnce(
+      Response.json({
+        uri: `${SPACE}/${DID}/${CHART_COLLECTION}/${PERSON_RKEY}`,
+        cid: "bafy",
+      }),
+    );
+
+    expect(await store.addPerson(PERSON, TimeDisclosure.Omit)).toBe(
+      PERSON_RKEY,
+    );
+
+    const [path, init] = fetchHandler.mock.calls[0];
+    expect(path).toBe("/xrpc/com.atproto.space.createRecord");
+    const body = JSON.parse(init.body);
+    expect(body).toMatchObject({
+      space: SPACE,
+      repo: DID,
+      collection: CHART_COLLECTION,
+    });
+    expect(body).not.toHaveProperty("rkey");
+    expect(body.record.name).toBe("Mum");
+    expect(body.record.isBirthTimeKnown).toBe(false);
+  });
+  it("updates and deletes a person by key", async () => {
+    const { store, fetchHandler } = createStore();
+    await store.savePerson(PERSON_RKEY, PERSON, TimeDisclosure.Include);
+    await store.deletePerson(PERSON_RKEY);
+
+    expect(fetchHandler.mock.calls[0][0]).toBe(
+      "/xrpc/com.atproto.space.putRecord",
+    );
+    expect(JSON.parse(fetchHandler.mock.calls[0][1].body).rkey).toBe(
+      PERSON_RKEY,
+    );
+    expect(fetchHandler.mock.calls[1][0]).toBe(
+      "/xrpc/com.atproto.space.deleteRecord",
+    );
+    expect(JSON.parse(fetchHandler.mock.calls[1][1].body).rkey).toBe(
+      PERSON_RKEY,
+    );
+  });
+  it("never writes the account's own chart as a person", async () => {
+    const { store, fetchHandler } = createStore();
+    await expect(
+      store.savePerson("self", PERSON, TimeDisclosure.Omit),
+    ).rejects.toThrow();
+    await expect(store.deletePerson("self")).rejects.toThrow();
+    expect(fetchHandler).not.toHaveBeenCalled();
+  });
+});

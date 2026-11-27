@@ -7,4 +7,6 @@ export enum Stage {
   FirstSave = "first-save",
   Viewing = "viewing",
   Editing = "editing",
+  AddingPerson = "adding-person",
+  EditingPerson = "editing-person",
 }

@@ -19,7 +19,11 @@ type AiPreference = { allow: boolean; updatedAt: string };
 export type AiPreferences = Partial<
   Record<(typeof AI_PREFERENCE_KEYS)[number], AiPreference>
 >;
-export type ChartDetails = BirthDetails & { aiPreferences?: AiPreferences };
+export type ChartDetails = BirthDetails & {
+  /** Whose chart it is. Omitted on the account's own. */
+  name?: string;
+  aiPreferences?: AiPreferences;
+};
 
 export enum TimeDisclosure {
   Omit = "omit",
@@ -54,6 +58,7 @@ export function buildChartRecord(
     timeZone: details.place.timeZone,
     houseSystem: details.houseSystem,
     updatedAt: updatedAt.toISOString(),
+    ...(details.name !== undefined && { name: details.name }),
     ...(details.aiPreferences !== undefined && {
       aiPreferences: details.aiPreferences,
     }),
@@ -111,6 +116,9 @@ export function parseChartRecord(value: unknown): ChartDetails {
     }),
     houseSystem: record.houseSystem,
   };
+  if (record.name !== undefined) {
+    details.name = record.name;
+  }
   if (record.aiPreferences !== undefined) {
     details.aiPreferences = _toAiPreferences(record.aiPreferences);
   }

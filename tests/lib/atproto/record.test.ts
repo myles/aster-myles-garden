@@ -30,6 +30,27 @@ describe("chart records", () => {
       place: { ...CHART.details.place, id: undefined, region: "", country: "" },
     });
   });
+  it("names whose chart it is only when given a name", () => {
+    expect(RECORD).not.toHaveProperty("name");
+    expect(parseChartRecord(RECORD)).not.toHaveProperty("name");
+
+    const named = buildChartRecord(
+      { ...CHART.details, name: "Mum" },
+      TimeDisclosure.Include,
+      UPDATED_AT,
+    );
+    expect(named.name).toBe("Mum");
+    expect(parseChartRecord(named).name).toBe("Mum");
+  });
+  it("rejects a name longer than the lexicon allows", () => {
+    expect(() =>
+      buildChartRecord(
+        { ...CHART.details, name: "a".repeat(65) },
+        TimeDisclosure.Include,
+        UPDATED_AT,
+      ),
+    ).toThrow();
+  });
   it("omits the actual time and uses local noon when withheld", () => {
     const details = {
       ...CHART.details,

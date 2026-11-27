@@ -1,46 +1,48 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import BirthFields from "@/components/birth-form/BirthFields.svelte";
+  import ChartForm, {
+    type ChartInput,
+  } from "@/components/atproto/ChartForm.svelte";
+  import { ChartOwner } from "@/components/atproto/owner";
   import { Stage } from "@/components/atproto/stage";
   import ChartView from "@/components/views/ChartView.svelte";
+  import ComparisonView from "@/components/views/ComparisonView.svelte";
   import { describeError } from "@/lib/format";
-  import {
-    DEFAULT_HOUSE_SYSTEM,
-    HOUSE_SYSTEM_NAMES,
-    HouseSystem,
-  } from "@/lib/astrology/houses";
   import { createChart, loadChartEngine, type Chart } from "@/lib/charts/chart";
-  import type { Place } from "@/lib/places";
-  import {
-    formatDateValue,
-    formatTimeValue,
-    parseLocalDate,
-    parseLocalTime,
-  } from "@/lib/time";
+  import { compareCharts } from "@/lib/charts/synastry";
 
   import {
     createAtprotoClient,
     type AtprotoClient,
   } from "@/lib/atproto/client";
   import { TimeDisclosure, type ChartDetails } from "@/lib/atproto/record";
+  import type { PersonChart } from "@/lib/atproto/store";
+
+  /** Someone saved in the Space, with their chart already cast. */
+  type ComparedPerson = PersonChart & { chart: Chart };
 
   let connection: AtprotoClient | undefined = $state.raw();
   let stage: Stage = $state(Stage.Connecting);
   let handle = $state("");
-  let date = $state("");
-  let time = $state("");
-  let place: Place | undefined = $state.raw();
-  let isTimeUnknown = $state(false);
-  let houseSystem = $state(DEFAULT_HOUSE_SYSTEM);
-  let shouldIncludeTime = $state(false);
-  let hasConfirmedOwnership = $state(false);
   let isBusy = $state(false);
   let error = $state("");
   let status = $state("");
   let space = $state("");
   let savedDetails: ChartDetails | undefined = $state.raw();
   let savedChart: Chart | undefined = $state.raw();
+  let people: ComparedPerson[] = $state.raw([]);
+  let selectedRkey = $state("");
+  let peopleError = $state("");
+
+  const selectedPerson = $derived(
+    people.find(({ rkey }) => rkey === selectedRkey),
+  );
+  const comparison = $derived(
+    savedChart && selectedPerson
+      ? compareCharts(savedChart, selectedPerson.chart)
+      : undefined,
+  );
 
   onMount(() => {
     let isMounted = true;
@@ -90,6 +92,13 @@
     return connection.charts;
   }
 
+  /** What a record holds after saving: a withheld time is dropped. */
+  function toStored({ details, disclosure }: ChartInput): ChartDetails {
+    return disclosure === TimeDisclosure.Include
+      ? details
+      : { ...details, time: undefined };
+  }
+
   async function signIn(event: SubmitEvent): Promise<void> {
     event.preventDefault();
     await runAction(async () => {
@@ -105,8 +114,10 @@
       connection = undefined;
       savedDetails = undefined;
       savedChart = undefined;
+      people = [];
+      selectedRkey = "";
+      peopleError = "";
       space = "";
-      fillForm(undefined);
       stage = Stage.SignedOut;
       status = "Signed out.";
     });
@@ -124,6 +135,9 @@
         stage = Stage.Unavailable;
         throw cause;
       }
+      if (savedDetails) {
+        await loadPeople();
+      }
     });
   }
 
@@ -132,7 +146,6 @@
     if (!details) {
       savedDetails = undefined;
       savedChart = undefined;
-      fillForm(undefined);
       stage = Stage.FirstSave;
       return;
     }
@@ -142,67 +155,83 @@
     stage = Stage.Viewing;
   }
 
-  function fillForm(details: ChartDetails | undefined): void {
-    date = details ? formatDateValue(details.date) : "";
-    time = details?.time ? formatTimeValue(details.time) : "";
-    isTimeUnknown = details ? !details.time : false;
-    place = details?.place;
-    houseSystem = details?.houseSystem ?? DEFAULT_HOUSE_SYSTEM;
-    shouldIncludeTime = false;
-    hasConfirmedOwnership = false;
+  // People fail on their own, so your chart stays on screen regardless.
+  async function loadPeople(): Promise<void> {
+    peopleError = "";
+    try {
+      const listed = await requireCharts().listPeople();
+      await loadChartEngine();
+      people = listed.map((person) => ({
+        ...person,
+        chart: createChart(person.details),
+      }));
+      if (!selectedPerson) {
+        selectedRkey = people[0]?.rkey ?? "";
+      }
+    } catch (cause) {
+      peopleError = describeError(cause);
+    }
   }
 
-  function startEditing(): void {
-    fillForm(savedDetails);
+  function openStage(next: Stage): void {
     error = "";
     status = "";
-    stage = Stage.Editing;
+    stage = next;
   }
 
-  function cancelEditing(): void {
-    error = "";
-    stage = Stage.Viewing;
-  }
-
-  async function saveChart(event: SubmitEvent): Promise<void> {
-    event.preventDefault();
-    await runAction(async () => {
+  function saveOwnChart(read: () => ChartInput): void {
+    void runAction(async () => {
       const charts = requireCharts();
-      if (!hasConfirmedOwnership) {
-        throw new Error("Confirm these are your own birth details.");
-      }
-      if (!place) {
-        throw new Error("Choose a place or enter its coordinates.");
-      }
-      const details: ChartDetails = {
-        ...(savedDetails?.aiPreferences !== undefined
-          ? { aiPreferences: savedDetails.aiPreferences }
-          : {}),
-        date: parseLocalDate(date),
-        time: isTimeUnknown ? undefined : parseLocalTime(time),
-        place,
-        houseSystem,
-      };
-      const disclosure = shouldIncludeTime
-        ? TimeDisclosure.Include
-        : TimeDisclosure.Omit;
+      const input = read();
 
       // A first save also creates the personal Space it's kept in.
       space ||= await charts.createSpace();
-      await charts.saveChart(details, disclosure);
-      await showChart({
-        ...details,
-        time: shouldIncludeTime ? details.time : undefined,
-      });
+      await charts.saveChart(input.details, input.disclosure);
+      await showChart(toStored(input));
       status = "Saved your chart in your Space.";
+      await loadPeople();
     });
   }
 
-  async function deleteChart(): Promise<void> {
+  function savePerson(read: () => ChartInput): void {
+    void runAction(async () => {
+      const charts = requireCharts();
+      const input = read();
+      const details = toStored(input);
+      let rkey: string;
+      if (stage === Stage.EditingPerson) {
+        // Never fall back to adding: that would duplicate the person.
+        if (!selectedPerson) {
+          throw new Error("Choose who to edit first.");
+        }
+        rkey = selectedPerson.rkey;
+        await charts.savePerson(rkey, input.details, input.disclosure);
+      } else {
+        rkey = await charts.addPerson(input.details, input.disclosure);
+      }
+      await loadChartEngine();
+      const saved = { rkey, details, chart: createChart(details) };
+      people = [...people.filter((person) => person.rkey !== rkey), saved];
+      selectedRkey = rkey;
+      stage = Stage.Viewing;
+      status = `Saved ${details.name}'s chart in your Space.`;
+    });
+  }
+
+  async function deleteOwnChart(): Promise<void> {
     await runAction(async () => {
       await requireCharts().deleteChart();
       await showChart(undefined);
       status = "Deleted your saved chart from the Space.";
+    });
+  }
+
+  async function removePerson(person: ComparedPerson): Promise<void> {
+    await runAction(async () => {
+      await requireCharts().deletePerson(person.rkey);
+      people = people.filter(({ rkey }) => rkey !== person.rkey);
+      selectedRkey = people[0]?.rkey ?? "";
+      status = `Removed ${person.details.name}'s chart from the Space.`;
     });
   }
 </script>
@@ -216,12 +245,13 @@
       </p>
     {:else}
       <p class="mt-3">
-        Save your own chart in a personal Space on your AT Protocol account.
-        Your PDS and apps or people with Space access can read it. It is not
-        end-to-end encrypted. Spaces are in alpha, so use test details for now.
+        Save your own chart, and the charts of people you compare it with, in a
+        personal Space on your AT Protocol account. Your PDS and apps or people
+        with Space access can read it. It is not end-to-end encrypted. Spaces
+        are in alpha, so use test details for now.
       </p>
       <p class="text-ink-muted mt-2 text-sm">
-        Aster never publishes your chart to your public repo.
+        Aster never publishes your charts to your public repo.
       </p>
     {/if}
 
@@ -258,10 +288,14 @@
       <p class="mt-4 text-sm break-all">Signed in as {connection?.did}</p>
       <fieldset disabled={isBusy} class="mt-4 flex flex-wrap gap-3">
         {#if stage === Stage.Viewing}
-          <button type="button" class="underline" onclick={startEditing}>
+          <button
+            type="button"
+            class="underline"
+            onclick={() => openStage(Stage.Editing)}
+          >
             Edit my details
           </button>
-          <button type="button" class="underline" onclick={deleteChart}>
+          <button type="button" class="underline" onclick={deleteOwnChart}>
             Delete my saved chart
           </button>
         {:else if stage === Stage.Unavailable}
@@ -275,62 +309,91 @@
       </fieldset>
     {/if}
 
-    {#if stage === Stage.FirstSave || stage === Stage.Editing}
-      <form onsubmit={saveChart} class="mt-6">
-        <fieldset disabled={isBusy} class="flex min-w-0 flex-col gap-5">
-          <legend class="mb-4 font-serif text-xl">My birth details</legend>
-          <BirthFields
-            idPrefix="atproto"
-            timeHint="Local birth time. Omitted from the record by default."
-            bind:date
-            bind:time
-            bind:isTimeUnknown
-            bind:place
-          />
-          <label class="flex flex-col gap-2">
-            House system
-            <select bind:value={houseSystem} class="rounded border p-2">
-              {#each Object.values(HouseSystem) as system (system)}
-                <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
-              {/each}
-            </select>
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              bind:checked={shouldIncludeTime}
-              disabled={isTimeUnknown}
-            />
-            Include my birth time in the saved record
-          </label>
-          <label>
-            <input type="checkbox" bind:checked={hasConfirmedOwnership} />
-            These are my own details and I want to store them in my Space
-          </label>
-          {#if !space}
-            <p class="text-ink-muted text-sm">
-              Saving creates a personal Aster Space on your account.
-            </p>
+    {#if stage === Stage.Viewing}
+      <section aria-labelledby="atproto-people" class="mt-8">
+        <h2 id="atproto-people" class="font-serif text-xl">
+          Compare your chart
+        </h2>
+        {#if peopleError}
+          <p role="alert" class="mt-2">{peopleError}</p>
+          <button type="button" class="mt-2 underline" onclick={loadPeople}>
+            Try again
+          </button>
+        {/if}
+        <fieldset disabled={isBusy} class="mt-3 flex flex-wrap items-end gap-3">
+          {#if people.length > 0}
+            <label class="flex flex-col gap-2">
+              Compare with
+              <select bind:value={selectedRkey} class="rounded border p-2">
+                {#each people as person (person.rkey)}
+                  <option value={person.rkey}>{person.details.name}</option>
+                {/each}
+              </select>
+            </label>
           {/if}
-          <div class="flex flex-wrap items-center gap-4">
+          {#if selectedPerson}
             <button
-              type="submit"
-              class="bg-accent text-paper rounded px-4 py-2"
+              type="button"
+              class="underline"
+              onclick={() => openStage(Stage.EditingPerson)}
             >
-              Save my chart
+              Edit {selectedPerson.details.name}
             </button>
-            {#if stage === Stage.Editing}
-              <button type="button" class="underline" onclick={cancelEditing}>
-                Cancel
-              </button>
-            {/if}
-          </div>
+            <button
+              type="button"
+              class="underline"
+              onclick={() => removePerson(selectedPerson)}
+            >
+              Remove {selectedPerson.details.name}
+            </button>
+          {/if}
+          <button
+            type="button"
+            class="underline"
+            onclick={() => openStage(Stage.AddingPerson)}
+          >
+            Add someone
+          </button>
         </fieldset>
-      </form>
+        {#if people.length === 0 && !peopleError}
+          <p class="text-ink-muted mt-2 text-sm">
+            Add someone to compare your chart with theirs.
+          </p>
+        {/if}
+      </section>
+    {/if}
+
+    {#if stage === Stage.FirstSave || stage === Stage.Editing}
+      <ChartForm
+        owner={ChartOwner.Self}
+        initial={stage === Stage.Editing ? savedDetails : undefined}
+        {isBusy}
+        note={space
+          ? undefined
+          : "Saving creates a personal Aster Space on your account."}
+        onsave={saveOwnChart}
+        oncancel={stage === Stage.Editing
+          ? () => openStage(Stage.Viewing)
+          : undefined}
+      />
+    {:else if stage === Stage.AddingPerson || stage === Stage.EditingPerson}
+      <ChartForm
+        owner={ChartOwner.Person}
+        initial={stage === Stage.EditingPerson
+          ? selectedPerson?.details
+          : undefined}
+        {isBusy}
+        onsave={savePerson}
+        oncancel={() => openStage(Stage.Viewing)}
+      />
     {/if}
   </div>
 
-  {#if stage === Stage.Viewing && savedChart}
+  {#if stage === Stage.Viewing && comparison}
+    <section class="border-rule mt-10 border-t pt-8">
+      <ComparisonView synastry={comparison} />
+    </section>
+  {:else if stage === Stage.Viewing && savedChart}
     <section class="border-rule mt-10 border-t pt-8">
       <ChartView chart={savedChart} />
     </section>

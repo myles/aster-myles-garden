@@ -5,7 +5,15 @@ export type AtprotoClient = {
   did?: string;
   charts?: Pick<
     SpaceChartStore,
-    "findSpace" | "createSpace" | "loadChart" | "saveChart" | "deleteChart"
+    | "findSpace"
+    | "createSpace"
+    | "loadChart"
+    | "saveChart"
+    | "deleteChart"
+    | "listPeople"
+    | "addPerson"
+    | "savePerson"
+    | "deletePerson"
   >;
   signIn(handle: string): Promise<void>;
   signOut(): Promise<void>;

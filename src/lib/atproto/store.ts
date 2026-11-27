@@ -19,7 +19,10 @@ export type OAuthSession = {
   fetchHandler(path: string, init?: RequestInit): Promise<Response>;
 };
 
-/** The signed-in account's own chart, in its own personal Space. */
+/** Someone else's chart, kept in the account's own Space. */
+export type PersonChart = { rkey: string; details: ChartDetails };
+
+/** The signed-in account's charts, in its own personal Space. */
 export class SpaceChartStore {
   private readonly _space: string;
 
@@ -117,19 +120,88 @@ export class SpaceChartStore {
     await this._writeRecord("deleteRecord", this._getRecordParams());
   }
 
-  private _getRecordParams() {
+  /** Everyone whose chart is kept here, other than the account itself. */
+  async listPeople(): Promise<PersonChart[]> {
+    const people: PersonChart[] = [];
+    let cursor: string | undefined;
+    do {
+      const params = new URLSearchParams({
+        space: this._space,
+        repo: this._session.did,
+        collection: CHART_COLLECTION,
+        ...(cursor !== undefined && { cursor }),
+      });
+      const response = await this._session.fetchHandler(
+        `/xrpc/com.atproto.space.listRecords?${params}`,
+      );
+      if (!response.ok) {
+        throw new Error(`Couldn't list saved people (${response.status}).`);
+      }
+      const body = await response.json();
+      for (const record of body.records ?? []) {
+        if (record.rkey === CHART_RECORD_KEY) {
+          continue;
+        }
+        people.push({
+          rkey: record.rkey,
+          details: parseChartRecord(record.value),
+        });
+      }
+      cursor = body.cursor;
+    } while (cursor);
+    return people;
+  }
+
+  /** Saves a new person under a key the PDS chooses, and returns it. */
+  async addPerson(
+    details: ChartDetails,
+    disclosure: TimeDisclosure,
+  ): Promise<string> {
+    const { rkey: _, ...params } = this._getRecordParams();
+    const response = await this._writeRecord("createRecord", {
+      ...params,
+      record: buildChartRecord(details, disclosure, new Date()),
+    });
+    // Example: "at:space/did:plc:…/garden.myles.aster.chart/3lbz2xq4kme2a"
+    const { uri } = await response.json();
+    const rkey = typeof uri === "string" ? uri.split("/").pop() : undefined;
+    if (!rkey) {
+      throw new Error("The PDS returned an unexpected record URI.");
+    }
+    return rkey;
+  }
+
+  async savePerson(
+    rkey: string,
+    details: ChartDetails,
+    disclosure: TimeDisclosure,
+  ): Promise<void> {
+    await this._writeRecord("putRecord", {
+      ...this._getRecordParams(_assertPersonKey(rkey)),
+      record: buildChartRecord(details, disclosure, new Date()),
+    });
+  }
+
+  async deletePerson(rkey: string): Promise<void> {
+    await this._writeRecord(
+      "deleteRecord",
+      this._getRecordParams(_assertPersonKey(rkey)),
+    );
+  }
+
+  private _getRecordParams(rkey: string = CHART_RECORD_KEY) {
     return {
       space: this._space,
       repo: this._session.did,
       collection: CHART_COLLECTION,
-      rkey: CHART_RECORD_KEY,
+      rkey,
     };
   }
 
   private async _writeRecord(
-    method: "putRecord" | "deleteRecord",
+    method: "createRecord" | "putRecord" | "deleteRecord",
     body: object,
-  ): Promise<void> {
+  ): Promise<Response> {
     const response = await this._session.fetchHandler(
       `/xrpc/com.atproto.space.${method}`,
       {
@@ -141,5 +213,14 @@ export class SpaceChartStore {
     if (!response.ok) {
       throw new Error(`Couldn't change the saved chart (${response.status}).`);
     }
+    return response;
   }
+}
+
+/** People's keys must never reach the account's own chart. */
+function _assertPersonKey(rkey: string): string {
+  if (rkey === CHART_RECORD_KEY) {
+    throw new Error("That key holds your own chart.");
+  }
+  return rkey;
 }

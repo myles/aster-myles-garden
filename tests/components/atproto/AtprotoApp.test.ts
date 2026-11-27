@@ -32,6 +32,10 @@ const charts = {
   loadChart: vi.fn(),
   saveChart: vi.fn(),
   deleteChart: vi.fn(),
+  listPeople: vi.fn(),
+  addPerson: vi.fn(),
+  savePerson: vi.fn(),
+  deletePerson: vi.fn(),
 };
 const client = {
   did: DID,
@@ -45,6 +49,17 @@ const client = {
 const CHART_HEADING = { name: formatPlace(CHART.details.place) };
 const OWNERSHIP_LABEL =
   "These are my own details and I want to store them in my Space";
+const PERMISSION_LABEL =
+  "I have their permission to store these details in my Space";
+const COMPARISON_HEADING = { name: "Chart comparison" };
+const MUM = {
+  rkey: "3lbz2xq4kme2a",
+  details: { ...CHART.details, name: "Mum" },
+};
+const DAD = {
+  rkey: "3lbz2xq4kme2b",
+  details: { ...CHART.details, name: "Dad" },
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -62,6 +77,10 @@ beforeEach(() => {
   charts.loadChart.mockResolvedValue(CHART.details);
   charts.saveChart.mockResolvedValue(undefined);
   charts.deleteChart.mockResolvedValue(undefined);
+  charts.listPeople.mockResolvedValue([]);
+  charts.addPerson.mockResolvedValue(DAD.rkey);
+  charts.savePerson.mockResolvedValue(undefined);
+  charts.deletePerson.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -230,6 +249,100 @@ describe("AtprotoApp", () => {
       expect(client.signOut).toHaveBeenCalled();
       expect(screen.queryByRole("heading", CHART_HEADING)).toBeNull();
       expect(screen.getByLabelText("Your handle")).toBeTruthy();
+    });
+  });
+
+  describe("comparing with other people", () => {
+    it("shows your chart alone and invites a comparison", async () => {
+      render(AtprotoApp);
+      expect(await findChart()).toBeTruthy();
+      expect(screen.queryByRole("heading", COMPARISON_HEADING)).toBeNull();
+      expect(screen.getByRole("button", { name: "Add someone" })).toBeTruthy();
+    });
+    it("compares you with the first person saved", async () => {
+      charts.listPeople.mockResolvedValue([MUM, DAD]);
+      render(AtprotoApp);
+      expect(
+        await screen.findByRole("heading", COMPARISON_HEADING),
+      ).toBeTruthy();
+      expect(createChart).toHaveBeenCalledWith(MUM.details);
+      expect(screen.getByRole("button", { name: "Edit Mum" })).toBeTruthy();
+    });
+    it("switches who you're compared with", async () => {
+      charts.listPeople.mockResolvedValue([MUM, DAD]);
+      render(AtprotoApp);
+      await screen.findByRole("heading", COMPARISON_HEADING);
+      await fireEvent.change(screen.getByLabelText("Compare with"), {
+        target: { value: DAD.rkey },
+      });
+      expect(screen.getByRole("button", { name: "Edit Dad" })).toBeTruthy();
+    });
+    it("adds someone with permission and compares with them", async () => {
+      render(AtprotoApp);
+      await findChart();
+      await click("Add someone");
+      await fireEvent.input(screen.getByLabelText("Name"), {
+        target: { value: " Dad " },
+      });
+      await fillNewChart();
+      await fireEvent.click(screen.getByLabelText(PERMISSION_LABEL));
+      await click("Save their chart");
+      expect(charts.addPerson).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "Dad" }),
+        TimeDisclosure.Omit,
+      );
+      expect(charts.saveChart).not.toHaveBeenCalled();
+      expect(
+        await screen.findByRole("heading", COMPARISON_HEADING),
+      ).toBeTruthy();
+    });
+    it("requires permission and a name to store someone else", async () => {
+      render(AtprotoApp);
+      await findChart();
+      await click("Add someone");
+      await fillNewChart();
+      await click("Save their chart");
+      expect(screen.getByRole("alert").textContent).toContain(
+        "Confirm you have their permission",
+      );
+      await fireEvent.click(screen.getByLabelText(PERMISSION_LABEL));
+      await click("Save their chart");
+      expect(screen.getByRole("alert").textContent).toContain("Enter a name");
+      expect(charts.addPerson).not.toHaveBeenCalled();
+    });
+    it("edits someone by their key", async () => {
+      charts.listPeople.mockResolvedValue([MUM]);
+      render(AtprotoApp);
+      await screen.findByRole("heading", COMPARISON_HEADING);
+      await click("Edit Mum");
+      expect(screen.getByLabelText<HTMLInputElement>("Name").value).toBe("Mum");
+      await fireEvent.click(screen.getByLabelText(PERMISSION_LABEL));
+      await click("Save their chart");
+      expect(charts.savePerson).toHaveBeenCalledWith(
+        MUM.rkey,
+        expect.objectContaining({ name: "Mum" }),
+        TimeDisclosure.Omit,
+      );
+      expect(charts.saveChart).not.toHaveBeenCalled();
+    });
+    it("removes someone and falls back to your chart", async () => {
+      charts.listPeople.mockResolvedValue([MUM]);
+      render(AtprotoApp);
+      await screen.findByRole("heading", COMPARISON_HEADING);
+      await click("Remove Mum");
+      expect(charts.deletePerson).toHaveBeenCalledWith(MUM.rkey);
+      expect(screen.queryByRole("heading", COMPARISON_HEADING)).toBeNull();
+      expect(screen.getByRole("heading", CHART_HEADING)).toBeTruthy();
+    });
+    it("keeps your chart when people can't be listed", async () => {
+      charts.listPeople.mockRejectedValueOnce(new Error("List failed"));
+      render(AtprotoApp);
+      expect(await findChart()).toBeTruthy();
+      expect((await screen.findByRole("alert")).textContent).toContain(
+        "List failed",
+      );
+      await click("Try again");
+      expect(charts.listPeople).toHaveBeenCalledTimes(2);
     });
   });
 
