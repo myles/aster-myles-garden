@@ -104,7 +104,7 @@
     },
     "garden.myles.aster.chart": {
       "uri": "at://did:plc:lequzxcenrqczsr4gxexhmg4/com.atproto.lexicon.schema/garden.myles.aster.chart",
-      "cid": "bafyreiaxt53pxvzdhmtzm4vkxjjwreyp2xtdz5bxz2wanbtds33evxeiiq"
+      "cid": "bafyreigcperj7fxtvg6aala4wkzfmexsfenwaieloiir7wsvyeo3abodqq"
     },
     "garden.myles.aster.releaseNotes": {
       "uri": "file://./src/lib/atproto/lexicons/garden/myles/aster/releaseNotes.json",

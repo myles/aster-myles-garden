@@ -12,13 +12,18 @@ type $nsid = typeof $nsid;
 
 export { $nsid };
 
-/** The author's own birth chart calculation inputs. */
+/** Birth chart calculation inputs. The record key 'self' holds the author's own chart; any other key (a TID) holds someone else's. */
 type Main = { $type: "garden.myles.aster.chart";
 
   /**
-   * Birth instant; local noon if time is unknown or omitted.
+   * Who the chart belongs to, e.g. 'Mum'. Usually omitted on the 'self' record.
    */
-  "bornAt":l.DatetimeString;"location":LocationGeo.Main;"timeZone":string;"updatedAt":l.DatetimeString;"houseSystem":"placidus" | "koch" | "wholeSign" | "equal" | "porphyry" | "regiomontanus" | "campanus";
+  "name"?:string;
+
+  /**
+   * Birth instant. When isBirthTimeKnown is false, local noon in timeZone.
+   */
+  "bornAt":l.DatetimeString;"location":LocationGeo.Main;"timeZone":string;"updatedAt":l.DatetimeString;"houseSystem":"placidus" | "koch" | "wholeSign" | "equal" | "porphyry" | "regiomontanus" | "campanus" | l.UnknownString;
 
   /**
    * Chart-specific AI preferences. Aster treats omitted preferences, including inference, as denied. Inference covers sending chart data to an AI model, including a hosted LLM, to generate text such as a horoscope.
@@ -32,8 +37,8 @@ type Main = { $type: "garden.myles.aster.chart";
 
 export type { Main };
 
-/** The author's own birth chart calculation inputs. */
-const main = /*#__PURE__*/ l.record<"literal:self", Main>("literal:self", $nsid, /*#__PURE__*/ l.object({"bornAt":/*#__PURE__*/ l.string({"format":"datetime"}),"location":/*#__PURE__*/ l.ref<LocationGeo.Main>((() => LocationGeo.main) as any),"timeZone":/*#__PURE__*/ l.string(),"updatedAt":/*#__PURE__*/ l.string({"format":"datetime"}),"houseSystem":/*#__PURE__*/ l.enum(["placidus","koch","wholeSign","equal","porphyry","regiomontanus","campanus"]),"aiPreferences":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.ref<PreferenceAi.PreferenceSet>((() => PreferenceAi.preferenceSet) as any)),"isBirthTimeKnown":/*#__PURE__*/ l.boolean()}));
+/** Birth chart calculation inputs. The record key 'self' holds the author's own chart; any other key (a TID) holds someone else's. */
+const main = /*#__PURE__*/ l.record<"any", Main>("any", $nsid, /*#__PURE__*/ l.object({"name":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.string({"maxLength":640,"maxGraphemes":64})),"bornAt":/*#__PURE__*/ l.string({"format":"datetime"}),"location":/*#__PURE__*/ l.ref<LocationGeo.Main>((() => LocationGeo.main) as any),"timeZone":/*#__PURE__*/ l.string(),"updatedAt":/*#__PURE__*/ l.string({"format":"datetime"}),"houseSystem":/*#__PURE__*/ l.string<{"knownValues":["placidus","koch","wholeSign","equal","porphyry","regiomontanus","campanus"]}>(),"aiPreferences":/*#__PURE__*/ l.optional(/*#__PURE__*/ l.ref<PreferenceAi.PreferenceSet>((() => PreferenceAi.preferenceSet) as any)),"isBirthTimeKnown":/*#__PURE__*/ l.boolean()}));
 
 export { main };
 

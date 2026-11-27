@@ -2,7 +2,7 @@
   "id": "garden.myles.aster.chart",
   "defs": {
     "main": {
-      "key": "literal:self",
+      "key": "any",
       "type": "record",
       "record": {
         "type": "object",
@@ -15,10 +15,16 @@
           "updatedAt"
         ],
         "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 640,
+            "description": "Who the chart belongs to, e.g. 'Mum'. Usually omitted on the 'self' record.",
+            "maxGraphemes": 64
+          },
           "bornAt": {
             "type": "string",
             "format": "datetime",
-            "description": "Birth instant; local noon if time is unknown or omitted."
+            "description": "Birth instant. When isBirthTimeKnown is false, local noon in timeZone."
           },
           "location": {
             "ref": "community.lexicon.location.geo#main",
@@ -27,7 +33,8 @@
           "timeZone": { "type": "string" },
           "updatedAt": { "type": "string", "format": "datetime" },
           "houseSystem": {
-            "enum": [
+            "type": "string",
+            "knownValues": [
               "placidus",
               "koch",
               "wholeSign",
@@ -35,8 +42,7 @@
               "porphyry",
               "regiomontanus",
               "campanus"
-            ],
-            "type": "string"
+            ]
           },
           "aiPreferences": {
             "ref": "community.lexicon.preference.ai#preferenceSet",
@@ -49,7 +55,7 @@
           }
         }
       },
-      "description": "The author's own birth chart calculation inputs."
+      "description": "Birth chart calculation inputs. The record key 'self' holds the author's own chart; any other key (a TID) holds someone else's."
     }
   },
   "$type": "com.atproto.lexicon.schema",
