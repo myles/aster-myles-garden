@@ -14,7 +14,7 @@
     "build": "astro build",
     "changelog:publish": "node --env-file-if-exists=.env --import tsx scripts/changelog-publish.ts",
     "check": "astro check",
-    "dev": "astro dev",
+    "dev": "astro dev --host 127.0.0.1",
     "format": "npm run oxfmt && npm run prettier",
     "format:fix": "npm run oxfmt:write && npm run prettier:write",
     "lexicons:build": "lex build --lib @atproto/lex-schema --import-ext \"\" --clear",

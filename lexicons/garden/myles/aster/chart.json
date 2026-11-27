@@ -1,1 +1,57 @@
-../../../../src/lib/atproto/lexicons/garden/myles/aster/chart.json
+{
+  "id": "garden.myles.aster.chart",
+  "defs": {
+    "main": {
+      "key": "literal:self",
+      "type": "record",
+      "record": {
+        "type": "object",
+        "required": [
+          "bornAt",
+          "isBirthTimeKnown",
+          "location",
+          "timeZone",
+          "houseSystem",
+          "updatedAt"
+        ],
+        "properties": {
+          "bornAt": {
+            "type": "string",
+            "format": "datetime",
+            "description": "Birth instant; local noon if time is unknown or omitted."
+          },
+          "location": {
+            "ref": "community.lexicon.location.geo#main",
+            "type": "ref"
+          },
+          "timeZone": { "type": "string" },
+          "updatedAt": { "type": "string", "format": "datetime" },
+          "houseSystem": {
+            "enum": [
+              "placidus",
+              "koch",
+              "wholeSign",
+              "equal",
+              "porphyry",
+              "regiomontanus",
+              "campanus"
+            ],
+            "type": "string"
+          },
+          "aiPreferences": {
+            "ref": "community.lexicon.preference.ai#preferenceSet",
+            "type": "ref",
+            "description": "Chart-specific AI preferences. Aster treats omitted preferences, including inference, as denied. Inference covers sending chart data to an AI model, including a hosted LLM, to generate text such as a horoscope."
+          },
+          "isBirthTimeKnown": {
+            "type": "boolean",
+            "description": "Whether the birth time is known and disclosed."
+          }
+        }
+      },
+      "description": "The author's own birth chart calculation inputs."
+    }
+  },
+  "$type": "com.atproto.lexicon.schema",
+  "lexicon": 1
+}
