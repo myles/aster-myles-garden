@@ -5,6 +5,12 @@
 
   import { ChartOwner } from "@/components/atproto/owner";
   import BirthFields from "@/components/birth-form/BirthFields.svelte";
+  import Button from "@/components/ui/Button.svelte";
+  import ButtonRow from "@/components/ui/ButtonRow.svelte";
+  import Field from "@/components/ui/Field.svelte";
+  import FormPanel from "@/components/ui/FormPanel.svelte";
+  import Input from "@/components/ui/Input.svelte";
+  import Select from "@/components/ui/Select.svelte";
   import {
     DEFAULT_HOUSE_SYSTEM,
     HOUSE_SYSTEM_NAMES,
@@ -26,6 +32,7 @@
 
   let {
     owner,
+    title,
     initial,
     isBusy,
     note,
@@ -33,6 +40,8 @@
     oncancel,
   }: {
     owner: ChartOwner;
+    /** Heads the panel, such as "Add someone". */
+    title: string;
     /** Prefills the form; its AI preferences are carried through. */
     initial?: ChartDetails;
     isBusy: boolean;
@@ -93,22 +102,20 @@
   }
 </script>
 
-<form onsubmit={submit} class="mt-6">
-  <fieldset disabled={isBusy} class="flex min-w-0 flex-col gap-5">
-    <legend class="mb-4 font-serif text-xl">
-      {isPerson ? "Their birth details" : "My birth details"}
-    </legend>
+<FormPanel {title} onsubmit={submit}>
+  <fieldset
+    disabled={isBusy}
+    class="m-0 flex min-w-0 flex-col gap-5 border-0 p-0"
+  >
     {#if isPerson}
-      <label class="flex flex-col gap-2">
-        Name
-        <input
-          type="text"
+      <Field id={`${idPrefix}-name`} label="Name">
+        <Input
+          id={`${idPrefix}-name`}
           bind:value={name}
-          maxlength="64"
+          maxlength={64}
           autocomplete="off"
-          class="rounded border p-2"
         />
-      </label>
+      </Field>
     {/if}
     <BirthFields
       {idPrefix}
@@ -118,42 +125,46 @@
       bind:isTimeUnknown
       bind:place
     />
-    <label class="flex flex-col gap-2">
-      House system
-      <select bind:value={houseSystem} class="rounded border p-2">
+    <Field id={`${idPrefix}-house-system`} label="House system">
+      <Select id={`${idPrefix}-house-system`} bind:value={houseSystem}>
         {#each Object.values(HouseSystem) as system (system)}
           <option value={system}>{HOUSE_SYSTEM_NAMES[system]}</option>
         {/each}
-      </select>
-    </label>
-    <label>
-      <input
-        type="checkbox"
-        bind:checked={shouldIncludeTime}
-        disabled={isTimeUnknown}
-      />
-      {isPerson
-        ? "Include their birth time in the saved record"
-        : "Include my birth time in the saved record"}
-    </label>
-    <label>
-      <input type="checkbox" bind:checked={hasConsented} />
-      {isPerson
-        ? "I have their permission to store these details in my Space"
-        : "These are my own details and I want to store them in my Space"}
-    </label>
-    {#if note}
-      <p class="text-ink-muted text-sm">{note}</p>
-    {/if}
-    <div class="flex flex-wrap items-center gap-4">
-      <button type="submit" class="bg-accent text-paper rounded px-4 py-2">
-        {isPerson ? "Save their chart" : "Save my chart"}
-      </button>
-      {#if oncancel}
-        <button type="button" class="underline" onclick={oncancel}>
-          Cancel
-        </button>
-      {/if}
+      </Select>
+    </Field>
+    <div class="flex flex-col gap-3">
+      <label class="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          class="accent-accent mt-0.5 size-4 shrink-0"
+          bind:checked={shouldIncludeTime}
+          disabled={isTimeUnknown}
+        />
+        {isPerson
+          ? "Include their birth time in the saved record"
+          : "Include my birth time in the saved record"}
+      </label>
+      <label class="flex items-start gap-2 text-sm">
+        <input
+          type="checkbox"
+          class="accent-accent mt-0.5 size-4 shrink-0"
+          bind:checked={hasConsented}
+        />
+        {isPerson
+          ? "I have their permission to store these details in my Space"
+          : "These are my own details and I want to store them in my Space"}
+      </label>
     </div>
+    {#if note}
+      <p class="ui-hint">{note}</p>
+    {/if}
+    <ButtonRow>
+      <Button variant="primary" type="submit">
+        {isPerson ? "Save their chart" : "Save my chart"}
+      </Button>
+      {#if oncancel}
+        <Button variant="quiet" onclick={oncancel}>Cancel</Button>
+      {/if}
+    </ButtonRow>
   </fieldset>
-</form>
+</FormPanel>

@@ -6,6 +6,13 @@
   } from "@/components/atproto/ChartForm.svelte";
   import { ChartOwner } from "@/components/atproto/owner";
   import { Stage } from "@/components/atproto/stage";
+  import Alert from "@/components/ui/Alert.svelte";
+  import Button from "@/components/ui/Button.svelte";
+  import ButtonRow from "@/components/ui/ButtonRow.svelte";
+  import Field from "@/components/ui/Field.svelte";
+  import FormPanel from "@/components/ui/FormPanel.svelte";
+  import Input from "@/components/ui/Input.svelte";
+  import Select from "@/components/ui/Select.svelte";
   import ChartView from "@/components/views/ChartView.svelte";
   import ComparisonView from "@/components/views/ComparisonView.svelte";
   import { describeError } from "@/lib/format";
@@ -26,6 +33,8 @@
   let stage: Stage = $state(Stage.Connecting);
   let handle = $state("");
   let isBusy = $state(false);
+  // False in the server-rendered page, so it works without JavaScript.
+  let isHydrated = $state(false);
   let error = $state("");
   let status = $state("");
   let space = $state("");
@@ -44,7 +53,16 @@
       : undefined,
   );
 
+  // What the view says in the stages that have no chart to draw.
+  const PLACEHOLDERS: Partial<Record<Stage, string>> = {
+    [Stage.Connecting]: "Loading your chart…",
+    [Stage.SignedOut]: "Sign in to see your saved chart.",
+    [Stage.Unavailable]: "Your chart couldn't be loaded.",
+    [Stage.FirstSave]: "Save your birth details to draw your chart.",
+  };
+
   onMount(() => {
+    isHydrated = true;
     let isMounted = true;
     void createAtprotoClient(window.location.href).then(
       (client) => {
@@ -236,136 +254,125 @@
   }
 </script>
 
-<main class="mx-auto max-w-6xl px-4 py-8">
-  <div class="mx-auto max-w-2xl">
-    <h1 class="font-serif text-3xl">Your chart on AT Protocol</h1>
-    {#if stage === Stage.Viewing}
-      <p class="text-ink-muted mt-2 text-sm">
-        Saved in your personal Space. Not end-to-end encrypted.
-      </p>
-    {:else}
-      <p class="mt-3">
-        Save your own chart, and the charts of people you compare it with, in a
-        personal Space on your AT Protocol account. Your PDS and apps or people
-        with Space access can read it. It is not end-to-end encrypted. Spaces
-        are in alpha, so use test details for now.
-      </p>
-      <p class="text-ink-muted mt-2 text-sm">
-        Aster never publishes your charts to your public repo.
-      </p>
+<main class="grid flex-1 gap-8 lg:grid-cols-[20rem_1fr]">
+  <div class="flex min-w-0 flex-col gap-6 self-start">
+    <Alert message={error} />
+    {#if status}
+      <p role="status" class="text-ink-muted text-sm">{status}</p>
     {/if}
 
-    <p role="alert" hidden={!error} class="mt-4">{error}</p>
-    <p role="status" class="mt-4">
-      {stage === Stage.Connecting ? "Loading your chart…" : status}
-    </p>
-
-    {#if stage === Stage.SignedOut}
-      <form onsubmit={signIn} class="mt-6">
-        <fieldset disabled={isBusy} class="flex flex-col gap-3">
-          <label class="flex flex-col gap-2">
-            Your handle
-            <input
-              type="text"
+    {#if stage === Stage.SignedOut || !isHydrated}
+      <FormPanel title="Sign in" onsubmit={signIn}>
+        {#snippet description()}
+          With your Bluesky or other AT Protocol handle.
+        {/snippet}
+        {#if !isHydrated}
+          <p class="text-ink-muted text-sm">
+            JavaScript is required to sign in and load your chart.
+          </p>
+        {/if}
+        <fieldset
+          disabled={isBusy || !isHydrated}
+          class="m-0 flex min-w-0 flex-col gap-5 border-0 p-0"
+        >
+          <Field id="atproto-handle" label="Your handle">
+            <Input
+              id="atproto-handle"
               bind:value={handle}
               required
               autocomplete="username"
               autocapitalize="none"
               spellcheck="false"
               placeholder="you.bsky.social"
-              class="rounded border p-2"
             />
-          </label>
-          <button
-            type="submit"
-            class="bg-accent text-paper self-start rounded px-4 py-2"
-          >
-            Sign in
-          </button>
+          </Field>
+          <ButtonRow>
+            <Button variant="primary" type="submit">Sign in</Button>
+          </ButtonRow>
         </fieldset>
-      </form>
-    {:else if stage !== Stage.Connecting}
-      <p class="mt-4 text-sm break-all">Signed in as {connection?.did}</p>
-      <fieldset disabled={isBusy} class="mt-4 flex flex-wrap gap-3">
-        {#if stage === Stage.Viewing}
-          <button
-            type="button"
-            class="underline"
+      </FormPanel>
+    {:else if stage === Stage.Unavailable}
+      <section class="ui-panel">
+        <ButtonRow>
+          <Button variant="primary" disabled={isBusy} onclick={openChart}>
+            Try again
+          </Button>
+        </ButtonRow>
+      </section>
+    {:else if stage === Stage.Viewing}
+      <section class="ui-panel" aria-labelledby="atproto-yours">
+        <h2 id="atproto-yours" class="ui-heading-section">Your chart</h2>
+        <ButtonRow>
+          <Button
+            size="small"
+            disabled={isBusy}
             onclick={() => openStage(Stage.Editing)}
           >
             Edit my details
-          </button>
-          <button type="button" class="underline" onclick={deleteOwnChart}>
+          </Button>
+          <Button variant="quiet" disabled={isBusy} onclick={deleteOwnChart}>
             Delete my saved chart
-          </button>
-        {:else if stage === Stage.Unavailable}
-          <button type="button" class="underline" onclick={openChart}>
-            Try again
-          </button>
-        {/if}
-        <button type="button" class="underline" onclick={signOut}>
-          Sign out
-        </button>
-      </fieldset>
-    {/if}
+          </Button>
+        </ButtonRow>
+      </section>
 
-    {#if stage === Stage.Viewing}
-      <section aria-labelledby="atproto-people" class="mt-8">
-        <h2 id="atproto-people" class="font-serif text-xl">
-          Compare your chart
-        </h2>
+      <section class="ui-panel" aria-labelledby="atproto-people">
+        <h2 id="atproto-people" class="ui-heading-section">People</h2>
         {#if peopleError}
-          <p role="alert" class="mt-2">{peopleError}</p>
-          <button type="button" class="mt-2 underline" onclick={loadPeople}>
-            Try again
-          </button>
+          <Alert message={peopleError} />
+          <ButtonRow>
+            <Button size="small" disabled={isBusy} onclick={loadPeople}>
+              Try again
+            </Button>
+          </ButtonRow>
         {/if}
-        <fieldset disabled={isBusy} class="mt-3 flex flex-wrap items-end gap-3">
-          {#if people.length > 0}
-            <label class="flex flex-col gap-2">
-              Compare with
-              <select bind:value={selectedRkey} class="rounded border p-2">
-                {#each people as person (person.rkey)}
-                  <option value={person.rkey}>{person.details.name}</option>
-                {/each}
-              </select>
-            </label>
-          {/if}
-          {#if selectedPerson}
-            <button
-              type="button"
-              class="underline"
+        {#if people.length > 0}
+          <Field id="atproto-compare-with" label="Compare with">
+            <Select
+              id="atproto-compare-with"
+              disabled={isBusy}
+              bind:value={selectedRkey}
+            >
+              {#each people as person (person.rkey)}
+                <option value={person.rkey}>{person.details.name}</option>
+              {/each}
+            </Select>
+          </Field>
+        {:else if !peopleError}
+          <p class="ui-hint">Add someone to compare your chart with theirs.</p>
+        {/if}
+        {#if selectedPerson}
+          <ButtonRow>
+            <Button
+              size="small"
+              disabled={isBusy}
               onclick={() => openStage(Stage.EditingPerson)}
             >
               Edit {selectedPerson.details.name}
-            </button>
-            <button
-              type="button"
-              class="underline"
+            </Button>
+            <Button
+              variant="quiet"
+              disabled={isBusy}
               onclick={() => removePerson(selectedPerson)}
             >
               Remove {selectedPerson.details.name}
-            </button>
-          {/if}
-          <button
-            type="button"
-            class="underline"
+            </Button>
+          </ButtonRow>
+        {/if}
+        <ButtonRow>
+          <Button
+            size="small"
+            disabled={isBusy}
             onclick={() => openStage(Stage.AddingPerson)}
           >
             Add someone
-          </button>
-        </fieldset>
-        {#if people.length === 0 && !peopleError}
-          <p class="text-ink-muted mt-2 text-sm">
-            Add someone to compare your chart with theirs.
-          </p>
-        {/if}
+          </Button>
+        </ButtonRow>
       </section>
-    {/if}
-
-    {#if stage === Stage.FirstSave || stage === Stage.Editing}
+    {:else if stage === Stage.FirstSave || stage === Stage.Editing}
       <ChartForm
         owner={ChartOwner.Self}
+        title="My birth details"
         initial={stage === Stage.Editing ? savedDetails : undefined}
         {isBusy}
         note={space
@@ -379,6 +386,9 @@
     {:else if stage === Stage.AddingPerson || stage === Stage.EditingPerson}
       <ChartForm
         owner={ChartOwner.Person}
+        title={stage === Stage.EditingPerson && selectedPerson
+          ? `Edit ${selectedPerson.details.name}'s details`
+          : "Add someone"}
         initial={stage === Stage.EditingPerson
           ? selectedPerson?.details
           : undefined}
@@ -387,18 +397,28 @@
         oncancel={() => openStage(Stage.Viewing)}
       />
     {/if}
+
+    {#if stage !== Stage.SignedOut && stage !== Stage.Connecting}
+      <p class="text-ink-muted flex flex-wrap items-center gap-x-2 text-sm">
+        Signed in.
+        <Button variant="quiet" disabled={isBusy} onclick={signOut}>
+          Sign out
+        </Button>
+      </p>
+    {/if}
   </div>
 
-  {#if stage === Stage.Viewing && comparison}
-    <section class="border-rule mt-10 border-t pt-8">
+  <div class="min-w-0">
+    {#if comparison && stage !== Stage.FirstSave}
       <ComparisonView synastry={comparison} />
-    </section>
-  {:else if stage === Stage.Viewing && savedChart}
-    <section class="border-rule mt-10 border-t pt-8">
+    {:else if savedChart && stage !== Stage.FirstSave}
       <ChartView chart={savedChart} />
-    </section>
-  {/if}
-  <p class="mx-auto mt-8 max-w-2xl">
-    <a href="/" class="underline">Back to Aster</a>
-  </p>
+    {:else}
+      <div
+        class="border-rule text-ink-muted flex h-full min-h-80 items-center justify-center rounded-lg border border-dashed p-8 text-center"
+      >
+        {PLACEHOLDERS[isHydrated ? stage : Stage.SignedOut]}
+      </div>
+    {/if}
+  </div>
 </main>

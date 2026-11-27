@@ -1,8 +1,29 @@
 ---
 import AtprotoApp from "@/components/atproto/AtprotoApp.svelte";
+import SiteFooter from "@/components/site/SiteFooter.astro";
 import Layout from "@/layouts/Layout.astro";
 ---
 
 <Layout pageTitle="Your chart on AT Protocol" robots="noindex, nofollow">
-  <AtprotoApp client:load />
+  <div class="mx-auto flex min-h-dvh max-w-6xl flex-col px-4 py-8 sm:px-6">
+    <header class="mb-8">
+      <h1 class="font-serif text-4xl tracking-tight">
+        Your chart on AT Protocol
+      </h1>
+      <p class="mt-1 text-ink-muted">
+        Your chart, and the people you compare it with, saved in a personal
+        Space on your AT Protocol account. It isn't published to your public
+        repo, but it isn't end-to-end encrypted either. Spaces are in alpha, so
+        use test details for now.{" "}
+        <a class="underline" href="/">
+          Back to Aster
+        </a>
+        .
+      </p>
+    </header>
+
+    <AtprotoApp client:load />
+
+    <SiteFooter />
+  </div>
 </Layout>
